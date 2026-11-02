@@ -636,3 +636,59 @@ body {
     scroll-behavior: auto !important;
   }
 }
+/* ShipNext video background */
+
+.nv-video-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.nv-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(251, 248, 243, 0.45);
+  pointer-events: none;
+}
+
+.nv-checker,
+.nv-checker-glow {
+  background-image: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+.nv-landing {
+  position: relative;
+  isolation: isolate;
+}
+
+/* ShipNext full website video background */
+#site-background-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Remove old chessboard background */
+.nv-checker,
+.nv-checker-glow {
+  display: none !important;
+}
+
+/* Keep the website background transparent */
+html,
+body,
+#root {
+  min-height: 100%;
+  background: transparent;
+}
