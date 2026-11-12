@@ -2,16 +2,22 @@
 function Navbar() {
   return (
     <header className="navbar">
-      <a href="/" className="logo">
-        <span className="logo-icon">S</span>
-        Ship<span>Next</span>
-      </a>
+  <a href="/" className="logo">
+    <img
+      src="/logo.jpeg"
+      alt="ShipNext Logo"
+      className="logo-image"
+    />
+   
+  </a>
 
       <nav>
-        <a href="/#services">Services</a>
+        <a href="/#services">Solutions</a>
+        <a href="/#solutions">Pin & Rate Calculator</a>
+         <a href="/#ai-engine">Ai Engine & NDR Services</a>
         <a href="/#how-it-works">How It Works</a>
-        <a href="/track">Track Shipment</a>
-        <a href="/dashboard">Dashboard</a>
+        
+        <a href="/dashboard"> Customer Dashboard</a>
         <a href="/admin">Admin</a>
       </nav>
 

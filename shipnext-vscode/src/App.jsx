@@ -19,32 +19,54 @@ import AdminBookings from './pages/AdminBookings.jsx';
 import AdminWallet from './pages/AdminWallet.jsx';
 import AdminEnquiries from './pages/AdminEnquiries.jsx';
 
+
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
+      <div className="website-background">
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* Global Video Background */}
+        <video
+          className="website-bg-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+        >
+          <source src="/shipnext-bg.mp4" type="video/mp4" />
+        </video>
 
-        <Route path="/dashboard" element={<CustomerDashboard />} />
-        <Route path="/book-shipment" element={<BookShipment />} />
-        <Route path="/shipping-charges" element={<ShippingCharges />} />
-        <Route path="/wallet" element={<Wallet />} />
-        <Route path="/shipments" element={<MyShipments />} />
-        <Route path="/profile" element={<MyProfile />} />
+        {/* Dark Overlay */}
+        <div className="website-bg-overlay"></div>
 
-        <Route path="/track" element={<TrackShipment />} />
-        <Route path="/track/:trackingId" element={<TrackShipment />} />
+        {/* All Website Pages */}
+        <div className="website-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
 
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/customers" element={<AdminCustomers />} />
-        <Route path="/admin/shipments" element={<AdminShipments />} />
-        <Route path="/admin/bookings" element={<AdminBookings />} />
-        <Route path="/admin/wallet" element={<AdminWallet />} />
-        <Route path="/admin/enquiries" element={<AdminEnquiries />} />
-      </Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/dashboard" element={<CustomerDashboard />} />
+            <Route path="/book-shipment" element={<BookShipment />} />
+            <Route path="/shipping-charges" element={<ShippingCharges />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/shipments" element={<MyShipments />} />
+            <Route path="/profile" element={<MyProfile />} />
+
+            <Route path="/track" element={<TrackShipment />} />
+            <Route path="/track/:trackingId" element={<TrackShipment />} />
+
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/customers" element={<AdminCustomers />} />
+            <Route path="/admin/shipments" element={<AdminShipments />} />
+            <Route path="/admin/bookings" element={<AdminBookings />} />
+            <Route path="/admin/wallet" element={<AdminWallet />} />
+            <Route path="/admin/enquiries" element={<AdminEnquiries />} />
+          </Routes>
+        </div>
+
+      </div>
     </BrowserRouter>
   );
 }

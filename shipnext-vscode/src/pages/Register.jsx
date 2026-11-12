@@ -31,10 +31,14 @@ function Register() {
   return (
     <div className="auth-page">
       <div className="auth-brand">
-        <a href="/" className="logo">
-          <span className="logo-icon">S</span>
-          Ship<span>Next</span>
-        </a>
+          <a href="/" className="logo">
+    <img
+      src="/logo.jpeg"
+      alt="ShipNext Logo"
+      className="logo-image"
+    />
+   
+  </a>
         <p>Your Shipping. Our Priority.</p>
       </div>
 
