@@ -1,31 +1,29 @@
 
+import { Link } from 'react-router-dom';
+
 function Navbar() {
   return (
     <header className="navbar">
-  <a href="/" className="logo">
-    <img
-      src="/logo.jpeg"
-      alt="ShipNext Logo"
-      className="logo-image"
-    />
-   
-  </a>
+      <Link to="/" className="logo">
+        <img
+          src="/logo.jpeg"
+          alt="ShipNext Logo"
+          className="logo-image"
+        />
+      </Link>
 
       <nav>
         <a href="/#services">Solutions</a>
         <a href="/#solutions">Pin & Rate Calculator</a>
-         <a href="/#ai-engine">Ai Engine & NDR Services</a>
-        <a href="/#how-it-works">How It Works</a>
-        
-        <a href="/dashboard"> Customer Dashboard</a>
-        <a href="/admin">Admin</a>
+        <a href="/#ai-engine">AI Engine & NDR Services</a>
+        <Link to="/enquiry">Enquire Now</Link>
       </nav>
 
       <div className="nav-actions">
-        <a href="/login" className="login-link">Login</a>
-        <a href="/register" className="primary-button">
+        <Link to="/login" className="login-link">Login</Link>
+        <Link to="/register" className="primary-button">
           Get Started →
-        </a>
+        </Link>
       </div>
     </header>
   );

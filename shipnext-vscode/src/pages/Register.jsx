@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -10,6 +11,11 @@ function Register() {
     confirmPassword: '',
   });
 
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
   const handleChange = (event) => {
     setFormData({
       ...formData,
@@ -17,28 +23,57 @@ function Register() {
     });
   };
 
-  const handleRegister = (event) => {
+  const handleRegister = async (event) => {
     event.preventDefault();
+    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
       return;
     }
 
-    alert('Registration will be connected to the ShipNext backend soon.');
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed.');
+      }
+
+      alert('Your ShipNext account has been created successfully!');
+      navigate('/login');
+
+    } catch (error) {
+      setError(error.message || 'Unable to connect to ShipNext.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="auth-page">
       <div className="auth-brand">
-          <a href="/" className="logo">
-    <img
-      src="/logo.jpeg"
-      alt="ShipNext Logo"
-      className="logo-image"
-    />
-   
-  </a>
+        <a href="/" className="logo">
+          <img
+            src="/logo.jpeg"
+            alt="ShipNext Logo"
+            className="logo-image"
+          />
+        </a>
         <p>Your Shipping. Our Priority.</p>
       </div>
 
@@ -110,8 +145,18 @@ function Register() {
             required
           />
 
-          <button type="submit" className="auth-submit">
-            Create Account →
+          {error && (
+            <p style={{ color: '#dc2626', marginTop: '12px' }}>
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={loading}
+          >
+            {loading ? 'Creating Account...' : 'Create Account →'}
           </button>
         </form>
 

@@ -1,21 +1,64 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (event) => {
+  const navigate = useNavigate();
+
+  const handleLogin = async (event) => {
     event.preventDefault();
-    alert('Login will be connected to the ShipNext backend soon.');
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed.');
+      }
+
+      sessionStorage.setItem('shipnextToken', data.token);
+      sessionStorage.setItem('shipnextUser', JSON.stringify(data.user));
+
+      if (data.user.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+
+    } catch (error) {
+      setError(error.message || 'Unable to connect to ShipNext.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="auth-page">
       <div className="auth-brand">
         <a href="/" className="logo">
-          <span className="logo-icon">S</span>
-          Ship<span>Next</span>
+          <img
+            src="/logo.jpeg"
+            alt="ShipNext Logo"
+            className="logo-image"
+          />
         </a>
         <p>Your Shipping. Our Priority.</p>
       </div>
@@ -57,8 +100,18 @@ function Login() {
             <a href="#forgot-password">Forgot password?</a>
           </div>
 
-          <button type="submit" className="auth-submit">
-            Sign In →
+          {error && (
+            <p style={{ color: '#dc2626', marginTop: '12px' }}>
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={loading}
+          >
+            {loading ? 'Signing In...' : 'Sign In →'}
           </button>
         </form>
 

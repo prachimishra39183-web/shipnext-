@@ -1,8 +1,10 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function BookShipment() {
+  const navigate = useNavigate();
+const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     pickupName: '',
     pickupPhone: '',
@@ -22,16 +24,56 @@ function BookShipment() {
     });
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    if (Number(formData.weight) < 0.5) {
-      alert('Minimum parcel weight is 500 grams (0.5 kg).');
-      return;
+  if (Number(formData.weight) < 0.5) {
+    alert('Minimum parcel weight is 500 grams (0.5 kg).');
+    return;
+  }
+
+  const token = sessionStorage.getItem('shipnextToken');
+
+  if (!token) {
+    alert('Please log in before booking a shipment.');
+    navigate('/login');
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    const response = await fetch('http://localhost:5000/api/shipments/drafts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Unable to save shipment details.');
     }
 
-    alert('Shipment details saved for the next booking step. Backend connection will be added later.');
-  };
+  sessionStorage.setItem('shipnextDraftId', data.draft.id);
+
+alert('Shipment details saved successfully!');
+
+navigate('/shipping-charges', {
+  state: {
+    draftId: data.draft.id,
+  },
+});
+
+  } catch (error) {
+    alert(error.message || 'Something went wrong. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="booking-page">
@@ -119,9 +161,13 @@ function BookShipment() {
             Your shipping charges will be calculated using parcel weight and pickup/delivery pincodes.
           </div>
 
-          <button type="submit" className="booking-submit">
-            Continue to Shipping Charges →
-          </button>
+          <button
+  type="submit"
+  className="booking-submit"
+  disabled={isSubmitting}
+>
+  {isSubmitting ? 'Saving Shipment...' : 'Continue to Shipping Charges →'}
+</button>
         </form>
       </main>
     </div>

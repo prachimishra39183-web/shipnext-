@@ -67,11 +67,15 @@ function AdminDashboard() {
 
         <section className="admin-content-card">
           <h2>Quick Management</h2>
-          <div className="admin-quick-links">
-            <Link to="/admin/customers">Manage Customers →</Link>
-            <Link to="/admin/shipments">Manage Shipments →</Link>
-            <Link to="/admin/enquiries">View Enquiries →</Link>
-          </div>
+         <div className="admin-quick-links">
+  <Link to="/admin/customers">Manage Customers →</Link>
+  <Link to="/admin/shipments">Manage Shipments →</Link>
+  <Link to="/admin/enquiries">View Enquiries →</Link>
+  <Link to="/admin/support">Support Tickets →</Link>
+  <Link to="/admin/serviceability">
+  PIN Serviceability →
+</Link>
+</div>
         </section>
       </main>
     </div>

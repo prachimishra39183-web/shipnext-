@@ -4,18 +4,43 @@ import { Link, useParams } from 'react-router-dom';
 
 function TrackShipment() {
   const { trackingId } = useParams();
-  const [trackingNumber, setTrackingNumber] = useState(trackingId || '');
-  const [submitted, setSubmitted] = useState(false);
 
-  const handleTrack = (event) => {
+  const [trackingNumber, setTrackingNumber] = useState(trackingId || '');
+  const [shipment, setShipment] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleTrack = async (event) => {
     event.preventDefault();
 
     if (!trackingNumber.trim()) {
-      alert('Please enter your ShipNext tracking ID.');
+      setError('Please enter your ShipNext tracking ID.');
       return;
     }
 
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+    setShipment(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/shipments/track/${encodeURIComponent(
+          trackingNumber.trim()
+        )}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Shipment not found.');
+      }
+
+      setShipment(data.shipment);
+    } catch (err) {
+      setError(err.message || 'Unable to track shipment.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,23 +71,65 @@ function TrackShipment() {
               value={trackingNumber}
               onChange={(event) => {
                 setTrackingNumber(event.target.value);
-                setSubmitted(false);
+                setShipment(null);
+                setError('');
               }}
+              required
             />
 
-            <button type="submit">Track Shipment</button>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Checking...' : 'Track Shipment'}
+            </button>
           </div>
         </form>
 
-        {submitted && (
+        {error && (
           <div className="tracking-message">
-            <h3>Tracking request received</h3>
+            <h3>Tracking unsuccessful</h3>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {shipment && (
+          <div className="tracking-message">
+            <h3>Shipment Found ✓</h3>
+
             <p>
-              Live tracking information will appear here once
-              the ShipNext tracking service is connected.
+              Tracking ID: <strong>{shipment.trackingId}</strong>
             </p>
+
             <p>
-              Your tracking ID: <strong>{trackingNumber}</strong>
+              Current Status:{' '}
+              <strong>{shipment.status.replaceAll('_', ' ')}</strong>
+            </p>
+
+            <p>
+              Pickup PIN: <strong>{shipment.pickupPincode}</strong>
+            </p>
+
+            <p>
+              Delivery PIN: <strong>{shipment.deliveryPincode}</strong>
+            </p>
+
+            <p>
+              Parcel Weight:{' '}
+              <strong>
+                {(shipment.weightGrams / 1000).toFixed(2)} kg
+              </strong>
+            </p>
+
+            <p>
+              Booking Date:{' '}
+              <strong>
+                {new Date(shipment.createdAt).toLocaleDateString('en-IN')}
+              </strong>
+            </p>
+
+            <p>
+              Last Updated:{' '}
+              <strong>
+                {new Date(shipment.updatedAt).toLocaleString('en-IN')}
+              </strong>
             </p>
           </div>
         )}
@@ -70,9 +137,8 @@ function TrackShipment() {
         <div className="tracking-information">
           <h2>How ShipNext Tracking Works</h2>
           <p>
-            ShipNext brings shipment updates together in one
-            place, so you can follow your parcel without visiting
-            separate courier websites.
+            Enter your ShipNext tracking ID to retrieve your
+            shipment's latest recorded status.
           </p>
         </div>
       </div>

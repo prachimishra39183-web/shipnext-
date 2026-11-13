@@ -395,7 +395,7 @@ button {
 
   margin-top: 22px;
 
-  color: white;
+  color: black;
 
   font-size: 16px;
 
@@ -2013,67 +2013,79 @@ button {
 
 
 
+/* ===== PREMIUM DASHBOARD SIDEBAR ===== */
+
 .sidebar {
-
   width: 250px;
-
   min-height: 100vh;
-
-  background: #ffffff;
-
-  border-right: 1px solid #e8edf4;
-
+  background: linear-gradient(180deg, #0a79e7 0%, #0a7df1 100%);
+  border-right: 1px solid rgba(211, 30, 30, 0.08);
   padding: 30px 20px;
-
   display: flex;
-
   flex-direction: column;
-
   flex-shrink: 0;
-
 }
 
-
-
+/* SHIPNEXT LOGO */
 .sidebar .logo {
-
-  font-size: 25px;
-
-  font-weight: 800;
-
+  display: inline-flex;
+  align-items: center;
   margin-bottom: 55px;
-
+  font-size: 25px;
+  font-weight: 900;
+  text-decoration: none;
 }
 
+.sidebar .logo-ship {
+  color: #171313 !important;
+}
 
+.sidebar .logo-next {
+  color: #ff593f !important;
+}
 
+/* SIDEBAR LABEL */
 .sidebar-label {
-
+  color: #91a9c0;
   font-size: 11px;
-
   font-weight: 800;
-
-  color: #94a3b8;
-
   letter-spacing: 1.2px;
-
   margin-bottom: 16px;
-
 }
 
-
-
+/* NAVIGATION */
 .sidebar-nav {
-
   display: flex;
-
   flex-direction: column;
-
   gap: 9px;
-
 }
 
+.sidebar-nav a,
+.sidebar-bottom a {
+  padding: 13px 14px;
+  border-radius: 10px;
+  color: #c2d0df;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
 
+.sidebar-nav a:hover,
+.sidebar-bottom a:hover {
+  background: rgba(255,255,255,0.09);
+  color: #ffffff;
+}
+
+.sidebar-nav a.active {
+  background: #ff593f;
+  color: #ffffff;
+  box-shadow: 0 5px 18px rgba(255,89,63,0.25);
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+}
 
 .sidebar-nav a,
 
@@ -2093,7 +2105,17 @@ button {
 
 }
 
+.sidebar .logo {
+  display: inline-flex !important;
+  gap: 0 !important;
+  column-gap: 0 !important;
+}
 
+.sidebar .logo-ship,
+.sidebar .logo-next {
+  margin: 0 !important;
+  padding: 0 !important;
+}
 
 .sidebar-nav a:hover,
 
@@ -2147,7 +2169,7 @@ button {
 
   font-size: 27px;
 
-  color: #172033;
+  color: #303317;
 
   margin-bottom: 7px;
 
@@ -4680,17 +4702,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .booking-back, .tracking-back, .charges-edit { color: var(--primary); }
 .charge-total strong { color: var(--primary); }
 .charges-note, .tracking-information { background: #fff0e9; color: #9f351f; }
-.wallet-balance-card { background: linear-gradient(125deg,#0a2540,#17466c); box-shadow: 0 15px 35px rgba(10,37,64,.16); }
+.wallet-balance-card { background: linear-gradient(125deg,#5297db,#17466c); box-shadow: 0 15px 35px rgba(10,37,64,.16); }
 .profile-avatar, .tracking-icon { background: var(--accent-soft); color: var(--primary); }
 .shipment-status { background: #fff0e9; color: #c83b22; }
 .shipment-item > a { color: var(--primary); }
 
 /* Customer dashboard */
 .dashboard-layout, .customer-layout { background: #f7f5f0; }
-.dashboard-sidebar, .sidebar { background: var(--navy); }
+.dashboard-sidebar,
+.sidebar {
+  background: linear-gradient(180deg, #eaf4ff 0%, #dbeafe 100%) !important;
+}
 .dashboard-sidebar a:hover, .dashboard-sidebar a.active,
-.sidebar a:hover, .sidebar a.active { background: rgba(255,75,43,.18); color: #fff; }
-.dashboard-main { background: #f7f5f0; }
+.sidebar a:hover, .sidebar a.active { background: rgba(172, 163, 162, 0.18); color: #e01212; }
+.dashboard-main { background: #f7f2f0; }
 .dashboard-welcome { background: linear-gradient(120deg,#0a2540,#17466c); border-radius: 18px; }
 .dashboard-welcome h2, .dashboard-welcome p { color: #fff; }
 
@@ -4789,7 +4814,7 @@ body,
 .website-bg-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 20, 40, 0.60);
+ 
   z-index: -1;
   pointer-events: none;
 }
@@ -6042,94 +6067,8 @@ body,
 .website-bg-video {
   object-position: center top;
 }
-/* ===== PREMIUM SERVICES SECTION ===== */
 
-.services {
-  position: relative;
-  overflow: hidden;
-  padding: 110px 7%;
-  background: transparent;
-  isolation: isolate;
-}
-
-.services-glow {
-  position: absolute;
-  width: 350px;
-  height: 350px;
-  border-radius: 50%;
-  filter: blur(110px);
-  opacity: 0.16;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.services-glow-one {
-  background: #ff4b32;
-  top: 10%;
-  left: -150px;
-}
-
-.services-glow-two {
-  background: #4285ff;
-  bottom: 0;
-  right: -150px;
-}
-
-/* Heading */
-
-.services-heading {
-  position: relative;
-  max-width: 780px;
-  margin: 0 auto 65px;
-  text-align: center;
-}
-
-.services-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 17px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 50px;
-  color: #ff654d;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.services-eyebrow i {
-  width: 7px;
-  height: 7px;
-  background: #ff4b32;
-  border-radius: 50%;
-  box-shadow: 0 0 12px #ff4b32;
-}
-
-.services-heading h2 {
-  margin: 25px 0 16px;
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(38px, 5vw, 62px);
-  font-weight: 800;
-  line-height: 1.15;
-  color: #fff;
-}
-
-.services-heading h2 span {
-  display: block;
-  color: #ff6048;
-  font-style: italic;
-}
-
-.services-heading p {
-  max-width: 570px;
-  margin: auto;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 16px;
-  line-height: 1.8;
-}
-
-/* Cards */
+/* ===== PREMIUM SERVICE CARDS ===== */
 
 .service-grid {
   display: grid;
@@ -6144,21 +6083,48 @@ body,
   min-height: 365px;
   padding: 30px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.17);
+  border: 1px solid rgba(10, 37, 64, 0.10);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  transition: transform 0.4s ease, border-color 0.4s ease,
-    background 0.4s ease, box-shadow 0.4s ease;
+  background: #ffffff;
+  color: #0a2540;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.10);
+  transition: transform 0.4s ease, box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.service-card-orange {
+  background: linear-gradient(145deg, #fff0e9, #ffffff);
+  border-color: #ffd6c9;
+}
+
+.service-card-blue {
+  background: linear-gradient(145deg, #e8f3ff, #ffffff);
+  border-color: #c8e1ff;
+}
+
+.service-card-purple {
+  background: linear-gradient(145deg, #f1eaff, #ffffff);
+  border-color: #dfd0ff;
 }
 
 .service-card:hover {
   transform: translateY(-12px);
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 25px 55px rgba(0, 0, 0, 0.17);
 }
+
+.service-card-orange:hover {
+  border-color: #ff8068;
+}
+
+.service-card-blue:hover {
+  border-color: #58a5ff;
+}
+
+.service-card-purple:hover {
+  border-color: #a88aff;
+}
+
+/* Card top */
 
 .service-card-top {
   display: flex;
@@ -6167,20 +6133,20 @@ body,
 }
 
 .service-number {
-  color: rgba(255, 255, 255, 0.55);
+  color: #718096;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 2px;
 }
 
 .service-arrow {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  color: white;
-  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  background: #0a2540;
   font-size: 21px;
   transition: 0.3s ease;
 }
@@ -6190,6 +6156,8 @@ body,
   background: #ff4b32;
 }
 
+/* Icon */
+
 .service-icon {
   display: grid;
   place-items: center;
@@ -6197,26 +6165,39 @@ body,
   height: 76px;
   margin: 35px 0 25px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.12);
+  background: #ffe1d8;
+  color: #ff4b32;
   font-size: 36px;
   transition: transform 0.4s ease;
+}
+
+.service-card-blue .service-icon {
+  background: #d9ebff;
+  color: #237bd1;
+}
+
+.service-card-purple .service-icon {
+  background: #e7dcff;
+  color: #8255d5;
 }
 
 .service-card:hover .service-icon {
   transform: scale(1.12) rotate(-6deg);
 }
 
+/* Text */
+
 .service-card h3 {
   margin: 0 0 13px;
-  color: #fff;
+  color: #0a2540;
   font-size: 23px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .service-card p {
   min-height: 76px;
   margin: 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: #526579;
   font-size: 14px;
   line-height: 1.8;
 }
@@ -6232,12 +6213,24 @@ body,
 
 .service-tags span {
   padding: 7px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.19);
+  border: 1px solid #f5c9bd;
   border-radius: 30px;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.07);
+  color: #a63c2b;
+  background: #fff7f3;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+}
+
+.service-card-blue .service-tags span {
+  border-color: #c6def8;
+  color: #205d9a;
+  background: #f2f8ff;
+}
+
+.service-card-purple .service-tags span {
+  border-color: #d9cafa;
+  color: #6844a9;
+  background: #f8f4ff;
 }
 
 /* Bottom accent */
@@ -6262,38 +6255,6 @@ body,
 
 .service-card-purple .service-card-line {
   background: #a88aff;
-}
-
-/* Responsive */
-
-@media (max-width: 900px) {
-  .service-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 600px) {
-  .services {
-    padding: 75px 6%;
-  }
-
-  .services-heading {
-    margin-bottom: 40px;
-  }
-
-  .service-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-
-  .service-card {
-    min-height: auto;
-    padding: 25px;
-  }
-
-  .service-card p {
-    min-height: auto;
-  }
 }
 
 /* AI ENGINE & NDR SECTION */
@@ -7138,5 +7099,285 @@ body,
 @media (max-width: 380px) {
   .footer-main {
     grid-template-columns: 1fr;
+  }
+}
+.logo-ship {
+  color: #000000 !important;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.logo-next {
+  color: #ff4b32 !important;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sidebar .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-size: 27px;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+.booking-header .logo {
+  display: inline-flex !important;
+  gap: 0 !important;
+  column-gap: 0 !important;
+}
+
+.booking-header .logo-ship,
+.booking-header .logo-next {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* =================================
+   SHIPNEXT ENQUIRY PAGE
+================================= */
+
+.enquiry-page {
+  min-height: 100vh;
+  padding: 55px 20px 80px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.enquiry-container {
+  width: 100%;
+  max-width: 680px;
+  padding: 42px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 22px;
+  box-shadow: 0 20px 65px rgba(15, 23, 42, 0.12);
+}
+
+.enquiry-heading {
+  text-align: center;
+  margin: 35px 0;
+}
+
+.enquiry-heading span {
+  display: inline-block;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+}
+
+.enquiry-heading h1 {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(34px, 5vw, 46px);
+  font-weight: 800;
+  color: #101828;
+  margin: 0 0 14px;
+}
+
+.enquiry-heading p {
+  color: #667085;
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 480px;
+  margin: auto;
+}
+
+.enquiry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.enquiry-form label {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.enquiry-form input,
+.enquiry-form textarea {
+  width: 100%;
+  padding: 15px 16px;
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+  background: #f9fafc;
+  color: #101828;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.enquiry-form input:focus,
+.enquiry-form textarea:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.09);
+}
+
+.enquiry-form input::placeholder,
+.enquiry-form textarea::placeholder {
+  color: #98a2b3;
+}
+
+.enquiry-form textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.enquiry-form button {
+  margin-top: 18px;
+  padding: 16px;
+  border: none;
+  border-radius: 10px;
+  background: #155eef;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.enquiry-form button:hover {
+  background: #0040c1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(21, 94, 239, 0.2);
+}
+
+.enquiry-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.enquiry-success {
+  padding: 14px;
+  border-radius: 9px;
+  background: #ecfdf3;
+  color: #027a48;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.enquiry-error {
+  padding: 14px;
+  border-radius: 9px;
+  background: #fef3f2;
+  color: #b42318;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* MOBILE RESPONSIVE */
+
+@media (max-width: 600px) {
+  .enquiry-page {
+    padding: 25px 14px 50px;
+  }
+
+  .enquiry-container {
+    padding: 25px 19px;
+    border-radius: 16px;
+  }
+
+  .enquiry-heading {
+    margin: 28px 0;
+  }
+
+  .enquiry-heading h1 {
+    font-size: 34px;
+  }
+
+  .enquiry-form input,
+  .enquiry-form textarea {
+    padding: 13px;
+  }
+}
+
+
+.admin-serviceability-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 24px 0;
+}
+
+.admin-serviceability-form label,
+.admin-serviceability-actions label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.admin-serviceability-form input,
+.admin-serviceability-form select,
+.admin-serviceability-actions input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #dbe2ed;
+  border-radius: 8px;
+}
+
+.admin-serviceability-list {
+  display: grid;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.admin-serviceability-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid #dbe2ed;
+  border-radius: 10px;
+}
+
+.admin-serviceability-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-serviceability-actions input {
+  width: 75px;
+}
+
+.serviceability-active {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.serviceability-inactive {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.admin-success {
+  background: #dcfce7;
+  color: #166534;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 768px) {
+  .admin-serviceability-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-serviceability-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

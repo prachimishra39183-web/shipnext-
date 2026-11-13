@@ -236,7 +236,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
             <h1>Shipping Made Smarter.<br /><span>Delivering Made Simpler.</span></h1>
 
             <p>
-              One connected logistics platform to manage dispatches, track parcels in real time, and streamline merchant operations with automated wallet debits and 100% white-label customer delivery.
+              One connected logistics platform to manage dispatches, track parcels in real time, and streamline merchant operations with automated wallet debits.
             </p>
 
             <div className="hero-actions">
@@ -335,7 +335,6 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
 <LiveNetworkSection />
 <Solutions />
 
-<FrictionlessDispatch />
 <AIEngineNDR />
       <section className="services section" id="services">
   <div className="services-glow services-glow-one"></div>
@@ -351,10 +350,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
       <span> your business forward.</span>
     </h2>
 
-    <p>
-      Powerful shipping solutions designed to make every delivery
-      faster, smarter and simpler.
-    </p>
+    
   </div>
 
   <div className="service-grid">
@@ -470,7 +466,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
       <h4>Explore</h4>
       <a href="/">Home</a>
       <a href="/#solutions">Our Solutions</a>
-      <a href="/#how-it-works">How It Works</a>
+      
       <a href="/#ai-engine">AI & NDR Engine</a>
       <a href="/#services">Services</a>
     </div>
@@ -480,7 +476,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
       <a href="/book-shipment">Book a Shipment</a>
       <a href="/track">Track Shipment</a>
       <a href="/shipping-charges">Shipping Rates</a>
-      <a href="/dashboard">Customer Dashboard</a>
+      
       <a href="/register">Create Account</a>
     </div>
 
