@@ -16,34 +16,34 @@ router.get(
   authorizeRole('ADMIN'),
   async (req, res) => {
     try {
-     const shipments = await prisma.shipment.findMany({
-  include: {
-    customer: {
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true
-      }
-    }
-  },
-  orderBy: {
-    createdAt: 'desc'
-  }
-});
+      const customers = await prisma.user.findMany({
+        where: {
+          role: 'CUSTOMER',
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          isActive: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
       return res.json({
         success: true,
         totalCustomers: customers.length,
-        customers
+        customers,
       });
-
     } catch (error) {
       console.error('Admin customers error:', error);
 
       return res.status(500).json({
         success: false,
-        message: 'Unable to retrieve customers.'
+        message: 'Unable to retrieve customers.',
       });
     }
   }
