@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function Enquiry() {
   const [form, setForm] = useState({
     name: '',
@@ -28,7 +28,7 @@ function Enquiry() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/enquiries', {
+      const response = await fetch('${API_URL}/api/enquiries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

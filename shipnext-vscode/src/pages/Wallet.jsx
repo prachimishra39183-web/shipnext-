@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function Wallet() {
   const [balance, setBalance] = useState('0.00');
   const [transactions, setTransactions] = useState([]);
@@ -19,7 +19,7 @@ function Wallet() {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/api/wallet/me', {
+        const response = await fetch('${API_URL}/api/wallet/me', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

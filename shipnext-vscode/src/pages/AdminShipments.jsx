@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import API_URL from '../config/api';
 const shipmentStatuses = [
   'PENDING',
   'CONFIRMED',
@@ -39,7 +39,7 @@ function AdminShipments() {
   const fetchShipments = async () => {
     try {
       const response = await fetch(
-        'http://localhost:5000/api/admin/shipments',
+        '${API_URL}/api/admin/shipments',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -81,7 +81,7 @@ function AdminShipments() {
       setSuccessMessage('');
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/shipments/${shipment.id}/status`,
+        `${API_URL}/api/admin/shipments/${shipment.id}/status`,
         {
           method: 'PATCH',
           headers: {

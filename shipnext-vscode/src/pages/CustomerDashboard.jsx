@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function CustomerDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -19,7 +19,7 @@ function CustomerDashboard() {
       }
 
       const response = await fetch(
-        'http://localhost:5000/api/notifications/me',
+        '${API_URL}/api/notifications/me',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -52,7 +52,7 @@ function CustomerDashboard() {
       const token = sessionStorage.getItem('shipnextToken');
 
       const response = await fetch(
-        `http://localhost:5000/api/notifications/${id}/read`,
+        `${API_URL}/api/notifications/${id}/read`,
         {
           method: 'PATCH',
           headers: {
@@ -84,7 +84,7 @@ function CustomerDashboard() {
       const token = sessionStorage.getItem('shipnextToken');
 
       const response = await fetch(
-        'http://localhost:5000/api/notifications/read-all',
+        '${API_URL}/api/notifications/read-all',
         {
           method: 'PATCH',
           headers: {

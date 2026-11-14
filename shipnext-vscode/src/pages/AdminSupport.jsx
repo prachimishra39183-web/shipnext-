@@ -1,8 +1,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import API_URL from '../config/api';
 
-const API = 'http://localhost:5000/api/admin/support';
+const API = '${API_URL}/api/admin/support';
 
 const categories = {
   DELIVERY: 'Delivery Related Issue',

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function BookShipment() {
   const navigate = useNavigate();
 const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +43,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
   try {
     setIsSubmitting(true);
 
-    const response = await fetch('http://localhost:5000/api/shipments/drafts', {
+    const response = await fetch('${API_URL}/api/shipments/drafts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

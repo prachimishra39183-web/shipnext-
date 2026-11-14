@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function AdminCustomers() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
@@ -14,7 +14,7 @@ function AdminCustomers() {
         const token = sessionStorage.getItem('shipnextToken');
 
         const response = await fetch(
-          'http://localhost:5000/api/admin/customers',
+          `${API_URL}/api/admin/customers`,
           {
             headers: {
               Authorization: `Bearer ${token}`

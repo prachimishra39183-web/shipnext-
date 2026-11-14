@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import API_URL from '../config/api';
 
 function MyShipments() {
   const [shipments, setShipments] = useState([]);
@@ -13,7 +14,7 @@ function MyShipments() {
         const token = sessionStorage.getItem('shipnextToken');
 
         const response = await fetch(
-          'http://localhost:5000/api/shipments/my',
+          '${API_URL}/api/shipments/my',
           {
             headers: {
               Authorization: `Bearer ${token}`,

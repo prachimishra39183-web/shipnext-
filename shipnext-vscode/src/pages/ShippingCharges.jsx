@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function ShippingCharges() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ function ShippingCharges() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/shipments/drafts/${draftId}`,
+          `${API_URL}/api/shipments/drafts/${draftId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

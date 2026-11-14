@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function AdminEnquiries() {
   const [enquiries, setEnquiries] = useState([]);
   const [stats, setStats] = useState({
@@ -27,7 +27,7 @@ function AdminEnquiries() {
       }
 
       const response = await fetch(
-        'http://localhost:5000/api/admin/enquiries',
+        `${API_URL}/api/admin/enquiries`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -82,7 +82,7 @@ function AdminEnquiries() {
       const token = sessionStorage.getItem('shipnextToken');
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/enquiries/${id}/resolve`,
+        `${API_URL}/api/admin/enquiries/${id}/resolve`,
         {
           method: 'PATCH',
           headers: {

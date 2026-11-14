@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-const API = 'http://localhost:5000/api';
+import API_URL from '../config/api';
+const API = '${API_URL}/api';
 
 const categories = [
   { value: 'DELIVERY', label: 'Delivery related issue' },

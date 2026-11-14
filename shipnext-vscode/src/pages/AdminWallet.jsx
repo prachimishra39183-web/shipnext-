@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function AdminWallet() {
   const [wallets, setWallets] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -29,8 +29,8 @@ function AdminWallet() {
         };
 
         const [walletResponse, transactionResponse] = await Promise.all([
-          fetch('http://localhost:5000/api/admin/wallets', { headers }),
-          fetch('http://localhost:5000/api/admin/wallet-transactions', {
+          fetch('${API_URL}/api/admin/wallets', { headers }),
+          fetch('${API_URL}/api/admin/wallet-transactions', {
             headers,
           }),
         ]);

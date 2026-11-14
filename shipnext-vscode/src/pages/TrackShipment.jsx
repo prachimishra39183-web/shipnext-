@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-
+import API_URL from '../config/api';
 function TrackShipment() {
   const { trackingId } = useParams();
 
@@ -24,7 +24,7 @@ function TrackShipment() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/shipments/track/${encodeURIComponent(
+        `${API_URL}/api/shipments/track/${encodeURIComponent(
           trackingNumber.trim()
         )}`
       );
