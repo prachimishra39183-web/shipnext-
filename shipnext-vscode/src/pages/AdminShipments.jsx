@@ -39,7 +39,7 @@ function AdminShipments() {
   const fetchShipments = async () => {
     try {
       const response = await fetch(
-        '${API_URL}/api/admin/shipments',
+       `${API_URL}/api/admin/shipments`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
