@@ -19,6 +19,92 @@ function validPincode(pin) {
   return /^\d{6}$/.test(String(pin || ''));
 }
 
+
+const COURIERS = ['DELHIVERY', 'SKYKING', 'BLUEDART'];
+
+// PUBLIC: Check PIN-code availability for all courier partners
+router.post('/couriers/check', async (req, res) => {
+  try {
+    const pickupPincode = String(req.body.pickupPincode || '').trim();
+    const deliveryPincode = String(req.body.deliveryPincode || '').trim();
+
+    if (
+      !validPincode(pickupPincode) ||
+      !validPincode(deliveryPincode)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Enter valid six-digit pickup and delivery PIN codes.',
+      });
+    }
+
+    const records = await prisma.courierPincodeServiceability.findMany({
+      where: {
+        courier: { in: COURIERS },
+        pincode: { in: [pickupPincode, deliveryPincode] },
+      },
+    });
+
+    const recordMap = new Map(
+      records.map((record) => [
+        `${record.courier}:${record.pincode}`,
+        record,
+      ])
+    );
+
+    const courierResults = COURIERS.map((courier) => {
+      const pickup = recordMap.get(`${courier}:${pickupPincode}`);
+      const delivery = recordMap.get(`${courier}:${deliveryPincode}`);
+
+      return {
+        courier,
+        serviceable: Boolean(pickup && delivery),
+
+        pickup: pickup
+          ? {
+              available: true,
+              district: pickup.district,
+              stateCode: pickup.stateCode,
+              prepaid: pickup.prepaid,
+              reversePickup: pickup.reversePickup,
+              repl: pickup.repl,
+              cod: pickup.cod,
+              cash: pickup.cash,
+            }
+          : { available: false },
+
+        delivery: delivery
+          ? {
+              available: true,
+              district: delivery.district,
+              stateCode: delivery.stateCode,
+              prepaid: delivery.prepaid,
+              reversePickup: delivery.reversePickup,
+              repl: delivery.repl,
+              cod: delivery.cod,
+              cash: delivery.cash,
+            }
+          : { available: false },
+      };
+    });
+
+    return res.json({
+      success: true,
+      pickupPincode,
+      deliveryPincode,
+      courierResults,
+      message: 'Courier PIN-code availability checked successfully.',
+    });
+  } catch (error) {
+    console.error('Courier PIN-code check error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to check courier PIN-code availability.',
+    });
+  }
+});
+
 // PUBLIC: Check serviceability and automatically allocate a mode
 router.post('/check', async (req, res) => {
   try {

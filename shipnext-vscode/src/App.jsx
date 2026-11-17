@@ -56,7 +56,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRole="CUSTOMER" />}>
               <Route path="/dashboard" element={<CustomerDashboard />} />
               <Route path="/book-shipment" element={<BookShipment />} />
-              <Route path="/shipping-charges" element={<ShippingCharges />} />
+             <Route path="/shipping-charges/:draftId" element={<ShippingCharges />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/shipments" element={<MyShipments />} />
               <Route path="/profile" element={<MyProfile />} />

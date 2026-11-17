@@ -120,7 +120,36 @@ router.post(
     }
   }
 );
+// GET ALL DRAFTS BELONGING TO THE LOGGED-IN CUSTOMER
+router.get(
+  '/drafts/my',
+  authenticateToken,
+  authorizeRole('CUSTOMER'),
+  async (req, res) => {
+    try {
+      const drafts = await prisma.shipmentDraft.findMany({
+        where: {
+          customerId: req.user.userId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
+      return res.json({
+        success: true,
+        drafts,
+      });
+    } catch (error) {
+      console.error('Get customer shipment drafts error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to retrieve your shipment drafts.',
+      });
+    }
+  }
+);
 // GET A CUSTOMER'S OWN SHIPMENT DRAFT
 router.get(
   '/drafts/:id',

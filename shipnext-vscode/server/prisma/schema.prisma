@@ -34,6 +34,11 @@ enum ShippingMode {
   EXPRESS_SURFACE
   NORMAL_SURFACE
 }
+enum CourierPartner {
+  DELHIVERY
+  SKYKING
+  BLUEDART
+}
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -211,4 +216,25 @@ model ServiceabilityMode {
 
   @@unique([pickupPincode, deliveryPincode, mode])
   @@index([pickupPincode, deliveryPincode, isActive])
+}
+
+model CourierPincodeServiceability {
+  id              String        @id @default(uuid())
+  courier         CourierPartner
+  pincode         String
+  stateCode       String?
+  district        String?
+
+  prepaid         Boolean       @default(false)
+  reversePickup   Boolean       @default(false)
+  repl            Boolean       @default(false)
+  cod             Boolean       @default(false)
+  cash            Boolean       @default(false)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([courier, pincode])
+  @@index([pincode])
+  @@index([courier, pincode])
 }

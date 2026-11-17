@@ -18,8 +18,8 @@ function CustomerDashboard() {
         return;
       }
 
-      const response = await fetch(
-        '${API_URL}/api/notifications/me',
+        const response = await fetch(
+  `${API_URL}/api/notifications/me`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -84,7 +84,7 @@ function CustomerDashboard() {
       const token = sessionStorage.getItem('shipnextToken');
 
       const response = await fetch(
-        '${API_URL}/api/notifications/read-all',
+  `${API_URL}/api/notifications/read-all`,
         {
           method: 'PATCH',
           headers: {

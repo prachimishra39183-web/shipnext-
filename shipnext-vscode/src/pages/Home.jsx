@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import API_URL from '../config/api';
 import Navbar from '../components/Navbar.jsx';
 import Solutions from '../components/Solutions.jsx';
 import FrictionlessDispatch from '../components/FrictionlessDispatch.jsx';
@@ -199,6 +202,73 @@ function LiveNetworkSection() {
 }
 
 function Home() {
+    const navigate = useNavigate();
+
+  // TRACK SHIPMENT
+  const [trackingId, setTrackingId] = useState('');
+
+  const handleTrackShipment = (e) => {
+    e.preventDefault();
+
+    const id = trackingId.trim();
+
+    if (!id) return;
+
+    navigate(`/track/${encodeURIComponent(id)}`);
+  };
+
+  // PIN CODE SERVICEABILITY
+  const [pickupPincode, setPickupPincode] = useState('');
+  const [deliveryPincode, setDeliveryPincode] = useState('');
+  const [courierResults, setCourierResults] = useState([]);
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
+  const [serviceabilityError, setServiceabilityError] = useState('');
+
+  const handleServiceabilityCheck = async (e) => {
+    e.preventDefault();
+
+    setCheckingServiceability(true);
+    setServiceabilityError('');
+    setCourierResults([]);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/serviceability/couriers/check`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pickupPincode: pickupPincode.trim(),
+            deliveryPincode: deliveryPincode.trim(),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || 'Unable to check PIN-code serviceability.'
+        );
+      }
+
+      setCourierResults(data.courierResults || []);
+    } catch (error) {
+      setServiceabilityError(
+        error.message || 'Something went wrong. Please try again.'
+      );
+    } finally {
+      setCheckingServiceability(false);
+    }
+  };
+
+  const courierNames = {
+    DELHIVERY: 'Delhivery',
+    SKYKING: 'Skyking',
+    BLUEDART: 'Blue Dart',
+  };
   const movingServices1 = [
   "Air Cargo",
   "Surface Express",
@@ -255,43 +325,137 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
 
               
         </section>
+             
+<section className="quick-tools" id="track">
 
-        <section className="quick-tools" id="track">
-          <div className="tool-card">
-            <div className="tool-icon">📍</div>
-            <div className="tool-content">
-              <h3>Track your shipment</h3>
-              <p>Enter your tracking ID to follow your parcel.</p>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                alert('Tracking will be connected soon.');
-              }}>
-                <input placeholder="Enter tracking ID" required />
-                <button type="submit">Track →</button>
-              </form>
-            </div>
-          </div>
+  {/* TRACK SHIPMENT */}
+  <div className="tool-card">
+    <div className="tool-icon">📍</div>
 
-          <div className="tool-card">
-            <div className="tool-icon">🚚</div>
-            <div className="tool-content">
-              <h3>Check serviceability</h3>
-              <p>Find out whether we deliver to your pincode.</p>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                alert('Pincode checking will be connected soon.');
-              }}>
-                <input
-                  placeholder="Enter 6-digit pincode"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  required
-                />
-                <button type="submit">Check →</button>
-              </form>
+    <div className="tool-content">
+      <h3>Track your shipment</h3>
+
+      <p>Enter your ShipNext tracking ID to follow your parcel.</p>
+
+      <form onSubmit={handleTrackShipment}>
+        <input
+          type="text"
+          placeholder="Enter tracking ID"
+          value={trackingId}
+          onChange={(e) => setTrackingId(e.target.value)}
+          required
+        />
+
+        <button type="submit">
+          Track →
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {/* CHECK SERVICEABILITY */}
+  <div className="tool-card">
+    <div className="tool-icon">🚚</div>
+
+    <div className="tool-content">
+      <h3>Check serviceability</h3>
+
+      <p>
+        Check courier availability between your pickup and delivery PIN codes.
+      </p>
+
+      <form onSubmit={handleServiceabilityCheck}>
+        <input
+          type="text"
+          placeholder="Pickup PIN code"
+          value={pickupPincode}
+          onChange={(e) =>
+            setPickupPincode(e.target.value.replace(/\D/g, '').slice(0, 6))
+          }
+          pattern="[0-9]{6}"
+          maxLength={6}
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Delivery PIN code"
+          value={deliveryPincode}
+          onChange={(e) =>
+            setDeliveryPincode(e.target.value.replace(/\D/g, '').slice(0, 6))
+          }
+          pattern="[0-9]{6}"
+          maxLength={6}
+          required
+        />
+
+        <button type="submit" disabled={checkingServiceability}>
+          {checkingServiceability ? 'Checking...' : 'Check →'}
+        </button>
+      </form>
+
+      {serviceabilityError && (
+        <p style={{ color: '#dc2626', marginTop: '12px' }}>
+          {serviceabilityError}
+        </p>
+      )}
+
+      {courierResults.length > 0 && (
+        <div style={{ marginTop: '20px' }}>
+          <h3>Courier Availability Results</h3>
+
+          {courierResults.map((courier) => (
+            <div
+              key={courier.courier}
+              style={{
+                padding: '14px',
+                marginTop: '12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
+              }}
+            >
+              <strong>
+                {courierNames[courier.courier] || courier.courier}
+              </strong>
+
+              <p>
+                Overall availability:{' '}
+                <strong style={{
+                  color: courier.serviceable ? '#15803d' : '#dc2626'
+                }}>
+                  {courier.serviceable ? 'Available' : 'Not available'}
+                </strong>
+              </p>
+
+              <p>
+                Pickup PIN: {courier.pickup.available ? 'Available' : 'Not available'}
+              </p>
+
+              <p>
+                Delivery PIN: {courier.delivery.available ? 'Available' : 'Not available'}
+              </p>
+
+              {courier.serviceable && (
+                <p style={{ fontSize: '13px', color: '#64748b' }}>
+                  Prepaid: {courier.delivery.prepaid ? 'Yes' : 'No'} |
+                  COD: {courier.delivery.cod ? 'Yes' : 'No'} |
+                  Reverse Pickup: {courier.pickup.reversePickup ? 'Yes' : 'No'}
+                </p>
+              )}
             </div>
-          </div>
-        </section>
+          ))}
+
+          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '12px' }}>
+            Results are based on the imported client-provided PIN-code dataset,
+            not live courier confirmation.
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+
+</section>
+
            <br></br>
            <br></br>
            <br></br>
