@@ -28,7 +28,7 @@ function Enquiry() {
     setError('');
 
     try {
-      const response = await fetch('${API_URL}/api/enquiries', {
+      const response = await fetch(`${API_URL}/api/enquiries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -43,7 +43,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
   try {
     setIsSubmitting(true);
 
-    const response = await fetch('${API_URL}/api/shipments/drafts', {
+    const response = await fetch(`${API_URL}/api/shipments/drafts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

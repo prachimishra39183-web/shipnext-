@@ -29,8 +29,9 @@ function AdminWallet() {
         };
 
         const [walletResponse, transactionResponse] = await Promise.all([
-          fetch('${API_URL}/api/admin/wallets', { headers }),
-          fetch('${API_URL}/api/admin/wallet-transactions', {
+              fetch(`${API_URL}/api/admin/wallets`, { headers }),
+
+fetch(`${API_URL}/api/admin/wallet-transactions`, {
             headers,
           }),
         ]);
