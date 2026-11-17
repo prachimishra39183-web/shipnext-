@@ -21,9 +21,7 @@ function Navbar() {
 
       <div className="nav-actions">
         <Link to="/login" className="login-link">Login</Link>
-        <Link to="/register" className="primary-button">
-          Get Started →
-        </Link>
+        
       </div>
     </header>
   );
