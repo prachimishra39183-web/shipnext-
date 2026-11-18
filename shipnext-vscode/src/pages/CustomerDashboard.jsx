@@ -126,11 +126,15 @@ function CustomerDashboard() {
 
   return (
     <div className="dashboard">
-      <aside className="sidebar">
-        <Link to="/" className="logo">
-          <span className="logo-ship">SHIP</span>
-          <span className="logo-next">NEXT</span>
-        </Link>
+  <aside className="sidebar">
+   
+     
+      <img
+        src="/logo.png"
+        alt="ShipNext Logo"
+        className="logo-image"
+      />
+  
 
         <p className="sidebar-label">MAIN MENU</p>
 
@@ -153,6 +157,7 @@ function CustomerDashboard() {
 
       <main className="dashboard-main" id="overview">
         <header className="dashboard-header">
+          
           <div>
             <h1>Customer Dashboard</h1>
             <p>Welcome back! Here's your shipping overview.</p>

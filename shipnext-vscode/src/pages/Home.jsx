@@ -310,7 +310,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
             </p>
 
             <div className="hero-actions">
-              <a href="/register" className="primary-button">Book a Shipment →</a>
+             
               <a href="#track" className="secondary-button">Track Your Parcel</a>
             </div>
 
@@ -351,6 +351,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
         </button>
       </form>
     </div>
+    
   </div>
 
   {/* CHECK SERVICEABILITY */}
@@ -400,59 +401,98 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
         </p>
       )}
 
-      {courierResults.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Courier Availability Results</h3>
+      
+{courierResults.length > 0 && (
+  <div className="shipnext-serviceability-result" style={{ marginTop: '20px' }}>
+    <h3>ShipNext Serviceability</h3>
 
-          {courierResults.map((courier) => (
+    {(() => {
+      const pickupAvailable = courierResults.some(
+        (courier) => courier.pickup?.available
+      );
+
+      const deliveryAvailable = courierResults.some(
+        (courier) => courier.delivery?.available
+      );
+
+      const overallAvailable = courierResults.some(
+        (courier) => courier.serviceable
+      );
+
+      const prepaidAvailable = courierResults.some(
+        (courier) =>
+          courier.serviceable && courier.delivery?.prepaid
+      );
+
+      const rows = [
+        {
+          label: 'Overall Availability',
+          available: overallAvailable,
+        },
+        {
+          label: 'Pickup PIN',
+          available: pickupAvailable,
+        },
+        {
+          label: 'Delivery PIN',
+          available: deliveryAvailable,
+        },
+        {
+          label: 'Prepaid',
+          available: prepaidAvailable,
+        },
+      ];
+
+      return (
+        <>
+          {rows.map((item) => (
             <div
-              key={courier.courier}
+              key={item.label}
               style={{
-                padding: '14px',
-                marginTop: '12px',
-                border: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '13px 15px',
+                marginTop: '10px',
+                background: '#fff7f4',
+                border: '1px solid #ffddd5',
                 borderRadius: '10px',
               }}
             >
-              <strong>
-                {courierNames[courier.courier] || courier.courier}
+              <strong style={{ color: '#334155' }}>
+                {item.label}
               </strong>
 
-              <p>
-                Overall availability:{' '}
-                <strong style={{
-                  color: courier.serviceable ? '#15803d' : '#dc2626'
-                }}>
-                  {courier.serviceable ? 'Available' : 'Not available'}
-                </strong>
-              </p>
-
-              <p>
-                Pickup PIN: {courier.pickup.available ? 'Available' : 'Not available'}
-              </p>
-
-              <p>
-                Delivery PIN: {courier.delivery.available ? 'Available' : 'Not available'}
-              </p>
-
-              {courier.serviceable && (
-                <p style={{ fontSize: '13px', color: '#64748b' }}>
-                  Prepaid: {courier.delivery.prepaid ? 'Yes' : 'No'} |
-                  COD: {courier.delivery.cod ? 'Yes' : 'No'} |
-                  Reverse Pickup: {courier.pickup.reversePickup ? 'Yes' : 'No'}
-                </p>
-              )}
+              <strong
+                style={{
+                  color: item.available ? '#15803d' : '#dc2626',
+                }}
+              >
+                {item.available ? 'Available' : 'Not Available'}
+              </strong>
             </div>
           ))}
 
-          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '12px' }}>
-            Results are based on the imported client-provided PIN-code dataset,
-            not live courier confirmation.
+          <p
+            style={{
+              fontSize: '12px',
+              color: '#64748b',
+              marginTop: '12px',
+            }}
+          >
+            Serviceability is based on ShipNext's available PIN-code
+            records and is subject to final booking confirmation.
           </p>
-        </div>
-      )}
-    </div>
+        </>
+      );
+    })()}
   </div>
+)}
+
+    </div>
+    
+  </div>
+  
 
 </section>
 
@@ -607,7 +647,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
     <div className="footer-brand">
       <a href="/" className="logo">
         <img
-          src="/logo.jpeg"
+          src="/logo.png"
           alt="ShipNext Logo"
           className="logo-image"
         />

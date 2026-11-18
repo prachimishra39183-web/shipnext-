@@ -1,23 +1,29 @@
 
 import { Link } from 'react-router-dom';
-
+import AdminNotificationBell from '../components/AdminNotificationBell.jsx';
 function AdminDashboard() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <h2>ShipNext <span>Admin</span></h2>
+       <img
+        src="/logo.png"
+        alt="ShipNext Logo"
+        className="logo-image"
+      /> <span>Admin</span>
+      
 
         <p className="admin-menu-title">MAIN MENU</p>
 
-        <Link to="/admin" className="admin-active">📊 Dashboard</Link>
-        <Link to="/admin/customers">👥 Customers</Link>
-        <Link to="/admin/shipments">📦 Shipments</Link>
-        <Link to="/admin/bookings">🚚 Bookings</Link>
-        <Link to="/admin/wallet">💳 Wallet Management</Link>
-        <Link to="/admin/enquiries">📩 Enquiries</Link>
-
+        <Link to="/admin" className="admin-active"> Dashboard</Link>
+        <Link to="/admin/customers"> Customers</Link>
+        <Link to="/admin/shipments">Shipments</Link>
+        <Link to="/admin/bookings">Bookings</Link>
+        <Link to="/admin/wallet"> Wallet Management</Link>
+        <Link to="/admin/enquiries">Enquiries</Link>
+          <Link to="/admin/support">Support Tickets →</Link>
+          <Link to="/admin/reports">Reports</Link>
         <p className="admin-menu-title">ACCOUNT</p>
-        <Link to="/">🌐 View Website</Link>
+        <Link to="/">View Website</Link>
         <Link to="/login">↪ Logout</Link>
       </aside>
 
@@ -27,7 +33,7 @@ function AdminDashboard() {
             <h1>Admin Dashboard</h1>
             <p>Welcome to ShipNext administration panel.</p>
           </div>
-          <div className="admin-user">👤 Administrator</div>
+          
         </header>
 
         <section className="admin-stats">
@@ -65,18 +71,7 @@ function AdminDashboard() {
           </div>
         </section>
 
-        <section className="admin-content-card">
-          <h2>Quick Management</h2>
-         <div className="admin-quick-links">
-  <Link to="/admin/customers">Manage Customers →</Link>
-  <Link to="/admin/shipments">Manage Shipments →</Link>
-  <Link to="/admin/enquiries">View Enquiries →</Link>
-  <Link to="/admin/support">Support Tickets →</Link>
-  <Link to="/admin/serviceability">
-  PIN Serviceability →
-</Link>
-</div>
-        </section>
+      
       </main>
     </div>
   );

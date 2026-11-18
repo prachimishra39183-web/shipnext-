@@ -500,20 +500,7 @@ const solutionTabs = [
       'Carrier integration subject to availability',
     ],
   },
-  {
-    id: 'hyperlocal',
-    label: 'Hyperlocal',
-    title: 'Hyperlocal Delivery',
-    rate: 'Availability and pricing subject to service configuration.',
-    description: 'Local delivery workflows for retail orders, documents and urgent consignments.',
-    features: [
-      'Local delivery workflow',
-      'Service-area configuration',
-      'Delivery status updates',
-      'Provider integration',
-      'Availability confirmation',
-    ],
-  },
+ 
   {
     id: 'international',
     label: 'International',
@@ -528,20 +515,7 @@ const solutionTabs = [
       'International shipment management',
     ],
   },
-  {
-    id: 'fulfillment',
-    label: 'Warehousing',
-    title: 'Distributed Warehousing & Fulfilment',
-    rate: 'Pricing subject to configured fulfilment services.',
-    description: 'Inventory storage and fulfilment workflows designed to connect warehouse operations with parcel dispatch.',
-    features: [
-      'Inventory receiving and storage',
-      'Pick and pack workflows',
-      'Inventory visibility',
-      'Regional stock allocation',
-      'Warehouse operations management',
-    ],
-  },
+  
 ];
 
 const whatsappMessages = {
@@ -634,117 +608,12 @@ function PricingMatrix({ onBook }) {
     <section className="sn-section sn-pricing" id="rates">
       <div className="sn-container">
         <SectionHeading
-          eyebrow="PIN Serviceability"
+          
           title="Find Available Shipping Modes"
-          description="Enter your pickup and delivery PIN codes. ShipNext checks the configured route and automatically assigns the active mode with the highest priority."
+        
         />
 
-        <div className="sn-pricing-card">
-          <form onSubmit={checkServiceability}>
-            <div className="sn-pricing-inputs">
-              <label className="sn-field">
-                Pickup PIN code
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="Enter pickup PIN"
-                  value={origin}
-                  onChange={(e) => {
-                    setOrigin(e.target.value.replace(/\D/g, ''));
-                    setResult(null);
-                    setError('');
-                  }}
-                />
-              </label>
-
-              <label className="sn-field">
-                Delivery PIN code
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="Enter delivery PIN"
-                  value={destination}
-                  onChange={(e) => {
-                    setDestination(e.target.value.replace(/\D/g, ''));
-                    setResult(null);
-                    setError('');
-                  }}
-                />
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              className="sn-serviceability-button"
-              disabled={loading}
-            >
-              {loading ? 'Checking...' : 'Check Serviceability'}
-            </button>
-          </form>
-
-          {error && (
-            <div className="sn-serviceability-error" role="alert">
-              {error}
-            </div>
-          )}
-
-          {result && (
-            <div className="sn-serviceability-result">
-              <div className="sn-serviceability-success">
-                <span>✓</span>
-                <div>
-                  <strong>Route is serviceable</strong>
-                  <p>{origin} → {destination}</p>
-                </div>
-              </div>
-
-              <div className="sn-assigned-mode">
-                <span>Automatically assigned shipping mode</span>
-                <h3>
-                  {modeLabels[result.assignedMode] || result.assignedMode}
-                </h3>
-              </div>
-
-              <h4>Available shipping modes</h4>
-
-              <div className="sn-available-modes">
-                {result.availableModes.map((item) => (
-                  <div
-                    className={`sn-mode-item ${
-                      item.mode === result.assignedMode ? 'assigned' : ''
-                    }`}
-                    key={item.mode}
-                  >
-                    <strong>
-                      {modeLabels[item.mode] || item.mode}
-                    </strong>
-                    <small>
-                      Priority {item.priority}
-                      {item.mode === result.assignedMode ? ' · Assigned' : ''}
-                    </small>
-                  </div>
-                ))}
-              </div>
-
-              <p className="sn-serviceability-note">
-                Mode availability and allocation are based on active routes
-                configured by ShipNext administrators. Shipping prices and
-                delivery estimates are not displayed until verified tariffs
-                and carrier transit data are integrated.
-              </p>
-
-              <button
-                type="button"
-                className="sn-serviceability-button"
-                onClick={onBook}
-              >
-                Continue to Dashboard
-              </button>
-            </div>
-          )}
-        </div>
+       
 
         <div className="sn-mode-grid">
           <div className="sn-mode-card">

@@ -9,6 +9,7 @@ const {
 const router = express.Router();
 
 // SAVE SHIPMENT DETAILS AS A DRAFT
+
 router.post(
   '/drafts',
   authenticateToken,
@@ -25,9 +26,12 @@ router.post(
         deliveryAddress,
         deliveryPincode,
         weight,
+        shipmentType,
+        itemCategory,
+        itemName,
+        itemDescription,
       } = req.body;
 
-      // Required field validation
       const requiredFields = {
         pickupName,
         pickupPhone,
@@ -53,29 +57,22 @@ router.post(
         }
       }
 
-      // Validate mobile numbers
-      if (
-        !/^[0-9]{10}$/.test(pickupPhone) ||
-        !/^[0-9]{10}$/.test(deliveryPhone)
-      ) {
+      if (!/^[0-9]{10}$/.test(String(pickupPhone)) ||
+          !/^[0-9]{10}$/.test(String(deliveryPhone))) {
         return res.status(400).json({
           success: false,
           message: 'Both mobile numbers must contain 10 digits.',
         });
       }
 
-      // Validate pincodes
-      if (
-        !/^[0-9]{6}$/.test(pickupPincode) ||
-        !/^[0-9]{6}$/.test(deliveryPincode)
-      ) {
+      if (!/^[0-9]{6}$/.test(String(pickupPincode)) ||
+          !/^[0-9]{6}$/.test(String(deliveryPincode))) {
         return res.status(400).json({
           success: false,
           message: 'Both pincodes must contain 6 digits.',
         });
       }
 
-      // Validate weight
       const weightKg = Number(weight);
 
       if (!Number.isFinite(weightKg) || weightKg < 0.5) {
@@ -85,23 +82,65 @@ router.post(
         });
       }
 
-      const weightGrams = Math.round(weightKg * 1000);
+      const validCategories = [
+        'Clothes',
+        'Electronics',
+        'Accessories',
+        'Household Items',
+        'Gifts',
+        'Other',
+      ];
+
+      const normalizedType = shipmentType || 'DOCUMENT';
+
+      if (!['DOCUMENT', 'NON_DOCUMENT'].includes(normalizedType)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid shipment type.',
+        });
+      }
+
+      if (normalizedType === 'NON_DOCUMENT') {
+        if (!validCategories.includes(itemCategory)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Please select a valid item category.',
+          });
+        }
+
+        if (itemCategory === 'Other' &&
+            (!itemName?.trim() || !itemDescription?.trim())) {
+          return res.status(400).json({
+            success: false,
+            message: 'Item name and description are required for Other.',
+          });
+        }
+      }
 
       const draft = await prisma.shipmentDraft.create({
         data: {
           customerId: req.user.userId,
 
           pickupName: pickupName.trim(),
-          pickupPhone,
+          pickupPhone: String(pickupPhone),
           pickupAddress: pickupAddress.trim(),
-          pickupPincode,
+          pickupPincode: String(pickupPincode),
 
           deliveryName: deliveryName.trim(),
-          deliveryPhone,
+          deliveryPhone: String(deliveryPhone),
           deliveryAddress: deliveryAddress.trim(),
-          deliveryPincode,
+          deliveryPincode: String(deliveryPincode),
 
-          weightGrams,
+          weightGrams: Math.round(weightKg * 1000),
+
+          shipmentType: normalizedType,
+          itemCategory: normalizedType === 'NON_DOCUMENT' ? itemCategory : null,
+          itemName: normalizedType === 'NON_DOCUMENT' && itemCategory === 'Other'
+            ? itemName.trim()
+            : null,
+          itemDescription: normalizedType === 'NON_DOCUMENT' && itemCategory === 'Other'
+            ? itemDescription.trim()
+            : null,
         },
       });
 
@@ -120,6 +159,7 @@ router.post(
     }
   }
 );
+
 // GET ALL DRAFTS BELONGING TO THE LOGGED-IN CUSTOMER
 router.get(
   '/drafts/my',

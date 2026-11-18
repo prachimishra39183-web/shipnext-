@@ -24,6 +24,8 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Support from './pages/Support.jsx';
 import AdminSupport from './pages/AdminSupport.jsx';
 import AdminServiceability from './pages/AdminServiceability.jsx';
+import AdminReports from './pages/AdminReports';
+import AdminLayout from './components/AdminLayout.jsx';
 function App() {
   return (
     <BrowserRouter>
@@ -61,19 +63,25 @@ function App() {
               <Route path="/shipments" element={<MyShipments />} />
               <Route path="/profile" element={<MyProfile />} />
               <Route path="/support" element={<Support />} />
+              
             </Route>
 
-            {/* ADMIN PROTECTED PAGES */}
-            <Route element={<ProtectedRoute allowedRole="ADMIN" />}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/customers" element={<AdminCustomers />} />
-              <Route path="/admin/shipments" element={<AdminShipments />} />
-              <Route path="/admin/bookings" element={<AdminBookings />} />
-              <Route path="/admin/wallet" element={<AdminWallet />} />
-              <Route path="/admin/enquiries" element={<AdminEnquiries />} />
-              <Route path="/admin/support" element={<AdminSupport />} />
-              <Route path="/admin/serviceability" element={<AdminServiceability />} />
-            </Route>
+           
+{/* ADMIN PROTECTED PAGES */}
+<Route element={<ProtectedRoute allowedRole="ADMIN" />}>
+  <Route element={<AdminLayout />}>
+    <Route path="/admin" element={<AdminDashboard />} />
+    <Route path="/admin/customers" element={<AdminCustomers />} />
+    <Route path="/admin/shipments" element={<AdminShipments />} />
+    <Route path="/admin/bookings" element={<AdminBookings />} />
+    <Route path="/admin/wallet" element={<AdminWallet />} />
+    <Route path="/admin/enquiries" element={<AdminEnquiries />} />
+    <Route path="/admin/support" element={<AdminSupport />} />
+    <Route path="/admin/serviceability" element={<AdminServiceability />} />
+    <Route path="/admin/reports" element={<AdminReports />} />
+  </Route>
+</Route>
+
 
           </Routes>
         </div>

@@ -154,16 +154,20 @@ function AdminShipments() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <h2>ShipNext <span>Admin</span></h2>
-        <Link to="/admin">📊 Dashboard</Link>
+        <img
+        src="/logo.png"
+        alt="ShipNext Logo"
+        className="logo-image"
+      />
+        <Link to="/admin">Dashboard</Link>
         <Link to="/admin/customers">👥 Customers</Link>
         <Link to="/admin/shipments" className="admin-active">
-          📦 Shipments
+           Shipments
         </Link>
-        <Link to="/admin/bookings">🚚 Bookings</Link>
-        <Link to="/admin/wallet">💳 Wallet Management</Link>
-        <Link to="/admin/enquiries">📩 Enquiries</Link>
-        <Link to="/">🌐 View Website</Link>
+        <Link to="/admin/bookings">Bookings</Link>
+        <Link to="/admin/wallet"> Wallet Management</Link>
+        <Link to="/admin/enquiries">Enquiries</Link>
+        <Link to="/"> View Website</Link>
       </aside>
 
       <main className="admin-main">

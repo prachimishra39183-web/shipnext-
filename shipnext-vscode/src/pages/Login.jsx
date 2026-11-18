@@ -55,7 +55,7 @@ function Login() {
       <div className="auth-brand">
         <a href="/" className="logo">
           <img
-            src="/logo.jpeg"
+            src="/logo.png"
             alt="ShipNext Logo"
             className="logo-image"
           />

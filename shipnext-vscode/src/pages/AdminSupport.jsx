@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import API_URL from '../config/api';
 
-const API = '${API_URL}/api/admin/support';
+const API = `${API_URL}/api/admin/support`;
 
 const categories = {
   DELIVERY: 'Delivery Related Issue',
@@ -132,7 +132,11 @@ function AdminSupport() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <h2>ShipNext <span>Admin</span></h2>
+       <img
+        src="/logo.png"
+        alt="ShipNext Logo"
+        className="logo-image"
+      />
         <Link to="/admin">📊 Dashboard</Link>
         <Link to="/admin/customers">👥 Customers</Link>
         <Link to="/admin/shipments">📦 Shipments</Link>

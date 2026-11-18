@@ -117,14 +117,20 @@ function AdminEnquiries() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <h2>ShipNext <span>Admin</span></h2>
-        <Link to="/admin">📊 Dashboard</Link>
-        <Link to="/admin/customers">👥 Customers</Link>
-        <Link to="/admin/shipments">📦 Shipments</Link>
-        <Link to="/admin/bookings">🚚 Bookings</Link>
-        <Link to="/admin/wallet">💳 Wallet Management</Link>
-        <Link to="/admin/enquiries" className="admin-active">📩 Enquiries</Link>
-        <Link to="/">🌐 View Website</Link>
+         <img
+        src="/logo.png"
+        alt="ShipNext Logo"
+        className="logo-image"
+      />
+
+        <p className="admin-menu-title">MAIN MENU</p>
+
+        <Link to="/admin" className="admin-active"> Dashboard</Link>
+        <Link to="/admin/customers"> Customers</Link>
+        <Link to="/admin/shipments">Shipments</Link>
+        <Link to="/admin/bookings">Bookings</Link>
+        <Link to="/admin/wallet"> Wallet Management</Link>
+        <Link to="/admin/enquiries">Enquiries</Link>
       </aside>
 
       <main className="admin-main">

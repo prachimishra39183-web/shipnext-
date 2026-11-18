@@ -191,19 +191,23 @@ function AdminServiceability() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <h2>ShipNext <span>Admin</span></h2>
+        <img
+        src="/logo.png"
+        alt="ShipNext Logo"
+        className="logo-image"
+      />
 
-        <Link to="/admin">📊 Dashboard</Link>
-        <Link to="/admin/customers">👥 Customers</Link>
-        <Link to="/admin/shipments">📦 Shipments</Link>
-        <Link to="/admin/bookings">🚚 Bookings</Link>
-        <Link to="/admin/wallet">💳 Wallet Management</Link>
-        <Link to="/admin/enquiries">📩 Enquiries</Link>
-        <Link to="/admin/support">🎧 Support Tickets</Link>
+        <Link to="/admin"> Dashboard</Link>
+        <Link to="/admin/customers"> Customers</Link>
+        <Link to="/admin/shipments"> Shipments</Link>
+        <Link to="/admin/bookings"> Bookings</Link>
+        <Link to="/admin/wallet"> Wallet Management</Link>
+        <Link to="/admin/enquiries">Enquiries</Link>
+        <Link to="/admin/support">Support Tickets</Link>
         <Link to="/admin/serviceability" className="admin-active">
-          📍 Serviceability
+           Serviceability
         </Link>
-        <Link to="/">🌐 View Website</Link>
+        <Link to="/"> View Website</Link>
       </aside>
 
       <main className="admin-main">

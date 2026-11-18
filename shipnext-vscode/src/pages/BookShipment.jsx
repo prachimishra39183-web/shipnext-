@@ -15,6 +15,10 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     deliveryAddress: '',
     deliveryPincode: '',
     weight: '',
+    shipmentType: 'DOCUMENT',
+itemCategory: '',
+itemName: '',
+itemDescription: '',
   });
 
   const handleChange = (event) => {
@@ -78,10 +82,11 @@ navigate('/shipping-charges', {
   return (
     <div className="booking-page">
       <header className="booking-header">
-        <Link to="/dashboard" className="logo">
-          <span className="logo-icon">S</span>
-          Ship<span>Next</span>
-        </Link>
+        <img
+        src="/logo.png"
+        alt="ShipNext Logo"
+        className="logo-image"
+      />
         <Link to="/dashboard" className="booking-back">← Back to Dashboard</Link>
       </header>
 
@@ -119,31 +124,104 @@ navigate('/shipping-charges', {
             </div>
           </section>
 
-          <section className="booking-section">
-            <h2>🚚 Delivery Details</h2>
+         
+<section className="booking-section">
+  <h2>📦 Parcel Details</h2>
 
-            <div className="booking-grid">
-              <div className="booking-field">
-                <label>Receiver Name</label>
-                <input name="deliveryName" value={formData.deliveryName} onChange={handleChange} placeholder="Enter receiver name" required />
-              </div>
+  <div className="booking-grid">
+    <div className="booking-field">
+      <label>Parcel Weight (kg)</label>
+      <input
+        name="weight"
+        type="number"
+        min="0.5"
+        step="0.1"
+        value={formData.weight}
+        onChange={handleChange}
+        placeholder="Minimum 0.5 kg"
+        required
+      />
+      <small>Minimum booking weight: 500 grams.</small>
+    </div>
 
-              <div className="booking-field">
-                <label>Receiver Mobile Number</label>
-                <input name="deliveryPhone" type="tel" pattern="[0-9]{10}" maxLength={10} value={formData.deliveryPhone} onChange={handleChange} placeholder="10-digit mobile number" required />
-              </div>
+    <div className="booking-field full-width">
+      <label>Shipment Type</label>
 
-              <div className="booking-field full-width">
-                <label>Delivery Address</label>
-                <textarea name="deliveryAddress" value={formData.deliveryAddress} onChange={handleChange} placeholder="House number, street, area, landmark" required />
-              </div>
+      <div className="booking-options">
+        <label>
+          <input
+            type="radio"
+            name="shipmentType"
+            value="DOCUMENT"
+            checked={formData.shipmentType === 'DOCUMENT'}
+            onChange={handleChange}
+          />
+          Documents
+        </label>
 
-              <div className="booking-field">
-                <label>Delivery Pincode</label>
-                <input name="deliveryPincode" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={formData.deliveryPincode} onChange={handleChange} placeholder="6-digit pincode" required />
-              </div>
+        <label>
+          <input
+            type="radio"
+            name="shipmentType"
+            value="NON_DOCUMENT"
+            checked={formData.shipmentType === 'NON_DOCUMENT'}
+            onChange={handleChange}
+          />
+          Non-Documents
+        </label>
+      </div>
+    </div>
+
+    {formData.shipmentType === 'NON_DOCUMENT' && (
+      <>
+        <div className="booking-field full-width">
+          <label>Item Category</label>
+
+          <select
+            name="itemCategory"
+            value={formData.itemCategory}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select item category</option>
+            <option value="Clothes">Clothes</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Household Items">Household Items</option>
+            <option value="Gifts">Gifts</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {formData.itemCategory === 'Other' && (
+          <>
+            <div className="booking-field full-width">
+              <label>Item Name</label>
+              <input
+                name="itemName"
+                value={formData.itemName}
+                onChange={handleChange}
+                placeholder="Enter your item name"
+                required
+              />
             </div>
-          </section>
+
+            <div className="booking-field full-width">
+              <label>Item Description</label>
+              <textarea
+                name="itemDescription"
+                value={formData.itemDescription}
+                onChange={handleChange}
+                placeholder="Describe the item you are shipping"
+                required
+              />
+            </div>
+          </>
+        )}
+      </>
+    )}
+  </div>
+</section>
 
           <section className="booking-section">
             <h2>📦 Parcel Details</h2>
