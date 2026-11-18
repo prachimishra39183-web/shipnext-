@@ -7720,6 +7720,83 @@ body,
   color: #ffffff;
 }
 
+/* FIX MEGA MENU TEXT VISIBILITY */
+
+/* Main dropdown heading */
+.navbar .mega-menu-heading h2 {
+  color: #ffffff !important;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.navbar .mega-menu-heading p {
+  color: #d1dbea !important;
+  font-size: 14px;
+}
+
+/* SHIPNEXT PRODUCTS / PLATFORM label */
+.navbar .mega-menu-eyebrow {
+  color: #ff7952 !important;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* SHIPPING SERVICES / TRACKING & DELIVERY headings */
+.navbar .mega-menu-column h4 {
+  color: #ff7952 !important;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 1.5px;
+}
+
+/* Product and platform names */
+.navbar .mega-menu-text strong {
+  color: #ffffff !important;
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+/* Descriptions under product names */
+.navbar .mega-menu-text small {
+  color: #cbd5e1 !important;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* Menu item spacing */
+.navbar .mega-menu-item {
+  padding: 14px;
+  margin-bottom: 7px;
+}
+
+/* Hover effect */
+.navbar .mega-menu-item:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 104, 72, 0.35);
+}
+
+.navbar .mega-menu-item:hover .mega-menu-text strong {
+  color: #ff987d !important;
+}
+
+/* Footer text */
+.navbar .mega-menu-footer strong {
+  color: #ffffff !important;
+  font-size: 14px;
+}
+
+.navbar .mega-menu-footer p {
+  color: #cbd5e1 !important;
+  font-size: 12px;
+}
+
+.navbar .mega-menu-footer > a {
+  color: #ff7952 !important;
+}
+
+
 /* =========================================
    RESPONSIVE NAVBAR
 ========================================= */

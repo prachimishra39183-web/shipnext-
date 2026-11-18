@@ -6,7 +6,7 @@ import API_URL from '../config/api';
 function AdminWallet() {
   const [wallets, setWallets] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [rechargeRequests, setRechargeRequests] = useState([]);
+
 
   const [stats, setStats] = useState({
     totalCustomers: 0,
@@ -18,44 +18,12 @@ function AdminWallet() {
 
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [rechargeLoading, setRechargeLoading] = useState(true);
+
   const [error, setError] = useState('');
   const [transactionError, setTransactionError] = useState('');
-  const [rechargeError, setRechargeError] = useState('');
-  const [actionLoading, setActionLoading] = useState('');
-  const [actionMessage, setActionMessage] = useState('');
 
   const token = sessionStorage.getItem('shipnextToken');
 
-  const fetchRechargeRequests = async () => {
-    setRechargeLoading(true);
-    setRechargeError('');
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/wallet/admin/recharge-requests`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || 'Unable to load recharge requests.'
-        );
-      }
-
-      setRechargeRequests(data.requests || []);
-    } catch (err) {
-      setRechargeError(err.message || 'Unable to load recharge requests.');
-    } finally {
-      setRechargeLoading(false);
-    }
-  };
 
   const fetchWalletData = async () => {
     try {
@@ -101,63 +69,15 @@ function AdminWallet() {
   };
 
   useEffect(() => {
-    if (!token) {
-      setError('Please log in as an administrator.');
-      setLoading(false);
-      setRechargeLoading(false);
-      return;
-    }
+  if (!token) {
+    setError('Please log in as an administrator.');
+    setLoading(false);
+    return;
+  }
 
-    fetchWalletData();
-    fetchRechargeRequests();
-  }, []);
+  fetchWalletData();
+}, []);
 
-  const handleReview = async (requestId, status) => {
-    const action = status === 'APPROVED' ? 'approve' : 'reject';
-
-    if (
-      !window.confirm(
-        `Are you sure you want to ${action} this recharge request?`
-      )
-    ) {
-      return;
-    }
-
-    setActionLoading(requestId);
-    setActionMessage('');
-    setRechargeError('');
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/wallet/admin/recharge-requests/${requestId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Unable to review request.');
-      }
-
-      setActionMessage(data.message || 'Request updated successfully.');
-
-      await Promise.all([
-        fetchRechargeRequests(),
-        fetchWalletData(),
-      ]);
-    } catch (err) {
-      setRechargeError(err.message || 'Unable to review request.');
-    } finally {
-      setActionLoading('');
-    }
-  };
 
   const filteredWallets = useMemo(() => {
     const query = search.toLowerCase();
@@ -190,9 +110,7 @@ function AdminWallet() {
     return '';
   };
 
-  const pendingCount = rechargeRequests.filter(
-    (request) => request.status === 'PENDING'
-  ).length;
+  
 
   return (
     <div className="admin-layout">
@@ -221,181 +139,6 @@ function AdminWallet() {
           </div>
         </header>
 
-        {/* UPI RECHARGE VERIFICATION */}
-        <section className="admin-content-card">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}>
-            <div>
-              <h2>UPI Recharge Verification</h2>
-              <p style={{ color: '#64748b', fontSize: '14px' }}>
-                Verify customer payments before crediting their wallets.
-              </p>
-            </div>
-
-            <span style={{
-              background: '#fff3e8',
-              color: '#c45b16',
-              padding: '8px 14px',
-              borderRadius: '20px',
-              fontWeight: 700,
-              fontSize: '13px',
-            }}>
-              {pendingCount} Pending Requests
-            </span>
-          </div>
-
-          {actionMessage && (
-            <p style={{
-              padding: '12px',
-              background: '#e9f8ef',
-              color: '#176b37',
-              borderRadius: '8px',
-            }}>
-              {actionMessage}
-            </p>
-          )}
-
-          {rechargeError && (
-            <p style={{
-              padding: '12px',
-              background: '#fff0f0',
-              color: '#a32222',
-              borderRadius: '8px',
-            }}>
-              {rechargeError}
-            </p>
-          )}
-
-          {rechargeLoading ? (
-            <div className="admin-empty">
-              <p>Loading recharge requests...</p>
-            </div>
-          ) : rechargeRequests.length === 0 ? (
-            <div className="admin-empty">
-              <span>💳</span>
-              <h3>No recharge requests</h3>
-              <p>Customer UPI recharge requests will appear here.</p>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                textAlign: 'left',
-              }}>
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Amount</th>
-                    <th>UPI Reference / UTR</th>
-                    <th>Request Date</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rechargeRequests.map((request) => (
-                    <tr key={request.id}>
-                      <td>
-                        <strong>
-                          {request.user?.name ||
-                            request.user?.fullName ||
-                            'Customer'}
-                        </strong>
-                        <br />
-                        <small>{request.user?.email || '—'}</small>
-                      </td>
-
-                      <td>
-                        <strong>
-                          ₹{Number(request.amount).toFixed(2)}
-                        </strong>
-                      </td>
-
-                      <td>
-                        <strong>{request.upiReference}</strong>
-                      </td>
-
-                      <td>{formatDate(request.createdAt)}</td>
-
-                      <td>
-                        <span style={{
-                          color:
-                            request.status === 'APPROVED'
-                              ? '#16803c'
-                              : request.status === 'REJECTED'
-                                ? '#c53030'
-                                : '#b7791f',
-                          fontWeight: 700,
-                        }}>
-                          {request.status}
-                        </span>
-                      </td>
-
-                      <td>
-                        {request.status === 'PENDING' ? (
-                          <div style={{
-                            display: 'flex',
-                            gap: '8px',
-                            flexWrap: 'wrap',
-                          }}>
-                            <button
-                              type="button"
-                              disabled={!!actionLoading}
-                              onClick={() =>
-                                handleReview(request.id, 'APPROVED')
-                              }
-                              style={{
-                                padding: '8px 12px',
-                                background: '#16803c',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {actionLoading === request.id
-                                ? 'Please wait...'
-                                : 'Approve'}
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={!!actionLoading}
-                              onClick={() =>
-                                handleReview(request.id, 'REJECTED')
-                              }
-                              style={{
-                                padding: '8px 12px',
-                                background: '#dc2626',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ color: '#64748b' }}>
-                            Reviewed
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
 
         {/* WALLET STATISTICS */}
         <section className="admin-stats">

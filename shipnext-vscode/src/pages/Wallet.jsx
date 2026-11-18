@@ -107,9 +107,7 @@ function Wallet() {
         throw new Error(data.message || 'Unable to submit request.');
       }
 
-      setMessage(
-        'Recharge request submitted. Your payment will be verified by ShipNext.'
-      );
+      setMessage('Your recharge request has been submitted successfully.');
       setAmount('');
       setUpiReference('');
 
@@ -129,8 +127,7 @@ function Wallet() {
 
   const formatAmount = (value) => Number(value).toFixed(2);
 
-  const statusClass = (status) =>
-    `wallet-request-status wallet-status-${status.toLowerCase()}`;
+
 
   return (
     <div className="booking-page">
@@ -168,9 +165,9 @@ function Wallet() {
           <div>
             <h2>Add Money to Wallet</h2>
             <p>
-              Pay using the official ShipNext UPI QR code. Your balance
-              will be updated after payment verification.
-            </p>
+  Pay using the official ShipNext UPI QR code and submit your
+  transaction reference for your records.
+</p>
           </div>
 
           <div className="wallet-recharge-layout">
@@ -191,10 +188,9 @@ function Wallet() {
                   inside the public folder.
                 </p>
               </div>
-
-              <small>
-                Please pay only to the official ShipNext UPI account.
-              </small>
+                 <small>
+  Complete your UPI payment and enter the transaction reference below.
+</small>
             </div>
 
             <form className="wallet-add-form" onSubmit={handleRecharge}>
@@ -224,13 +220,11 @@ function Wallet() {
               />
 
               <button type="submit" disabled={submitting || loading}>
-                {submitting ? 'Submitting...' : '+ Submit Recharge Request'}
+                {submitting ? 'Submitting...' : '+ Submit Recharge '}
               </button>
 
               <small>
-                Your payment will be checked by ShipNext before your
-                wallet is credited. Do not submit a payment reference
-                unless you have completed the payment.
+               Submit your UPI transaction reference after completing the payment.
               </small>
             </form>
           </div>
@@ -247,8 +241,8 @@ function Wallet() {
         <section className="wallet-transactions">
           <div className="wallet-transactions-heading">
             <div>
-              <h2>Recharge Requests</h2>
-              <p>Track the status of your wallet top-ups.</p>
+            <h2>Recharge History</h2>
+<p>View your submitted UPI wallet recharge requests.</p>
             </div>
           </div>
 
@@ -258,31 +252,23 @@ function Wallet() {
             </div>
           ) : requests.length === 0 ? (
             <div className="wallet-empty">
-              <h3>No recharge requests yet</h3>
-              <p>Your submitted UPI recharge requests will appear here.</p>
+             
+              <p>Your submitted UPI recharge history will appear here.</p>
             </div>
           ) : (
             <div className="wallet-transaction-list">
-              {requests.map((request) => (
-                <div key={request.id}>
-                  <div>
-                    <strong>UPI Wallet Recharge</strong>
-                    <p>UTR: {request.upiReference}</p>
-                    <p>{formatDate(request.createdAt)}</p>
-                    {request.adminNote && (
-                      <p>Admin note: {request.adminNote}</p>
-                    )}
-                  </div>
+  {requests.map((request) => (
+    <div key={request.id}>
+      <div>
+        <strong>UPI Wallet Recharge</strong>
+        <p>UPI Reference: {request.upiReference}</p>
+        <p>{formatDate(request.createdAt)}</p>
+      </div>
 
-                  <div>
-                    <strong>₹{formatAmount(request.amount)}</strong>
-                    <p className={statusClass(request.status)}>
-                      {request.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <strong>₹{formatAmount(request.amount)}</strong>
+    </div>
+  ))}
+</div>
           )}
         </section>
 
