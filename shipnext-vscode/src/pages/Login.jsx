@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
+import './Login.css';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -61,12 +62,13 @@ function Login() {
       if (!response.ok) {
         throw new Error(data.message || 'Booking verification failed.');
       }
+
       navigate('/dashboard', {
-  state: {
-    bookingAccess: true,
-    shipment: data.shipment,
-  },
-});
+        state: {
+          bookingAccess: true,
+          shipment: data.shipment,
+        },
+      });
 
     } catch (error) {
       setError(error.message || 'Unable to verify Booking ID.');
@@ -75,114 +77,210 @@ function Login() {
     }
   };
 
+  const changeLoginMethod = (method) => {
+    setLoginMethod(method);
+    setError('');
+  };
+
   return (
-    <div className="auth-page">
-      <div className="auth-brand">
-        <a href="/" className="logo">
-          <img src="/logo.png" alt="ShipNext Logo" className="logo-image" />
-        </a>
-        <p>Your Shipping. Our Priority.</p>
+    <div className="sn-login-page">
+      <div className="sn-login-background">
+        <div className="sn-login-glow sn-login-glow-one" />
+        <div className="sn-login-glow sn-login-glow-two" />
+        <div className="sn-login-grid" />
       </div>
 
-      <div className="auth-card">
-        <div className="auth-icon">👋</div>
-        <h1>Welcome back!</h1>
-        <p className="auth-description">
-          Access your ShipNext account or view your booking.
-        </p>
-
-        <div className="login-method-switch">
-  <button
-    type="button"
-    onClick={() => {
-      setLoginMethod('account');
-      setError('');
-    }}
-    className={loginMethod === 'account' ? 'login-method active' : 'login-method'}
-  >
-    Sign In
-  </button>
-
-  <button
-    type="button"
-    onClick={() => {
-      setLoginMethod('booking');
-      setError('');
-    }}
-    className={loginMethod === 'booking' ? 'login-method active' : 'login-method'}
-  >
-    Booking ID
-  </button>
-</div>
-
-        {loginMethod === 'account' ? (
-          <form onSubmit={handleLogin}>
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-
-            {error && <p className="auth-error">{error}</p>}
-
-            <button type="submit" className="auth-submit" disabled={loading}>
-              {loading ? 'Signing In...' : 'Sign In →'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleBookingAccess}>
-            <label htmlFor="docketNumber">Booking ID / Docket Number</label>
-            <input
-              id="docketNumber"
-              type="text"
-              placeholder="Enter your SNX booking ID"
-              value={docketNumber}
-              onChange={(e) => setDocketNumber(e.target.value.toUpperCase())}
-              required
-            />
-
-            <p className="auth-description">
-              Enter the docket number provided after your shipment booking.
-            </p>
-
-            {error && <p className="auth-error">{error}</p>}
-
-            <button type="submit" className="auth-submit" disabled={loading}>
-              {loading ? 'Verifying...' : 'View My Booking →'}
-            </button>
-          </form>
-        )}
-
-        <div className="auth-divider">
-          <span>NEW TO SHIPNEXT?</span>
-        </div>
-
-        <a href="/register" className="auth-secondary">
-          Create an Account
+      <header className="sn-login-topbar">
+        <a href="/" className="sn-login-brand">
+          <img src="/logo.png" alt="ShipNext Logo" />
         </a>
 
-        <a href="/" className="back-home">
-          ← Back to Home
+        <a href="/" className="sn-login-home-link">
+          Back to website <span>↗</span>
         </a>
-      </div>
+      </header>
 
-      <p className="auth-copyright">
-        © {new Date().getFullYear()} ShipNext. All rights reserved.
-      </p>
+      <main className="sn-login-content">
+        <section className="sn-login-showcase">
+          <span className="sn-login-kicker">
+            <span className="sn-login-kicker-line" />
+            THE SMARTER WAY TO SHIP
+          </span>
+
+          <h1>
+            Move your
+            <br />
+            business <span>forward.</span>
+          </h1>
+
+          <p className="sn-login-showcase-description">
+            One powerful platform for your shipping operations.
+            Manage bookings, track shipments and stay in control
+            of your logistics journey.
+          </p>
+
+          <div className="sn-login-feature-list">
+            <div className="sn-login-feature">
+              <span className="sn-login-feature-number">01</span>
+              <div>
+                <strong>Unified Shipping</strong>
+                <small>All your shipments in one place</small>
+              </div>
+            </div>
+
+            <div className="sn-login-feature">
+              <span className="sn-login-feature-number">02</span>
+              <div>
+                <strong>Real-time Visibility</strong>
+                <small>Stay informed at every step</small>
+              </div>
+            </div>
+
+            <div className="sn-login-feature">
+              <span className="sn-login-feature-number">03</span>
+              <div>
+                <strong>Business Control</strong>
+                <small>Manage your logistics with confidence</small>
+              </div>
+            </div>
+          </div>
+
+          <div className="sn-login-showcase-footer">
+            <span>SHIP SMARTER.</span>
+            <span>GROW FASTER.</span>
+          </div>
+        </section>
+
+        <section className="sn-login-card">
+          <div className="sn-login-card-top">
+            <span className="sn-login-card-label">SECURE ACCESS PORTAL</span>
+            <span className="sn-login-secure-indicator">
+              <span /> SECURE
+            </span>
+          </div>
+
+          <div className="sn-login-heading">
+            <h2>Welcome <span>back.</span></h2>
+            <p>Sign in to continue your ShipNext journey.</p>
+          </div>
+
+          <div className="sn-login-switch">
+            <button
+              type="button"
+              onClick={() => changeLoginMethod('account')}
+              className={loginMethod === 'account' ? 'active' : ''}
+            >
+              Account Login
+            </button>
+
+            <button
+              type="button"
+              onClick={() => changeLoginMethod('booking')}
+              className={loginMethod === 'booking' ? 'active' : ''}
+            >
+              Booking Access
+            </button>
+          </div>
+
+          {loginMethod === 'account' ? (
+            <form className="sn-login-form" onSubmit={handleLogin}>
+              <div className="sn-login-field">
+                <label htmlFor="email">EMAIL ADDRESS</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              <div className="sn-login-field">
+                <label htmlFor="password">PASSWORD</label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="sn-login-error">{error}</div>
+              )}
+
+              <button
+                type="submit"
+                className="sn-login-submit"
+                disabled={loading}
+              >
+                <span>{loading ? 'Signing you in...' : 'Sign In to ShipNext'}</span>
+                <span className="sn-login-submit-arrow">→</span>
+              </button>
+            </form>
+          ) : (
+            <form className="sn-login-form" onSubmit={handleBookingAccess}>
+              <div className="sn-login-booking-intro">
+                <span className="sn-login-booking-line" />
+                <p>
+                  Access your shipment details using the Booking ID
+                  or docket number provided by ShipNext.
+                </p>
+              </div>
+
+              <div className="sn-login-field">
+                <label htmlFor="docketNumber">BOOKING ID / DOCKET NUMBER</label>
+                <input
+                  id="docketNumber"
+                  type="text"
+                  placeholder="e.g. SNX123456"
+                  value={docketNumber}
+                  onChange={(e) => setDocketNumber(e.target.value.toUpperCase())}
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="sn-login-error">{error}</div>
+              )}
+
+              <button
+                type="submit"
+                className="sn-login-submit"
+                disabled={loading}
+              >
+                <span>{loading ? 'Verifying booking...' : 'Access My Booking'}</span>
+                <span className="sn-login-submit-arrow">→</span>
+              </button>
+            </form>
+          )}
+
+          <div className="sn-login-divider">
+            <span />
+            <small>NEW TO SHIPNEXT?</small>
+            <span />
+          </div>
+
+          <a href="/register" className="sn-login-register">
+            Create your ShipNext account <span>→</span>
+          </a>
+
+          <div className="sn-login-card-footer">
+            <span>SHIPNEXT</span>
+            <span>LOGISTICS, REIMAGINED.</span>
+          </div>
+        </section>
+      </main>
+
+      <footer className="sn-login-bottom">
+        <span>© {new Date().getFullYear()} SHIPNEXT. ALL RIGHTS RESERVED.</span>
+        <span>YOUR SHIPPING. OUR PRIORITY.</span>
+      </footer>
     </div>
   );
 }
