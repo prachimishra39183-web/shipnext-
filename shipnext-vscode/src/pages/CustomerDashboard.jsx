@@ -1,14 +1,22 @@
-
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import API_URL from '../config/api';
 function CustomerDashboard() {
+    const location = useLocation();
+
+  const bookingAccess = location.state?.bookingAccess === true;
+  const bookingShipment = location.state?.shipment || null;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
   const [notificationError, setNotificationError] = useState('');
 
   const fetchNotifications = async () => {
+        if (bookingAccess) {
+      setLoadingNotifications(false);
+      return;
+    }
     try {
       const token = sessionStorage.getItem('shipnextToken');
 
@@ -43,9 +51,9 @@ function CustomerDashboard() {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [bookingAccess]);
 
   const markAsRead = async (id) => {
     try {
@@ -112,15 +120,15 @@ function CustomerDashboard() {
   const getNotificationIcon = (type) => {
     switch (type?.toUpperCase()) {
       case 'BOOKING':
-        return '📦';
+        return ;
       case 'PICKUP':
-        return '🚚';
+        return ;
       case 'TRANSIT':
-        return '🛣️';
+        return ;
       case 'DELIVERED':
-        return '✅';
+        return ;
       default:
-        return '🔔';
+        return ;
     }
   };
 
@@ -139,14 +147,14 @@ function CustomerDashboard() {
         <p className="sidebar-label">MAIN MENU</p>
 
         <nav className="sidebar-nav">
-          <a href="#overview" className="active">▦ Dashboard</a>
-          <Link to="/shipments">📦 My Shipments</Link>
-          <Link to="/track">📍 Track Shipment</Link>
-          <Link to="/wallet">💳 My Wallet</Link>
+          <a href="#overview" className="active"> Dashboard</a>
+          <Link to="/shipments"> My Shipments</Link>
+          <Link to="/track"> Track Shipment</Link>
+          <Link to="/wallet"> My Wallet</Link>
           <a href="#transactions">↔ Transactions</a>
-          <Link to="/profile">👤 My Profile</Link>
+          <Link to="/profile"> My Profile</Link>
           <Link to="/support">
-  🎧 Support Tickets
+   Support Tickets
 </Link>
         </nav>
 
@@ -160,36 +168,84 @@ function CustomerDashboard() {
           
           <div>
             <h1>Customer Dashboard</h1>
-            <p>Welcome back! Here's your shipping overview.</p>
+            <p>
+  {bookingAccess
+    ? 'Welcome! Here are your booking details.'
+    : "Welcome back! Here's your shipping overview."}
+</p>
           </div>
 
-          <div className="dashboard-user">
-            <div className="user-avatar">C</div>
-            <div>
-              <strong>Customer</strong>
-              <small>ShipNext Member</small>
-            </div>
-          </div>
+         <div className="dashboard-header-actions">
+
+  <details className="customer-child-dropdown">
+    <summary>
+      <span> Child Accounts</span>
+      <ChevronDown size={17} className="child-chevron" />
+    </summary>
+
+    <div className="customer-child-menu">
+      <Link to="/child-accounts">
+        <span>◈</span> Manage Branches
+      </Link>
+
+      <Link to="/child-accounts">
+        <span>＋</span> Add New Branch
+      </Link>
+    </div>
+  </details>
+
+  <div className="dashboard-user">
+    <div className="user-avatar">C</div>
+    <div>
+      <strong>Customer</strong>
+      <small>ShipNext Member</small>
+    </div>
+  </div>
+
+</div>
         </header>
 
-        <section className="dashboard-welcome">
-          <div>
-            <span>YOUR SHIPPING AT A GLANCE</span>
-            <h2>Manage your deliveries with ease.</h2>
-            <p>Book shipments, check your wallet and track your parcels.</p>
-            <Link to="/book-shipment" className="dashboard-button">
-              + Book a Shipment
-            </Link>
-          </div>
-          <div className="welcome-icon">📦</div>
-        </section>
+       <section className="dashboard-welcome">
+  <div>
+    <span>
+      {bookingAccess ? 'YOUR SHIPMENT DETAILS' : 'YOUR SHIPPING AT A GLANCE'}
+    </span>
+
+    <h2>
+      {bookingAccess
+        ? 'Your shipment, all in one place.'
+        : 'Manage your deliveries with ease.'}
+    </h2>
+
+    <p>
+      {bookingAccess
+        ? 'View your booking information and track your parcel.'
+        : 'Book shipments, check your wallet and track your parcels.'}
+    </p>
+
+    {bookingAccess ? (
+      <Link
+        to={`/track/${encodeURIComponent(bookingShipment.trackingId)}`}
+        className="dashboard-button"
+      >
+        Track My Shipment →
+      </Link>
+    ) : (
+      <Link to="/book-shipment" className="dashboard-button">
+        + Book a Shipment
+      </Link>
+    )}
+  </div>
+
+  <div className="welcome-icon"></div>
+</section>
 
         {/* NOTIFICATIONS PANEL */}
         <section className="dashboard-panel" id="notifications">
           <div className="panel-heading">
             <div>
               <h2>
-                🔔 Notifications
+                 Notifications
                 {unreadCount > 0 && (
                   <span style={{
                     marginLeft: '10px',
@@ -241,7 +297,7 @@ function CustomerDashboard() {
             </div>
           ) : notifications.length === 0 ? (
             <div className="empty-state compact">
-              <div>🔔</div>
+              <div></div>
               <h3>No notifications yet</h3>
               <p>Your shipment updates will appear here.</p>
             </div>
@@ -355,7 +411,7 @@ function CustomerDashboard() {
           </div>
 
           <div className="empty-state">
-            <div>📦</div>
+            <div></div>
             <h3>No shipments yet</h3>
             <p>Your booked shipments will appear here.</p>
             <Link to="/book-shipment" className="dashboard-button">

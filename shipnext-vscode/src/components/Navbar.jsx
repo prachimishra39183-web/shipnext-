@@ -134,9 +134,7 @@ function Navbar() {
           Platform <span className="nav-chevron"></span>
         </button>
 
-        <Link to="/#solutions" className="nav-simple-link" onClick={closeMenu}>
-          Solutions
-        </Link>
+      
 
         <Link to="/track" className="nav-simple-link" onClick={closeMenu}>
           Track Order
@@ -145,6 +143,10 @@ function Navbar() {
         <Link to="/enquiry" className="nav-simple-link" onClick={closeMenu}>
           Enquire Now
         </Link>
+        <Link to="/#rate-calculator" className="nav-simple-link" onClick={closeMenu}>
+  Rate Calculator
+</Link>
+        
       </nav>
 
       <div className="nav-actions">

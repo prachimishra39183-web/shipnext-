@@ -21,8 +21,10 @@
     "express": "^5.3.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.74.0",
+    "multer": "^2.5.0",
     "pg": "^8.23.1",
-    "prisma": "^7.10.1"
+    "prisma": "^7.10.1",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

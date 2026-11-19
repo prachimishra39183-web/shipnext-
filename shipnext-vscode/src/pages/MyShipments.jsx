@@ -1,13 +1,16 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import API_URL from '../config/api';
+import '../styles.css';
 
 function MyShipments() {
   const [shipments, setShipments] = useState([]);
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('ALL');
 
   useEffect(() => {
     const fetchShipments = async () => {
@@ -64,135 +67,324 @@ function MyShipments() {
     });
   };
 
+  const confirmedCount = shipments.length;
+  const draftCount = drafts.length;
+
+  const filteredShipments = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return shipments.filter((shipment) => {
+      const matchesSearch = [
+        shipment.trackingId,
+        shipment.pickupPincode,
+        shipment.deliveryPincode,
+        shipment.status,
+      ].some((value) => String(value || '').toLowerCase().includes(query));
+
+      const matchesFilter =
+        activeFilter === 'ALL' ||
+        String(shipment.status || '').toUpperCase() === activeFilter;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [shipments, search, activeFilter]);
+
+  const filteredDrafts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return drafts.filter((draft) =>
+      [
+        draft.pickupName,
+        draft.deliveryName,
+        draft.pickupPincode,
+        draft.deliveryPincode,
+      ].some((value) => String(value || '').toLowerCase().includes(query))
+    );
+  }, [drafts, search]);
+
+  const getStatusClass = (status) => {
+    const value = String(status || 'PENDING').toLowerCase();
+
+    if (value.includes('deliver')) return 'delivered';
+    if (value.includes('transit')) return 'transit';
+    if (value.includes('cancel') || value.includes('rto')) return 'cancelled';
+    if (value.includes('pending') || value.includes('book')) return 'pending';
+
+    return 'general';
+  };
+
   return (
-    <div className="booking-page">
-      <header className="booking-header">
-        <Link to="/" className="logo">
-          <span className="logo-ship">SHIP</span>
-          <span className="logo-next">NEXT</span>
+    <div className="sn-shipments-page">
+      <header className="sn-shipments-header">
+        <Link to="/" className="sn-brand">
+          
         </Link>
 
-        <Link to="/dashboard" className="booking-back">
-          ← Back to Dashboard
-        </Link>
+        <div className="sn-header-right">
+          <span className="sn-account-label">CUSTOMER PORTAL</span>
+          <Link to="/dashboard" className="sn-back-link">
+            Back to Dashboard
+          </Link>
+        </div>
       </header>
 
-      <main className="shipments-container">
-        <div className="booking-heading">
-          <span>YOUR SHIPNEXT ACCOUNT</span>
-          <h1>My Shipments</h1>
-          <p>View your saved drafts and confirmed parcel bookings.</p>
-        </div>
+      <main className="sn-shipments-main">
+        <section className="sn-page-intro">
+          <div>
+            <span className="sn-eyebrow">SHIPNEXT / YOUR ACCOUNT</span>
+            <h1>My <span>Shipments.</span></h1>
+            <p>
+              Manage your bookings, review saved drafts and follow
+              your shipment activity from one place.
+            </p>
+          </div>
+
+          <Link to="/book-shipment" className="sn-primary-button">
+            Book a Shipment
+          </Link>
+        </section>
 
         {loading ? (
-          <div className="shipments-card shipments-empty">
-            <h3>Loading your shipments...</h3>
-          </div>
+          <section className="sn-loading-panel">
+            <div className="sn-loading-line" />
+            <h3>Preparing your shipment overview</h3>
+            <p>Please wait while we retrieve your account activity.</p>
+          </section>
         ) : error ? (
-          <div className="shipments-card shipments-empty">
-            <h3>Unable to load shipments</h3>
+          <section className="sn-error-panel">
+            <span className="sn-eyebrow">ACCOUNT NOTICE</span>
+            <h2>Unable to load your shipments</h2>
             <p>{error}</p>
-          </div>
+            <Link to="/dashboard" className="sn-primary-button">
+              Return to Dashboard
+            </Link>
+          </section>
         ) : (
           <>
-            {/* DRAFT SHIPMENTS */}
-            <div className="shipments-toolbar">
-              <div>
-                <h2>Draft Shipments</h2>
-                <p>Your saved bookings that are not yet confirmed.</p>
+            <section className="sn-overview-grid">
+              <article className="sn-overview-card sn-overview-featured">
+                <span className="sn-card-label">TOTAL SHIPMENTS</span>
+                <strong>{confirmedCount + draftCount}</strong>
+                <p>All your saved and confirmed bookings</p>
+                <div className="sn-card-decoration" />
+              </article>
+
+              <article className="sn-overview-card">
+                <span className="sn-card-label">CONFIRMED BOOKINGS</span>
+                <strong>{confirmedCount}</strong>
+                <p>Shipments successfully booked</p>
+              </article>
+
+              <article className="sn-overview-card">
+                <span className="sn-card-label">SAVED DRAFTS</span>
+                <strong>{draftCount}</strong>
+                <p>Bookings waiting for completion</p>
+              </article>
+            </section>
+
+            <section className="sn-shipment-workspace">
+              <div className="sn-workspace-heading">
+                <div>
+                  <span className="sn-eyebrow">YOUR BOOKING ACTIVITY</span>
+                  <h2>Shipment <span>Management</span></h2>
+                  <p>Search and manage your shipment records.</p>
+                </div>
               </div>
 
-              <span>{drafts.length} Draft(s)</span>
-            </div>
+              <div className="sn-shipment-tools">
+                <input
+                  type="search"
+                  placeholder="Search by tracking ID or PIN code..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  aria-label="Search shipments"
+                />
 
-            <div className="shipments-card">
-              {drafts.length === 0 ? (
-                <div className="shipments-empty">
-                  <div>📝</div>
-                  <h3>No saved drafts</h3>
-                  <p>Your saved shipment details will appear here.</p>
-                </div>
-              ) : (
-                <div className="shipment-list">
-                  {drafts.map((draft) => (
-                    <article className="shipment-item" key={draft.id}>
-                      <div>
-                        <strong>Draft Shipment</strong>
-                        <p>
-                          {draft.pickupPincode} → {draft.deliveryPincode}
-                        </p>
-                        <p>
-                          {draft.pickupName} → {draft.deliveryName}
-                        </p>
-                        <p>
-                          Weight: {(draft.weightGrams / 1000).toFixed(2)} kg
-                        </p>
-                        <p>Saved: {formatDate(draft.createdAt)}</p>
-                      </div>
-
-                      <span className="shipment-status">
-                        DRAFT
-                      </span>
-                      <Link
-  to={`/shipping-charges/${draft.id}`}
-  className="dashboard-button"
->
-  Continue Booking →
-</Link>
-                    </article>
+                <div className="sn-filter-group">
+                  {['ALL', 'IN_TRANSIT', 'DELIVERED', 'PENDING'].map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      className={activeFilter === filter ? 'selected' : ''}
+                      onClick={() => setActiveFilter(filter)}
+                    >
+                      {filter === 'ALL'
+                        ? 'All'
+                        : filter.replaceAll('_', ' ')}
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* CONFIRMED SHIPMENTS */}
-            <div className="shipments-toolbar">
-              <div>
-                <h2>Confirmed Shipments</h2>
-                <p>Your confirmed parcel bookings and tracking details.</p>
               </div>
 
-              <Link to="/book-shipment" className="dashboard-button">
-                + Book Shipment
-              </Link>
-            </div>
-
-            <div className="shipments-card">
-              {shipments.length === 0 ? (
-                <div className="shipments-empty">
-                  <div>📦</div>
-                  <h3>No confirmed shipments</h3>
-                  <p>Your confirmed bookings will appear here.</p>
+              <section className="sn-shipment-section">
+                <div className="sn-section-heading">
+                  <div>
+                    <span className="sn-section-kicker">01 / INCOMPLETE BOOKINGS</span>
+                    <h3>Saved Drafts</h3>
+                    <p>Continue a booking whenever you are ready.</p>
+                  </div>
+                  <span className="sn-count">{draftCount} DRAFTS</span>
                 </div>
-              ) : (
-                <div className="shipment-list">
-                  {shipments.map((shipment) => (
-                    <article className="shipment-item" key={shipment.id}>
-                      <div>
-                        <strong>{shipment.trackingId}</strong>
-                        <p>
-                          {shipment.pickupPincode} → {shipment.deliveryPincode}
-                        </p>
-                        <p>
-                          Weight: {(shipment.weightGrams / 1000).toFixed(2)} kg
-                        </p>
-                        <p>Booked: {formatDate(shipment.createdAt)}</p>
-                      </div>
 
-                      <span className="shipment-status">
-                        {shipment.status.replaceAll('_', ' ')}
-                      </span>
-
-                      <Link to={`/track/${shipment.trackingId}`}>
-                        View Details →
+                {filteredDrafts.length === 0 ? (
+                  <div className="sn-empty-state">
+                    <span className="sn-empty-line" />
+                    <h4>{search ? 'No matching drafts' : 'No saved drafts yet'}</h4>
+                    <p>
+                      {search
+                        ? 'Try another name or PIN code.'
+                        : 'Your unfinished shipment bookings will appear here.'}
+                    </p>
+                    {!search && (
+                      <Link to="/book-shipment" className="sn-text-link">
+                        Start a new booking
                       </Link>
-                    </article>
-                  ))}
+                    )}
+                  </div>
+                ) : (
+                  <div className="sn-shipment-grid">
+                    {filteredDrafts.map((draft) => (
+                      <article className="sn-shipment-card sn-draft-card" key={draft.id}>
+                        <div className="sn-shipment-card-top">
+                          <span className="sn-record-label">SAVED BOOKING</span>
+                          <span className="sn-status-pill draft">DRAFT</span>
+                        </div>
+
+                        <div className="sn-route">
+                          <div>
+                            <span>ORIGIN PIN</span>
+                            <strong>{draft.pickupPincode}</strong>
+                          </div>
+                          <div className="sn-route-connector">
+                            <span />
+                          </div>
+                          <div>
+                            <span>DESTINATION PIN</span>
+                            <strong>{draft.deliveryPincode}</strong>
+                          </div>
+                        </div>
+
+                        <div className="sn-card-details">
+                          <div>
+                            <span>Sender</span>
+                            <strong>{draft.pickupName || 'Not provided'}</strong>
+                          </div>
+                          <div>
+                            <span>Receiver</span>
+                            <strong>{draft.deliveryName || 'Not provided'}</strong>
+                          </div>
+                          <div>
+                            <span>Parcel weight</span>
+                            <strong>{(Number(draft.weightGrams || 0) / 1000).toFixed(2)} kg</strong>
+                          </div>
+                          <div>
+                            <span>Last saved</span>
+                            <strong>{formatDate(draft.createdAt)}</strong>
+                          </div>
+                        </div>
+
+                        <Link
+                          to={`/shipping-charges/${draft.id}`}
+                          className="sn-card-action"
+                        >
+                          Continue Booking <span>→</span>
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="sn-shipment-section">
+                <div className="sn-section-heading">
+                  <div>
+                    <span className="sn-section-kicker">02 / ACTIVE RECORDS</span>
+                    <h3>Confirmed Shipments</h3>
+                    <p>Your booked shipments and their tracking information.</p>
+                  </div>
+                  <span className="sn-count">{confirmedCount} BOOKINGS</span>
                 </div>
-              )}
-            </div>
+
+                {filteredShipments.length === 0 ? (
+                  <div className="sn-empty-state">
+                    <span className="sn-empty-line" />
+                    <h4>
+                      {search || activeFilter !== 'ALL'
+                        ? 'No matching shipments'
+                        : 'No confirmed shipments yet'}
+                    </h4>
+                    <p>
+                      {search || activeFilter !== 'ALL'
+                        ? 'Change your search or filter to see other records.'
+                        : 'Once you confirm a booking, its details will appear here.'}
+                    </p>
+                    {!search && activeFilter === 'ALL' && (
+                      <Link to="/book-shipment" className="sn-text-link">
+                        Book your first shipment
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className="sn-shipment-grid">
+                    {filteredShipments.map((shipment) => (
+                      <article className="sn-shipment-card" key={shipment.id}>
+                        <div className="sn-shipment-card-top">
+                          <div>
+                            <span className="sn-record-label">TRACKING REFERENCE</span>
+                            <strong className="sn-tracking-id">
+                              {shipment.trackingId || 'Reference unavailable'}
+                            </strong>
+                          </div>
+
+                          <span className={`sn-status-pill ${getStatusClass(shipment.status)}`}>
+                            {String(shipment.status || 'PENDING').replaceAll('_', ' ')}
+                          </span>
+                        </div>
+
+                        <div className="sn-route">
+                          <div>
+                            <span>ORIGIN PIN</span>
+                            <strong>{shipment.pickupPincode || '—'}</strong>
+                          </div>
+                          <div className="sn-route-connector">
+                            <span />
+                          </div>
+                          <div>
+                            <span>DESTINATION PIN</span>
+                            <strong>{shipment.deliveryPincode || '—'}</strong>
+                          </div>
+                        </div>
+
+                        <div className="sn-card-details">
+                          <div>
+                            <span>Parcel weight</span>
+                            <strong>{(Number(shipment.weightGrams || 0) / 1000).toFixed(2)} kg</strong>
+                          </div>
+                          <div>
+                            <span>Booking date</span>
+                            <strong>{formatDate(shipment.createdAt)}</strong>
+                          </div>
+                        </div>
+
+                        <Link
+                          to={`/track/${shipment.trackingId}`}
+                          className="sn-card-action"
+                        >
+                          View Shipment Details <span>→</span>
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </section>
           </>
         )}
+
+        <footer className="sn-shipments-footer">
+       
+          <p>Moving your business forward.</p>
+        </footer>
       </main>
     </div>
   );

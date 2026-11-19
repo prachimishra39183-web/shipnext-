@@ -26,6 +26,8 @@ import AdminSupport from './pages/AdminSupport.jsx';
 import AdminServiceability from './pages/AdminServiceability.jsx';
 import AdminReports from './pages/AdminReports';
 import AdminLayout from './components/AdminLayout.jsx';
+import AdminChildAccounts from './pages/AdminChildAccounts.jsx';
+import CustomerChildAccounts from './pages/CustomerChildAccounts.jsx';
 function App() {
   return (
     <BrowserRouter>
@@ -63,6 +65,10 @@ function App() {
               <Route path="/shipments" element={<MyShipments />} />
               <Route path="/profile" element={<MyProfile />} />
               <Route path="/support" element={<Support />} />
+              <Route
+  path="/child-accounts"
+  element={<CustomerChildAccounts />}
+/>
               
             </Route>
 
@@ -79,6 +85,7 @@ function App() {
     <Route path="/admin/support" element={<AdminSupport />} />
     <Route path="/admin/serviceability" element={<AdminServiceability />} />
     <Route path="/admin/reports" element={<AdminReports />} />
+    <Route path="/admin/child-accounts" element={<AdminChildAccounts />} />
   </Route>
 </Route>
 

@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import API_URL from '../config/api';
-const API = '${API_URL}/api';
+
+const API = `${API_URL}/api`;
 
 const categories = [
   { value: 'DELIVERY', label: 'Delivery related issue' },
@@ -73,7 +74,6 @@ function Support() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
     setError('');
     setSuccess('');
 
@@ -127,312 +127,297 @@ function Support() {
     }
   }
 
-  function statusColor(status) {
+  function statusClass(status) {
     switch (status) {
       case 'RESOLVED':
-        return '#15803d';
+        return 'resolved';
       case 'IN_PROGRESS':
-        return '#2563eb';
+        return 'progress';
       case 'CLOSED':
-        return '#64748b';
+        return 'closed';
       default:
-        return '#d97706';
+        return 'pending';
     }
   }
 
-  function formatStatus(status) {
+  function formatStatus(status = '') {
     return status.replaceAll('_', ' ');
   }
 
   if (loading) {
-    return <div className="support-page">Loading support information...</div>;
+    return (
+      <div className="sn-support-page">
+        <div className="sn-support-loading">
+          <div className="sn-support-loader" />
+          <p>Preparing your support centre...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div
-      className="support-page"
-      style={{
-        maxWidth: '1150px',
-        margin: '30px auto',
-        padding: '20px',
-        color: '#172033',
-      }}
-    >
-      <div style={{ marginBottom: '25px' }}>
-        <Link to="/dashboard" style={{ color: '#2563eb' }}>
-          ← Back to Dashboard
+    <div className="sn-support-page">
+      <header className="sn-support-header">
+        <Link to="/dashboard" className="sn-support-brand">
+          
         </Link>
 
-        <h1 style={{ marginBottom: '5px' }}>Customer Support</h1>
-        <p style={{ color: '#64748b' }}>
-          Raise a support ticket and track its progress.
-        </p>
-      </div>
+        <Link to="/dashboard" className="sn-support-back">
+          Back to Dashboard
+        </Link>
+      </header>
 
-      {error && (
-        <div style={messageStyle('#fee2e2', '#991b1b')}>
-          {error}
-        </div>
-      )}
+      <main className="sn-support-container">
+        <section className="sn-support-hero">
+          <div>
+            <span className="sn-support-eyebrow">
+              SHIPNEXT CUSTOMER CARE
+            </span>
+            <h1>We're here to <span>help.</span></h1>
+            <p>
+              One place for shipment assistance, account queries
+              and complete support ticket management.
+            </p>
+          </div>
 
-      {success && (
-        <div style={messageStyle('#dcfce7', '#166534')}>
-          {success}
-        </div>
-      )}
+          <div className="sn-support-hero-art">
+            <div className="sn-support-orbit orbit-one" />
+            <div className="sn-support-orbit orbit-two" />
+            <div className="sn-support-art-core">SN</div>
+            <span className="sn-support-art-label">SUPPORT DESK</span>
+          </div>
+        </section>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '25px',
-          alignItems: 'start',
-        }}
-      >
-        {/* RAISE TICKET FORM */}
-        <section style={cardStyle}>
-          <h2>Raise a New Ticket</h2>
+        <section className="sn-support-stats">
+          <div className="sn-support-stat">
+            <span>TOTAL TICKETS</span>
+            <strong>{tickets.length}</strong>
+            <small>Your submitted requests</small>
+          </div>
 
-          <form onSubmit={handleSubmit}>
-            <label style={labelStyle}>Issue Category *</label>
+          <div className="sn-support-stat">
+            <span>OPEN REQUESTS</span>
+            <strong>
+              {tickets.filter(t =>
+                !['RESOLVED', 'CLOSED'].includes(t.status)
+              ).length}
+            </strong>
+            <small>Awaiting completion</small>
+          </div>
 
-            <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setShipmentId('');
-              }}
-              required
-              style={fieldStyle}
-            >
-              <option value="">Select issue category</option>
-              {categories.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+          <div className="sn-support-stat">
+            <span>RESOLVED</span>
+            <strong>
+              {tickets.filter(t => t.status === 'RESOLVED').length}
+            </strong>
+            <small>Successfully resolved</small>
+          </div>
+        </section>
 
-            {needsShipment && (
-              <>
-                <label style={labelStyle}>Select Shipment *</label>
+        {error && (
+          <div className="sn-support-alert error">{error}</div>
+        )}
 
+        {success && (
+          <div className="sn-support-alert success">{success}</div>
+        )}
+
+        <div className="sn-support-layout">
+          <section className="sn-support-panel sn-support-form-panel">
+            <div className="sn-support-section-heading">
+              <div>
+                <span>01 / NEW REQUEST</span>
+                <h2>Raise a Ticket</h2>
+                <p>Tell us what you need help with.</p>
+              </div>
+              <div className="sn-support-section-number">01</div>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="sn-support-field">
+                <label>Issue Category *</label>
                 <select
-                  value={shipmentId}
-                  onChange={(e) => setShipmentId(e.target.value)}
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setShipmentId('');
+                  }}
                   required
-                  style={fieldStyle}
                 >
-                  <option value="">Select your shipment</option>
-
-                  {shipments.map((shipment) => (
-                    <option key={shipment.id} value={shipment.id}>
-                      {shipment.trackingId} — {shipment.pickupPincode} to{' '}
-                      {shipment.deliveryPincode}
+                  <option value="">Choose an issue category</option>
+                  {categories.map(item => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </select>
+              </div>
 
-                {shipments.length === 0 && (
-                  <p style={{ color: '#b45309', fontSize: '13px' }}>
-                    You don't have any confirmed shipments yet. A shipment
-                    is required for this issue category.
-                  </p>
-                )}
-              </>
-            )}
-
-            <label style={labelStyle}>Subject *</label>
-
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Enter ticket subject"
-              maxLength={150}
-              required
-              style={fieldStyle}
-            />
-
-            <label style={labelStyle}>Describe Your Issue *</label>
-
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Explain your issue in detail..."
-              maxLength={3000}
-              rows={6}
-              required
-              style={{ ...fieldStyle, resize: 'vertical' }}
-            />
-
-            <button
-              type="submit"
-              disabled={submitting || (needsShipment && shipments.length === 0)}
-              style={{
-                width: '100%',
-                padding: '13px',
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: submitting ? 'wait' : 'pointer',
-                fontWeight: '600',
-                opacity: submitting || (needsShipment && shipments.length === 0)
-                  ? 0.6
-                  : 1,
-              }}
-            >
-              {submitting ? 'Submitting...' : 'Raise Support Ticket'}
-            </button>
-          </form>
-        </section>
-
-        {/* MY TICKETS */}
-        <section style={cardStyle}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '10px',
-            }}
-          >
-            <h2>My Tickets ({tickets.length})</h2>
-
-            <button
-              type="button"
-              onClick={loadData}
-              style={{
-                border: '1px solid #cbd5e1',
-                background: '#fff',
-                padding: '8px 12px',
-                borderRadius: '7px',
-                cursor: 'pointer',
-              }}
-            >
-              Refresh
-            </button>
-          </div>
-
-          {tickets.length === 0 ? (
-            <p style={{ color: '#64748b' }}>
-              You haven't raised any support tickets yet.
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gap: '15px' }}>
-              {tickets.map((ticket) => (
-                <article
-                  key={ticket.id}
-                  style={{
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '10px',
-                    padding: '15px',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: '10px',
-                      flexWrap: 'wrap',
-                    }}
+              {needsShipment && (
+                <div className="sn-support-field">
+                  <label>Related Shipment *</label>
+                  <select
+                    value={shipmentId}
+                    onChange={(e) => setShipmentId(e.target.value)}
+                    required
                   >
-                    <strong>{ticket.ticketNumber}</strong>
+                    <option value="">Select a shipment</option>
+                    {shipments.map(shipment => (
+                      <option key={shipment.id} value={shipment.id}>
+                        {shipment.trackingId} — {shipment.pickupPincode} to {shipment.deliveryPincode}
+                      </option>
+                    ))}
+                  </select>
 
-                    <span
-                      style={{
-                        color: statusColor(ticket.status),
-                        fontWeight: '700',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {formatStatus(ticket.status)}
-                    </span>
-                  </div>
-
-                  <p style={{ marginBottom: '5px' }}>
-                    <strong>Category:</strong>{' '}
-                    {categories.find((c) => c.value === ticket.category)?.label}
-                  </p>
-
-                  <p><strong>Subject:</strong> {ticket.subject}</p>
-
-                  <p style={{ overflowWrap: 'anywhere' }}>
-                    <strong>Message:</strong> {ticket.message}
-                  </p>
-
-                  {ticket.shipment && (
-                    <>
-                      <p>
-                        <strong>Tracking ID:</strong>{' '}
-                        {ticket.shipment.trackingId}
-                      </p>
-                      <p>
-                        <strong>Docket Number:</strong>{' '}
-                        {ticket.shipment.docketNumber || 'Not generated yet'}
-                      </p>
-                    </>
+                  {shipments.length === 0 && (
+                    <small className="sn-support-field-note">
+                      No confirmed shipments are available. A shipment
+                      is required for this category.
+                    </small>
                   )}
+                </div>
+              )}
 
-                  {ticket.adminReply && (
-                    <div
-                      style={{
-                        background: '#eff6ff',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        marginTop: '10px',
-                      }}
-                    >
-                      <strong>Admin Reply</strong>
-                      <p style={{ marginBottom: 0 }}>{ticket.adminReply}</p>
-                    </div>
-                  )}
+              <div className="sn-support-field">
+                <label>Ticket Subject *</label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Briefly describe your issue"
+                  maxLength={150}
+                  required
+                />
+              </div>
 
-                  <small style={{ color: '#64748b' }}>
-                    Raised: {new Date(ticket.createdAt).toLocaleString('en-IN')}
-                  </small>
-                </article>
-              ))}
+              <div className="sn-support-field">
+                <div className="sn-support-label-row">
+                  <label>Describe Your Issue *</label>
+                  <span>{message.length}/3000</span>
+                </div>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Share the details so our team can assist you..."
+                  maxLength={3000}
+                  rows={6}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="sn-support-submit"
+                disabled={submitting || (needsShipment && shipments.length === 0)}
+              >
+                {submitting ? 'Submitting Request...' : 'Submit Support Request'}
+                <span>→</span>
+              </button>
+
+              <p className="sn-support-form-note">
+                Your request will be added to your support history.
+              </p>
+            </form>
+          </section>
+
+          <section className="sn-support-panel sn-support-tickets-panel">
+            <div className="sn-support-section-heading">
+              <div>
+                <span>02 / REQUEST HISTORY</span>
+                <h2>My Tickets</h2>
+                <p>Monitor your support conversations.</p>
+              </div>
+
+              <button
+                type="button"
+                className="sn-support-refresh"
+                onClick={loadData}
+              >
+                Refresh
+              </button>
             </div>
-          )}
-        </section>
-      </div>
+
+            {tickets.length === 0 ? (
+              <div className="sn-support-empty">
+                <div className="sn-support-empty-art">SN</div>
+                <h3>No tickets yet</h3>
+                <p>
+                  Your submitted support requests will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="sn-support-ticket-list">
+                {tickets.map(ticket => (
+                  <article
+                    key={ticket.id}
+                    className="sn-support-ticket"
+                  >
+                    <div className="sn-support-ticket-top">
+                      <div>
+                        <span className="sn-support-ticket-label">
+                          TICKET REFERENCE
+                        </span>
+                        <strong>{ticket.ticketNumber}</strong>
+                      </div>
+
+                      <span className={`sn-support-status ${statusClass(ticket.status)}`}>
+                        {formatStatus(ticket.status)}
+                      </span>
+                    </div>
+
+                    <h3>{ticket.subject}</h3>
+
+                    <div className="sn-support-ticket-meta">
+                      <span>
+                        {categories.find(c => c.value === ticket.category)?.label || ticket.category}
+                      </span>
+                      <span>
+                        {new Date(ticket.createdAt).toLocaleDateString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="sn-support-ticket-message">
+                      {ticket.message}
+                    </div>
+
+                    {ticket.shipment && (
+                      <div className="sn-support-shipment">
+                        <div>
+                          <span>TRACKING ID</span>
+                          <strong>{ticket.shipment.trackingId}</strong>
+                        </div>
+                        <div>
+                          <span>DOCKET NUMBER</span>
+                          <strong>
+                            {ticket.shipment.docketNumber || 'Not generated yet'}
+                          </strong>
+                        </div>
+                      </div>
+                    )}
+
+                    {ticket.adminReply && (
+                      <div className="sn-support-admin-reply">
+                        <span>SHIPNEXT TEAM RESPONSE</span>
+                        <p>{ticket.adminReply}</p>
+                      </div>
+                    )}
+
+                    <div className="sn-support-ticket-footer">
+                      SUBMITTED {new Date(ticket.createdAt).toLocaleString('en-IN')}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <footer className="sn-support-footer">
+           YOUR SHIPPING. OUR PRIORITY.
+        </footer>
+      </main>
     </div>
   );
-}
-
-const cardStyle = {
-  background: '#fff',
-  padding: '22px',
-  borderRadius: '12px',
-  boxShadow: '0 4px 18px rgba(0,0,0,0.06)',
-};
-
-const labelStyle = {
-  display: 'block',
-  fontWeight: '600',
-  marginTop: '16px',
-  marginBottom: '7px',
-};
-
-const fieldStyle = {
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: '12px',
-  border: '1px solid #cbd5e1',
-  borderRadius: '8px',
-  fontSize: '14px',
-};
-
-function messageStyle(background, color) {
-  return {
-    background,
-    color,
-    padding: '12px 15px',
-    borderRadius: '8px',
-    marginBottom: '15px',
-  };
 }
 
 export default Support;

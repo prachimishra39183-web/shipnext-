@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
+
 function Register() {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -9,6 +10,12 @@ function Register() {
     phone: '',
     password: '',
     confirmPassword: '',
+  });
+
+  const [documents, setDocuments] = useState({
+    aadhaar: null,
+    pan: null,
+    cancelledCheque: null,
   });
 
   const [error, setError] = useState('');
@@ -23,6 +30,38 @@ function Register() {
     });
   };
 
+  const handleDocumentChange = (event) => {
+    const { name, files } = event.target;
+    const file = files[0];
+
+    if (!file) return;
+
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'application/pdf',
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError('Only JPG, PNG and PDF documents are allowed.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Each document must be 5 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    setError('');
+
+    setDocuments((previous) => ({
+      ...previous,
+      [name]: file,
+    }));
+  };
+
   const handleRegister = async (event) => {
     event.preventDefault();
     setError('');
@@ -32,20 +71,32 @@ function Register() {
       return;
     }
 
+    if (
+      !documents.aadhaar ||
+      !documents.pan ||
+      !documents.cancelledCheque
+    ) {
+      setError('Please upload all three mandatory documents.');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const uploadData = new FormData();
+
+      uploadData.append('fullName', formData.fullName);
+      uploadData.append('email', formData.email);
+      uploadData.append('phone', formData.phone);
+      uploadData.append('password', formData.password);
+
+      uploadData.append('aadhaar', documents.aadhaar);
+      uploadData.append('pan', documents.pan);
+      uploadData.append('cancelledCheque', documents.cancelledCheque);
+
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-        }),
+        body: uploadData,
       });
 
       const data = await response.json();
@@ -81,6 +132,7 @@ function Register() {
         <div className="auth-icon">🚀</div>
 
         <h1>Create your account</h1>
+
         <p className="auth-description">
           Join ShipNext and simplify your shipping experience.
         </p>
@@ -144,6 +196,61 @@ function Register() {
             onChange={handleChange}
             required
           />
+
+          <div className="kyc-upload-section">
+            <h3>Identity Verification</h3>
+
+            <p>
+              Upload all three documents to complete your registration.
+              JPG, PNG or PDF. Maximum 5 MB per document.
+            </p>
+
+            <label htmlFor="aadhaar">Aadhaar Card *</label>
+            <input
+              id="aadhaar"
+              name="aadhaar"
+              type="file"
+              accept="image/jpeg,image/png,application/pdf"
+              onChange={handleDocumentChange}
+              required
+            />
+
+            {documents.aadhaar && (
+              <small>Selected: {documents.aadhaar.name}</small>
+            )}
+
+            <label htmlFor="pan">PAN Card *</label>
+            <input
+              id="pan"
+              name="pan"
+              type="file"
+              accept="image/jpeg,image/png,application/pdf"
+              onChange={handleDocumentChange}
+              required
+            />
+
+            {documents.pan && (
+              <small>Selected: {documents.pan.name}</small>
+            )}
+
+            <label htmlFor="cancelledCheque">
+              Cancelled Cheque *
+            </label>
+            <input
+              id="cancelledCheque"
+              name="cancelledCheque"
+              type="file"
+              accept="image/jpeg,image/png,application/pdf"
+              onChange={handleDocumentChange}
+              required
+            />
+
+            {documents.cancelledCheque && (
+              <small>
+                Selected: {documents.cancelledCheque.name}
+              </small>
+            )}
+          </div>
 
           {error && (
             <p style={{ color: '#dc2626', marginTop: '12px' }}>

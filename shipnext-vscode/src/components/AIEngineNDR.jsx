@@ -6,7 +6,7 @@ const recommendations = {
   speed: {
     label: 'FASTEST DELIVERY',
     service: 'ShipNext Express Air',
-    carrier: 'BlueDart Air Network',
+   
     time: '24–36 Hours',
     rate: '₹148.68',
     score: '99.4/100',
@@ -16,7 +16,7 @@ const recommendations = {
   cost: {
     label: 'LOWEST SHIPPING COST',
     service: 'ShipNext Surface Economy',
-    carrier: 'Delhivery Surface Network',
+  
     time: '2–3 Days',
     rate: '₹84.50',
     score: '97.8/100',
@@ -26,7 +26,7 @@ const recommendations = {
   sla: {
     label: 'BEST DELIVERY PERFORMANCE',
     service: 'ShipNext Verified Courier Priority',
-    carrier: 'Shadowfax Priority Fleet',
+   
     time: '36–48 Hours',
     rate: '₹112.00',
     score: '99.8/100',

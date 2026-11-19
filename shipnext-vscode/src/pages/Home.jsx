@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
 import Navbar from '../components/Navbar.jsx';
 import Solutions from '../components/Solutions.jsx';
@@ -203,7 +203,20 @@ function LiveNetworkSection() {
 
 function Home() {
     const navigate = useNavigate();
+const location = useLocation();
 
+useEffect(() => {
+  if (location.hash === '#rate-calculator') {
+    const timer = setTimeout(() => {
+      document.getElementById('rate-calculator')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }
+}, [location.pathname, location.hash]);
   // TRACK SHIPMENT
   const [trackingId, setTrackingId] = useState('');
 
@@ -223,6 +236,74 @@ function Home() {
   const [courierResults, setCourierResults] = useState([]);
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [serviceabilityError, setServiceabilityError] = useState('');
+  const [availableModes, setAvailableModes] = useState([]);
+const [assignedMode, setAssignedMode] = useState('');
+
+// HOMEPAGE SHIPPING RATE CALCULATOR
+
+const [rateZone, setRateZone] = useState('METRO');
+const [rateMode, setRateMode] = useState('AIR');
+const [shipmentWeight, setShipmentWeight] = useState('0.5');
+const [rateResult, setRateResult] = useState(null);
+const [rateError, setRateError] = useState('');
+
+const shippingRates = {
+  METRO: {
+    standard: 35,
+    AIR: { base: 80, perKg: 120 },
+    SURFACE: { base: 50, perKg: 70 }
+  },
+  ROI: {
+    standard: 40,
+    AIR: { base: 90, perKg: 130 },
+    SURFACE: { base: 60, perKg: 90 }
+  },
+  NE: {
+    standard: 60,
+    AIR: { base: 120, perKg: 180 },
+    SURFACE: { base: 90, perKg: 120 }
+  }
+};
+
+const handleRateCalculation = (e) => {
+  e.preventDefault();
+
+  const weight = Number(shipmentWeight);
+
+  if (!Number.isFinite(weight) || weight <= 0) {
+    setRateError('Please enter a valid shipment weight.');
+    setRateResult(null);
+    return;
+  }
+
+  if (weight < 0.5) {
+    setRateError('Minimum shipment weight is 500 grams.');
+    setRateResult(null);
+    return;
+  }
+
+  const rates = shippingRates[rateZone][rateMode];
+
+  // First 500g + additional 500g slabs
+  const additionalSlabs = Math.ceil((weight - 0.5) / 0.5);
+
+  const additionalCharge =
+    additionalSlabs * (rates.perKg / 2);
+
+  const total = rates.base + additionalCharge;
+
+  setRateError('');
+
+  setRateResult({
+    zone: rateZone,
+    mode: rateMode,
+    weight,
+    base: rates.base,
+    additionalCharge,
+    total
+  });
+};
+
 
   const handleServiceabilityCheck = async (e) => {
     e.preventDefault();
@@ -230,7 +311,8 @@ function Home() {
     setCheckingServiceability(true);
     setServiceabilityError('');
     setCourierResults([]);
-
+   setAvailableModes([]);
+setAssignedMode('');
     try {
       const response = await fetch(
         `${API_URL}/api/serviceability/couriers/check`,
@@ -255,6 +337,36 @@ function Home() {
       }
 
       setCourierResults(data.courierResults || []);
+
+// Check available shipping modes for the same PIN pair
+try {
+  const modeResponse = await fetch(
+    `${API_URL}/api/serviceability/check`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pickupPincode: pickupPincode.trim(),
+        deliveryPincode: deliveryPincode.trim(),
+      }),
+    }
+  );
+
+  const modeData = await modeResponse.json();
+
+  if (modeResponse.ok && modeData.serviceable) {
+    setAvailableModes(modeData.availableModes || []);
+    setAssignedMode(modeData.assignedMode || '');
+  } else {
+    setAvailableModes([]);
+    setAssignedMode('');
+  }
+} catch (error) {
+  setAvailableModes([]);
+  setAssignedMode('');
+}
     } catch (error) {
       setServiceabilityError(
         error.message || 'Something went wrong. Please try again.'
@@ -274,7 +386,7 @@ function Home() {
   "Surface Express",
   "COD Remittance",
   "WhatsApp NDR",
-  "White-Label Tracking",
+  
   "Smart Wallet",
   "PIN Serviceability"
 ];
@@ -285,7 +397,7 @@ const movingServices2 = [
   "Zero RTO Leakage",
   "OTP Delivery",
   "Live GPS Scans",
-  "29,400+ PINs",
+  "19,300+ PINs",
   "GST Invoicing"
 ];
 
@@ -472,7 +584,41 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
               </strong>
             </div>
           ))}
+        <div className="available-shipping-modes">
+  <h4>Available Shipping Modes</h4>
 
+  {availableModes.length > 0 ? (
+    <div className="shipping-mode-list">
+      {availableModes.map((item) => {
+        const modeNames = {
+          EXPRESS_AIR: 'Express Air',
+          NORMAL_AIR: 'Normal Air',
+          EXPRESS_SURFACE: 'Express Surface',
+          NORMAL_SURFACE: 'Normal Surface',
+        };
+
+        return (
+          <div className="shipping-mode-item" key={item.mode}>
+            <span>
+              <span className="mode-check">✓</span>
+              {modeNames[item.mode] || item.mode}
+            </span>
+
+            {assignedMode === item.mode && (
+              <span className="recommended-mode">
+                Recommended
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p className="no-shipping-modes">
+      No shipping modes available for this PIN-code combination.
+    </p>
+  )}
+</div>
           <p
             style={{
               fontSize: '12px',
@@ -494,7 +640,319 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
   </div>
   
 
+{/* SHIPNEXT SHIPPING RATE CALCULATOR */}
+
+<div className="rate-calculator-card" id="rate-calculator">
+
+  <div className="rate-calculator-heading">
+    <span className="network-eyebrow">
+      // TRANSPARENT SHIPPING PRICES
+    </span>
+
+    <h2>Shipping Rate Calculator</h2>
+
+    <p>
+      Calculate your estimated shipping charges using
+      ShipNext's shipping tariff.
+    </p>
+  </div>
+
+  <form
+    className="rate-calculator-form"
+    onSubmit={handleRateCalculation}
+  >
+
+    <div className="rate-calculator-field">
+      <label>Delivery Zone</label>
+
+      <select
+        value={rateZone}
+        onChange={(e) => {
+          setRateZone(e.target.value);
+          setRateResult(null);
+        }}
+      >
+        <option value="METRO">Metro</option>
+        <option value="ROI">ROI</option>
+        <option value="NE">North East (NE)</option>
+      </select>
+    </div>
+
+    <div className="rate-calculator-field">
+      <label>Shipping Mode</label>
+
+      <select
+        value={rateMode}
+        onChange={(e) => {
+          setRateMode(e.target.value);
+          setRateResult(null);
+        }}
+      >
+        <option value="AIR">Air</option>
+        <option value="SURFACE">Surface</option>
+      </select>
+    </div>
+
+    <div className="rate-calculator-field">
+      <label>Shipment Weight (kg)</label>
+
+      <input
+        type="number"
+        min="0.5"
+        step="0.01"
+        placeholder="Example: 1.5"
+        value={shipmentWeight}
+        onChange={(e) => {
+          setShipmentWeight(e.target.value);
+          setRateResult(null);
+        }}
+        required
+      />
+    </div>
+
+    <button
+      type="submit"
+      className="rate-calculator-button"
+    >
+      Calculate Shipping Charges →
+    </button>
+
+  </form>
+
+  {rateError && (
+    <p style={{ color: '#dc2626', marginTop: '15px' }}>
+      {rateError}
+    </p>
+  )}
+
+  {rateResult && (
+    <div className="rate-result">
+
+      <div className="rate-result-header">
+        <span>YOUR ESTIMATED SHIPPING CHARGE</span>
+        <h2>
+          ₹{rateResult.total.toFixed(2)}
+        </h2>
+      </div>
+
+      <div className="rate-result-details">
+        <div>
+          <span>Delivery Zone</span>
+          <strong>{rateResult.zone}</strong>
+        </div>
+
+        <div>
+          <span>Shipping Mode</span>
+          <strong>{rateResult.mode}</strong>
+        </div>
+
+        <div>
+          <span>Chargeable Weight</span>
+          <strong>{rateResult.weight} kg</strong>
+        </div>
+
+        <div>
+          <span>First 500g</span>
+          <strong>₹{rateResult.base.toFixed(2)}</strong>
+        </div>
+
+        <div>
+          <span>Additional Weight Charges</span>
+          <strong>
+            ₹{rateResult.additionalCharge.toFixed(2)}
+          </strong>
+        </div>
+      </div>
+
+      <p className="rate-result-note">
+        Estimated tariff only. Final charges are subject
+        to shipment verification and applicable taxes or fees.
+      </p>
+
+    </div>
+  )}
+
+  <div className="standard-rate-reference">
+
+    <h3>Standard General Rates (&gt;500g)</h3>
+
+    <div className="rate-table-wrapper">
+      <table className="rate-table">
+        <thead>
+          <tr>
+            <th>Zone</th>
+            <th>Standard Rate</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>Metro</td>
+            <td>₹35</td>
+          </tr>
+
+          <tr>
+            <td>ROI</td>
+            <td>₹40</td>
+          </tr>
+
+          <tr>
+            <td>NE</td>
+            <td>₹60</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Standard rates are displayed separately as the general tariff.
+    </p>
+
+  </div>
+
+</div>
 </section>
+{/* PREMIUM ABOUT SHIPNEXT SECTION */}
+<section className="shipnext-about">
+
+  <div className="about-top">
+    <span className="about-eyebrow">THE SHIPNEXT ECOSYSTEM</span>
+
+    <h2>
+      Moving India Forward.
+      <span> Connecting Every Possibility.</span>
+    </h2>
+
+    <p className="about-intro">
+      SHIPNEXT is a Pan-India, end-to-end logistics and courier
+      aggregation platform serving both B2B and B2C customers.
+      We connect businesses, individuals, courier companies,
+      transporters, franchisees and last-mile delivery partners
+      through one integrated logistics ecosystem.
+    </p>
+  </div>
+
+  <div className="about-vision-grid">
+
+    <div className="about-feature-card vision-card">
+      <span className="about-card-number">01 / OUR VISION</span>
+      <div className="about-card-icon">◎</div>
+      <h3>Our Vision</h3>
+      <p>
+        To become India's most trusted, innovative and preferred
+        end-to-end logistics platform, transforming the way
+        businesses and individuals move goods through a seamlessly
+        connected logistics ecosystem.
+      </p>
+      <p>
+        We envision a future where every business, irrespective
+        of its size or location, has access to reliable, affordable
+        and technology-enabled logistics solutions across India.
+      </p>
+    </div>
+
+    <div className="about-feature-card mission-card">
+      <span className="about-card-number">02 / OUR MISSION</span>
+      <div className="about-card-icon">↗</div>
+      <h3>Our Mission</h3>
+      <p>
+        To simplify logistics and empower businesses and individuals
+        with seamless, technology-driven shipping and delivery
+        solutions through an integrated network of courier partners,
+        transporters and last-mile delivery providers.
+      </p>
+
+      <div className="mission-points">
+        <span>✓ Reliable and cost-effective shipping</span>
+        <span>✓ Multiple logistics providers on one platform</span>
+        <span>✓ Seamless B2B and B2C deliveries</span>
+        <span>✓ Simplified booking, tracking and management</span>
+        <span>✓ Stronger last-mile delivery networks</span>
+        <span>✓ Opportunities for logistics partners</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div className="values-heading">
+    <span className="about-eyebrow">WHAT DEFINES US</span>
+    <h2>Our Core <span>Values.</span></h2>
+    <p>
+      The principles that drive every shipment, every partnership
+      and every innovation.
+    </p>
+  </div>
+
+  <div className="about-values-grid">
+
+    {[
+      {
+        icon: '◈',
+        title: 'Trust & Transparency',
+        text: 'We build long-term relationships through honesty, transparent operations and clear communication.'
+      },
+      {
+        icon: '⚡',
+        title: 'Speed & Efficiency',
+        text: 'We continuously improve delivery processes to make shipping faster and more efficient.'
+      },
+      {
+        icon: '♡',
+        title: 'Customer Commitment',
+        text: 'We put customer satisfaction at the heart of every shipment and every interaction.'
+      },
+      {
+        icon: '✧',
+        title: 'Innovation & Technology',
+        text: 'We leverage technology to simplify logistics, improve visibility and deliver smarter solutions.'
+      },
+      {
+        icon: '⇄',
+        title: 'Collaboration & Partnership',
+        text: 'We grow together with courier companies, transporters, franchisees and delivery partners.'
+      },
+      {
+        icon: '✓',
+        title: 'Reliability & Accountability',
+        text: 'We take ownership of our commitments and strive for consistent service quality.'
+      },
+      {
+        icon: '↗',
+        title: 'Growth & Opportunity',
+        text: 'We create opportunities for businesses and logistics partners to expand their reach.'
+      },
+      {
+        icon: '🌱',
+        title: 'Sustainable Development',
+        text: 'We encourage efficient resource utilization and responsible logistics practices.'
+      }
+    ].map((value, index) => (
+      <div className="about-value-card" key={value.title}>
+        <div className="value-card-top">
+          <span className="value-icon">{value.icon}</span>
+          <span className="value-index">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+        </div>
+        <h3>{value.title}</h3>
+        <p>{value.text}</p>
+      </div>
+    ))}
+
+  </div>
+
+  <div className="about-bottom-banner">
+    <div>
+      <span>ONE NETWORK. MULTIPLE POSSIBILITIES.</span>
+      <h2>India's Logistics. <span>Connected.</span></h2>
+    </div>
+    <a href="/register" className="about-join-button">
+      Join SHIPNEXT <span>↗</span>
+    </a>
+  </div>
+
+</section>
+
 
            <br></br>
            <br></br>
@@ -632,11 +1090,6 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
 </section>
 
         
-        <section className="cta-section">
-          <h2>Ready to ship smarter?</h2>
-          <p>Join ShipNext and make your shipping experience simpler.</p>
-          <a href="/register" className="cta-button">Get Started Today →</a>
-        </section>
         
       </main>
 
@@ -696,9 +1149,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
     <div className="footer-column">
       <h4>Get Started</h4>
       <p>Ready to simplify your shipping operations?</p>
-      <a href="/register" className="footer-cta">
-        Get Started <span>↗</span>
-      </a>
+      
       <a href="/#contact">Contact Us</a>
     </div>
 

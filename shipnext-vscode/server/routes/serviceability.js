@@ -1,10 +1,19 @@
 
 const express = require('express');
 const prisma = require('../prisma');
+
 const {
   authenticateToken,
   authorizeRole,
 } = require('../middleware/auth');
+
+const {
+  calculateShippingCharge,
+} = require('../utils/shippingPricing');
+
+const {
+  getShippingZone,
+} = require('../utils/shippingZone');
 
 const router = express.Router();
 
@@ -15,12 +24,15 @@ const VALID_MODES = [
   'NORMAL_SURFACE',
 ];
 
+const COURIERS = [
+  'DELHIVERY',
+  'SKYKING',
+  'BLUEDART',
+];
+
 function validPincode(pin) {
-  return /^\d{6}$/.test(String(pin || ''));
+  return /^\d{6}$/.test(String(pin || '').trim());
 }
-
-
-const COURIERS = ['DELHIVERY', 'SKYKING', 'BLUEDART'];
 
 // PUBLIC: Check PIN-code availability for all courier partners
 router.post('/couriers/check', async (req, res) => {
@@ -105,55 +117,180 @@ router.post('/couriers/check', async (req, res) => {
   }
 });
 
-// PUBLIC: Check serviceability and automatically allocate a mode
+// PUBLIC: Check serviceability and available shipping modes
 router.post('/check', async (req, res) => {
   try {
-    const { pickupPincode, deliveryPincode } = req.body;
+    const pickupPincode = String(req.body.pickupPincode || '').trim();
+    const deliveryPincode = String(req.body.deliveryPincode || '').trim();
 
-    if (!validPincode(pickupPincode) || !validPincode(deliveryPincode)) {
+    if (
+      !validPincode(pickupPincode) ||
+      !validPincode(deliveryPincode)
+    ) {
       return res.status(400).json({
         success: false,
         message: 'Enter valid six-digit pickup and delivery PIN codes.',
       });
     }
 
-    const availableModes = await prisma.serviceabilityMode.findMany({
+    const records = await prisma.courierPincodeServiceability.findMany({
       where: {
-        pickupPincode,
-        deliveryPincode,
-        isActive: true,
+        courier: { in: COURIERS },
+        pincode: { in: [pickupPincode, deliveryPincode] },
       },
-      orderBy: [
-        { priority: 'asc' },
-        { createdAt: 'asc' },
-      ],
     });
 
-    if (availableModes.length === 0) {
+    // A courier must cover BOTH pickup and delivery PIN codes.
+    const serviceableCouriers = COURIERS.filter((courier) => {
+      const hasPickup = records.some(
+        (record) =>
+          record.courier === courier &&
+          record.pincode === pickupPincode
+      );
+
+      const hasDelivery = records.some(
+        (record) =>
+          record.courier === courier &&
+          record.pincode === deliveryPincode
+      );
+
+      return hasPickup && hasDelivery;
+    });
+
+    if (serviceableCouriers.length === 0) {
       return res.status(404).json({
         success: false,
         serviceable: false,
-        message: 'No shipping mode is currently available for this route.',
+        availableModes: [],
+        message: 'No courier currently covers both PIN codes.',
       });
     }
 
-    const assignedMode = availableModes[0];
+    // TEMPORARY: The imported dataset does not identify Air/Surface modes.
+    const availableModes = VALID_MODES.map((mode, index) => ({
+      mode,
+      priority: index + 1,
+    }));
 
     return res.json({
       success: true,
       serviceable: true,
-      assignedMode: assignedMode.mode,
-      availableModes: availableModes.map((item) => ({
-        mode: item.mode,
-        priority: item.priority,
-      })),
-      message: 'Shipping mode allocated successfully.',
+      assignedMode: availableModes[0].mode,
+      availableModes,
+      message: 'Shipping options retrieved using courier PIN coverage.',
+      availabilityBasis: 'COURIER_PIN_COVERAGE',
+      provisionalModes: true,
     });
   } catch (error) {
     console.error('Serviceability check error:', error);
+
     return res.status(500).json({
       success: false,
       message: 'Unable to check serviceability.',
+    });
+  }
+});
+
+// PUBLIC: Calculate shipping charge after mode selection
+router.post('/quote', async (req, res) => {
+  try {
+    const pickupPincode = String(req.body.pickupPincode || '').trim();
+    const deliveryPincode = String(req.body.deliveryPincode || '').trim();
+    const { weight, mode } = req.body;
+
+    if (
+      !validPincode(pickupPincode) ||
+      !validPincode(deliveryPincode)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Enter valid six-digit PIN codes.',
+      });
+    }
+
+    if (!VALID_MODES.includes(mode)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid shipping mode.',
+      });
+    }
+
+    if (!Number.isFinite(Number(weight)) || Number(weight) < 0.5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Minimum shipment weight is 500 grams.',
+      });
+    }
+
+    const locationRecords =
+      await prisma.courierPincodeServiceability.findMany({
+        where: {
+          courier: { in: COURIERS },
+          pincode: { in: [pickupPincode, deliveryPincode] },
+        },
+      });
+
+    // Find one courier that covers both locations.
+    const selectedCourier = COURIERS.find((courier) => {
+      const hasPickup = locationRecords.some(
+        (item) =>
+          item.courier === courier &&
+          item.pincode === pickupPincode
+      );
+
+      const hasDelivery = locationRecords.some(
+        (item) =>
+          item.courier === courier &&
+          item.pincode === deliveryPincode
+      );
+
+      return hasPickup && hasDelivery;
+    });
+
+    if (!selectedCourier) {
+      return res.status(404).json({
+        success: false,
+        message: 'No courier covers both PIN codes.',
+      });
+    }
+
+    const pickup = locationRecords.find(
+      (item) =>
+        item.courier === selectedCourier &&
+        item.pincode === pickupPincode
+    );
+
+    const delivery = locationRecords.find(
+      (item) =>
+        item.courier === selectedCourier &&
+        item.pincode === deliveryPincode
+    );
+
+    const zone = getShippingZone(pickup, delivery);
+
+    const pricingMode = mode.endsWith('_AIR')
+      ? 'AIR'
+      : 'SURFACE';
+
+    const charge = calculateShippingCharge(
+      zone,
+      pricingMode,
+      weight
+    );
+
+    return res.json({
+      success: true,
+      mode,
+      ...charge,
+      message: 'Shipping charge calculated successfully.',
+      provisionalModeAvailability: true,
+    });
+  } catch (error) {
+    console.error('Shipping quote error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to calculate shipping charge.',
     });
   }
 });
@@ -176,6 +313,7 @@ router.get(
       return res.json({ success: true, routes });
     } catch (error) {
       console.error('Fetch serviceability routes error:', error);
+
       return res.status(500).json({
         success: false,
         message: 'Unable to fetch serviceability routes.',
@@ -251,6 +389,7 @@ router.post(
       }
 
       console.error('Create serviceability route error:', error);
+
       return res.status(500).json({
         success: false,
         message: 'Unable to add shipping mode.',
@@ -320,6 +459,7 @@ router.patch(
       }
 
       console.error('Update serviceability route error:', error);
+
       return res.status(500).json({
         success: false,
         message: 'Unable to update route.',
@@ -352,6 +492,7 @@ router.delete(
       }
 
       console.error('Delete serviceability route error:', error);
+
       return res.status(500).json({
         success: false,
         message: 'Unable to delete route.',
