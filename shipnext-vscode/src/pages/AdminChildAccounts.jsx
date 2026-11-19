@@ -1,4 +1,4 @@
-
+import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import API_URL from '../config/api';
 import './AdminChildAccounts.css';
@@ -193,18 +193,18 @@ function AdminChildAccounts() {
       <section className="child-hero">
         <div className="child-hero-content">
           <div className="child-eyebrow">
-            <span className="child-eyebrow-dot" />
-            SHIPNEXT CONTROL CENTRE
+            <Link to="/admin" className="sn-child-back-button">
+  <span>←</span>
+  Back to Dashboard
+</Link>
+            
           </div>
 
           <h1>
             Child Account <span>Management</span>
           </h1>
 
-          <p>
-            Manage merchant branches, monitor account access and control
-            your ShipNext branch network from one place.
-          </p>
+         
 
           <button
             className="child-create-btn"
