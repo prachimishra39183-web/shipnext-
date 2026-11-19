@@ -15377,3 +15377,38 @@ body [class*="Icon-"] {
     align-items: flex-start;
   }
 }
+.sn-wallet-submit-btn {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 12px;
+  padding: 15px 24px;
+  border: 1px solid rgba(255, 89, 56, 0.8);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff5938, #e83219);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 8px 24px rgba(255, 59, 31, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.25s ease;
+}
+
+.sn-wallet-submit-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, #ff7559, #ff3b1f);
+  box-shadow: 0 12px 30px rgba(255, 59, 31, 0.4);
+}
+
+.sn-wallet-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sn-wallet-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}

@@ -75,10 +75,10 @@ function Wallet() {
     setError('');
     setMessage('');
 
-    if (!amount || Number(amount) < 100) {
-      setError('Minimum recharge amount is ₹100.');
-      return;
-    }
+    if (!amount || Number(amount) < 1) {
+  setError('Minimum recharge amount is ₹1.');
+  return;
+}
 
     if (!upiReference.trim()) {
       setError('Please enter your payment reference or transaction ID.');
@@ -118,8 +118,8 @@ function Wallet() {
       }
 
       setMessage(
-        'Recharge request submitted successfully. Awaiting payment verification.'
-      );
+  `₹${Number(amount).toLocaleString('en-IN')} has been added to your ShipNext wallet successfully.`
+);
 
       setAmount('');
       setUpiReference('');
@@ -184,11 +184,7 @@ function Wallet() {
     },
   ];
 
-  const getRechargeStatus = (request) => {
-    const status = request.status || 'PENDING';
-    return status.replaceAll('_', ' ').toUpperCase();
-  };
-
+  const getRechargeStatus = () => 'COMPLETED';
   return (
     <main className="sn-wallet-page">
      <header className="sn-wallet-header">
@@ -332,9 +328,12 @@ function Wallet() {
             )}
 
             <form
-              className="sn-wallet-form"
-              onSubmit={handleRecharge}
-            >
+  className="sn-wallet-form"
+  onSubmit={(e) => {
+    console.log('WALLET FORM SUBMITTED');
+    handleRecharge(e);
+  }}
+>
               <span className="sn-wallet-eyebrow">
                 PAYMENT SUBMISSION
               </span>
@@ -354,16 +353,16 @@ function Wallet() {
                   <input
                     id="walletAmount"
                     type="number"
-                    min="100"
+                    min="1"
                     max="1000000"
                     step="0.01"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount (minimum ₹100)"
+                    placeholder="Enter amount (minimum ₹1)"
                     required
                   />
                 </div>
-                <small>Minimum ₹100 · Maximum ₹10,00,000</small>
+                <small>Minimum ₹1 · Maximum ₹10,00,000</small>
               </div>
 
               <div className="sn-wallet-field">
@@ -418,20 +417,17 @@ function Wallet() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                className="sn-wallet-submit"
-                disabled={submitting || loading}
-              >
-                {submitting
-                  ? 'Submitting request...'
-                  : 'Submit recharge request'}
-              </button>
-
-              <p className="sn-wallet-verification-note">
-                Wallet funds are credited only after successful
-                payment verification by ShipNext administration.
-              </p>
+             <button
+  type="submit"
+  className="sn-wallet-submit-btn"
+  disabled={submitting}
+>
+  {submitting ? 'Adding money...' : 'Add money to wallet'}
+</button>
+             <p className="sn-wallet-verification-note">
+  Your wallet is credited immediately after submission.
+  Keep your payment reference for your records.
+</p>
             </form>
           </div>
         </section>

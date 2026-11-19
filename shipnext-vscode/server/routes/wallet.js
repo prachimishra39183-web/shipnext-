@@ -156,12 +156,12 @@ router.post(
       if (
         !/^\d+(\.\d{1,2})?$/.test(amountString) ||
         !Number.isFinite(Number(amountString)) ||
-        Number(amountString) < 100 ||
+        Number(amountString) < 1 ||
         Number(amountString) > 1000000
       ) {
         return res.status(400).json({
           success: false,
-          message: 'Enter a valid recharge amount between ₹100 and ₹10,00,000.',
+          message: 'Enter a valid recharge amount between ₹1 and ₹10,00,000.',
         });
       }
 
@@ -195,56 +195,74 @@ router.post(
         });
       }
 
-      const encryptedProof = encryptPaymentProof(req.file.buffer);
+     
+const encryptedProof = encryptPaymentProof(req.file.buffer);
 
-      const customer = await prisma.user.findUnique({
-        where: {
-          id: req.user.userId,
-        },
-        select: {
-          name: true,
-        },
-      });
+const recharge = await prisma.$transaction(async (tx) => {
+  // Create wallet if it does not exist, or add the recharge amount.
+  const wallet = await tx.wallet.upsert({
+    where: {
+      userId: req.user.userId,
+    },
+    update: {
+      balance: {
+        increment: amountString,
+      },
+    },
+    create: {
+      userId: req.user.userId,
+      balance: amountString,
+    },
+  });
 
-      const rechargeRequest = await prisma.$transaction(async (tx) => {
-        const request = await tx.walletRechargeRequest.create({
-          data: {
-            userId: req.user.userId,
-            amount: amountString,
-            upiReference: reference,
-            paymentMethod: method,
-            proofOriginalName: path.basename(req.file.originalname).slice(0, 150),
-            proofMimeType: req.file.mimetype,
-            proofFileSize: req.file.size,
-            proofEncryptedData: encryptedProof.encryptedData,
-            proofEncryptionIv: encryptedProof.encryptionIv,
-            proofAuthTag: encryptedProof.authTag,
-          },
-        });
+  // Save recharge details and encrypted payment proof.
+  const request = await tx.walletRechargeRequest.create({
+    data: {
+      userId: req.user.userId,
+      amount: amountString,
+      upiReference: reference,
+      paymentMethod: method,
+      proofOriginalName: path.basename(req.file.originalname).slice(0, 150),
+      proofMimeType: req.file.mimetype,
+      proofFileSize: req.file.size,
+      proofEncryptedData: encryptedProof.encryptedData,
+      proofEncryptionIv: encryptedProof.encryptionIv,
+      proofAuthTag: encryptedProof.authTag,
+    },
+  });
 
-        await tx.adminNotification.create({
-          data: {
-            title: 'New Wallet Top-up Request',
-            message: `${customer?.name || 'A customer'} submitted a ₹${amountString} wallet recharge request through ${method}. Reference: ${reference}`,
-            type: 'WALLET_TOPUP',
-            link: '/admin/wallet',
-          },
-        });
+  // Record the wallet credit.
+  await tx.walletTransaction.create({
+    data: {
+      userId: req.user.userId,
+      walletId: wallet.id,
+      type: 'CREDIT',
+      amount: amountString,
+      description: 'Wallet recharge through ' + method,
+      reference: 'WALLET_RECHARGE_' + reference,
+    },
+  });
 
-        return request;
-      });
+  return {
+    request,
+    wallet,
+  };
+});
 
-      return res.status(201).json({
-        success: true,
-        message: 'Your recharge request has been submitted for verification.',
-        rechargeRequest: {
-          id: rechargeRequest.id,
-          amount: rechargeRequest.amount.toString(),
-          paymentMethod: rechargeRequest.paymentMethod,
-          upiReference: rechargeRequest.upiReference,
-          createdAt: rechargeRequest.createdAt,
-        },
-      });
+return res.status(201).json({
+  success: true,
+  message: 'Wallet recharged successfully.',
+  rechargeRequest: {
+    id: recharge.request.id,
+    amount: recharge.request.amount.toString(),
+    paymentMethod: recharge.request.paymentMethod,
+    upiReference: recharge.request.upiReference,
+    createdAt: recharge.request.createdAt,
+    status: 'COMPLETED',
+  },
+  balance: recharge.wallet.balance.toString(),
+});
+
     } catch (error) {
       if (error.code === 'P2002') {
         return res.status(409).json({
