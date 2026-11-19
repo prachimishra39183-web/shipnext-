@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+
 function MyProfile() {
   const [profile, setProfile] = useState({
     fullName: '',
@@ -104,8 +105,8 @@ function MyProfile() {
     <div className="sn-profile-page">
       <header className="sn-profile-header">
         <Link to="/dashboard" className="sn-profile-brand">
-          <img src="/logo.png" alt="ShipNext" />
-          <span>SHIPNEXT</span>
+          
+          
         </Link>
 
         <Link to="/dashboard" className="sn-profile-back">

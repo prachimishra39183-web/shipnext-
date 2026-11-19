@@ -191,15 +191,11 @@ function Wallet() {
 
   return (
     <main className="sn-wallet-page">
-      <header className="sn-wallet-header">
-        <Link to="/" className="sn-wallet-brand">
-          
-        </Link>
-
-        <Link to="/dashboard" className="sn-wallet-back">
-          Back to Dashboard
-        </Link>
-      </header>
+     <header className="sn-wallet-header">
+  <Link to="/dashboard" className="sn-wallet-back">
+    Back to Dashboard
+  </Link>
+</header>
 
       <div className="sn-wallet-container">
         <section className="sn-wallet-intro">

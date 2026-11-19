@@ -115,18 +115,11 @@ function MyShipments() {
 
   return (
     <div className="sn-shipments-page">
-      <header className="sn-shipments-header">
-        <Link to="/" className="sn-brand">
-          
-        </Link>
-
-        <div className="sn-header-right">
-          <span className="sn-account-label">CUSTOMER PORTAL</span>
-          <Link to="/dashboard" className="sn-back-link">
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
+     <header className="sn-shipments-header">
+  <Link to="/dashboard" className="sn-back-link">
+    Back to Dashboard
+  </Link>
+</header>
 
       <main className="sn-shipments-main">
         <section className="sn-page-intro">

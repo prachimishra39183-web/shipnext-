@@ -15152,3 +15152,95 @@ body [class*="Icon-"] {
     font-size: 10px;
   }
 }
+/* MY SHIPMENTS — REMOVE LEFT SIDEBAR */
+.sn-shipments-page {
+  display: block !important;
+  width: 100% !important;
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.sn-shipments-header {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 85px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  padding: 15px 5% !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  z-index: 100 !important;
+}
+
+.sn-back-link {
+  position: static !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff5938, #df351b) !important;
+  border-radius: 12px;
+  text-decoration: none !important;
+}
+
+/* Remove old profile header styling from this page */
+.sn-shipments-page .sn-profile-header,
+.sn-shipments-page .sn-profile-brand {
+  display: none !important;
+}
+
+.sn-shipments-main {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 110px 4% 50px !important;
+  box-sizing: border-box;
+}
+/* REMOVE EXCESS LEFT SPACE — WALLET PAGE */
+.sn-wallet-page {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  grid-template-columns: 1fr !important;
+}
+
+.sn-wallet-page .sn-wallet-main {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  padding: 105px 4% 45px !important;
+  box-sizing: border-box !important;
+}
+
+.sn-wallet-header {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  justify-content: flex-end !important;
+  padding-right: 4% !important;
+}
+.sn-shipments-page .sn-back-link {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.sn-shipments-page .sn-back-link:hover {
+  background: transparent !important;
+  color: #ff5938 !important;
+  transform: translateY(-2px);
+  box-shadow: none !important;
+}
