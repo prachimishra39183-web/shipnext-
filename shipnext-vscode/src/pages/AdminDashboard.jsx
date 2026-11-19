@@ -1,6 +1,8 @@
 
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import AdminNotificationBell from '../components/AdminNotificationBell.jsx';
+import AdminNotificationBell from '../components/AdminNotificationBell';
+import API_URL from '../config/api';
 import {
   LayoutDashboard,
   Users,
@@ -37,43 +39,105 @@ const navigation = [
     { label: 'Reports & Analytics', path: '/admin/reports', icon: ChartNoAxesCombined }
   ]}
 ];
-
-const stats = [
+const statCards = [
   {
     label: 'Total Customers',
-    value: '—',
     note: 'Registered customer accounts',
     icon: Users,
     tone: 'orange',
-    index: '01'
+    index: '01',
+    key: 'totalCustomers'
   },
   {
     label: 'Total Shipments',
-    value: '—',
     note: 'All shipment records',
     icon: Package,
     tone: 'blue',
-    index: '02'
+    index: '02',
+    key: 'totalShipments'
   },
   {
     label: 'Pending Shipments',
-    value: '—',
     note: 'Awaiting processing',
     icon: Clock3,
     tone: 'purple',
-    index: '03'
+    index: '03',
+    key: 'pendingShipments'
   },
   {
     label: 'Total Enquiries',
-    value: '—',
     note: 'Customer enquiries received',
     icon: MessageSquare,
     tone: 'green',
-    index: '04'
+    index: '04',
+    key: 'totalEnquiries'
   }
 ];
-
 function AdminDashboard() {
+  const [dashboardStats, setDashboardStats] = useState({
+    totalCustomers: 0,
+    totalShipments: 0,
+    pendingShipments: 0,
+    totalEnquiries: 0
+  });
+
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = sessionStorage.getItem('shipnextToken');
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [customersRes, shipmentsRes, enquiriesRes] =
+          await Promise.all([
+            fetch(`${API_URL}/api/admin/customers`, { headers }),
+            fetch(`${API_URL}/api/admin/shipments`, { headers }),
+            fetch(`${API_URL}/api/admin/enquiries`, { headers })
+          ]);
+
+        if (!customersRes.ok || !shipmentsRes.ok || !enquiriesRes.ok) {
+          throw new Error('Failed to fetch dashboard statistics');
+        }
+
+        const [customersData, shipmentsData, enquiriesData] =
+          await Promise.all([
+            customersRes.json(),
+            shipmentsRes.json(),
+            enquiriesRes.json()
+          ]);
+
+        const customers = Array.isArray(customersData)
+          ? customersData
+          : customersData.customers || customersData.data || [];
+
+        const shipments = Array.isArray(shipmentsData)
+          ? shipmentsData
+          : shipmentsData.shipments || shipmentsData.data || [];
+
+        const enquiries = Array.isArray(enquiriesData)
+          ? enquiriesData
+          : enquiriesData.enquiries || enquiriesData.data || [];
+
+        setDashboardStats({
+          totalCustomers: customers.length,
+          totalShipments: shipments.length,
+          pendingShipments: shipments.filter(
+            item => item.status === 'PENDING'
+          ).length,
+          totalEnquiries: enquiries.length
+        });
+      } catch (error) {
+        console.error('Dashboard stats error:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  
   return (
     <div className="sn-admin">
 
@@ -211,32 +275,36 @@ function AdminDashboard() {
             </div>
           </section>
 
-          <section className="sn-admin-stats">
-            {stats.map((stat) => {
-              const Icon = stat.icon;
+                     <section className="sn-admin-stats">
+  {statCards.map((stat) => {
+    const Icon = stat.icon;
 
-              return (
-                <article
-                  className={`sn-admin-stat-card ${stat.tone}`}
-                  key={stat.label}
-                >
-                  <div className="sn-admin-stat-top">
-                    <div className="sn-admin-stat-icon">
-                      <Icon size={21} strokeWidth={1.8} />
-                    </div>
-                    <span className="sn-admin-stat-index">{stat.index}</span>
-                  </div>
+    return (
+      <article
+        className={`sn-admin-stat-card ${stat.tone}`}
+        key={stat.label}
+      >
+        <div className="sn-admin-stat-top">
+          <div className="sn-admin-stat-icon">
+            <Icon size={21} strokeWidth={1.8} />
+          </div>
+          <span className="sn-admin-stat-index">{stat.index}</span>
+        </div>
 
-                  <p>{stat.label}</p>
-                  <h3>{stat.value}</h3>
-                  <div className="sn-admin-stat-footer">
-                    <span>{stat.note}</span>
-                    <TrendingUp size={15} />
-                  </div>
-                </article>
-              );
-            })}
-          </section>
+        <p>{stat.label}</p>
+
+        <h3>
+          {statsLoading ? '...' : dashboardStats[stat.key]}
+        </h3>
+
+        <div className="sn-admin-stat-footer">
+          <span>{stat.note}</span>
+          <TrendingUp size={15} />
+        </div>
+      </article>
+    );
+  })}
+</section>
 
           <section className="sn-admin-lower-grid">
 

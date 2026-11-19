@@ -1161,3 +1161,145 @@
     transition-duration: .01ms !important;
   }
 }
+/* PREMIUM DASHBOARD STAT CARDS */
+
+.admin-stat-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #172941, #0b1423) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 20px !important;
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 20px 38px rgba(0, 0, 0, 0.45) !important;
+}
+
+.admin-stat-card:nth-child(1) {
+  border-top: 3px solid #ff5938 !important;
+}
+
+.admin-stat-card:nth-child(2) {
+  border-top: 3px solid #38bdf8 !important;
+}
+
+.admin-stat-card:nth-child(3) {
+  border-top: 3px solid #fbbf24 !important;
+}
+
+.admin-stat-card:nth-child(4) {
+  border-top: 3px solid #a78bfa !important;
+}
+
+.admin-stat-card h2 {
+  color: #ffffff !important;
+  font-size: 34px !important;
+  font-weight: 800 !important;
+  text-shadow: 0 3px 14px rgba(255, 255, 255, 0.12);
+}
+
+.admin-stat-card p,
+.admin-stat-card span {
+  color: #aebed1 !important;
+}
+
+.admin-stat-card::after {
+  content: "";
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  right: -55px;
+  bottom: -65px;
+  border-radius: 50%;
+  background: rgba(255, 89, 56, 0.10);
+  filter: blur(22px);
+  pointer-events: none;
+}
+
+/* SHIPNEXT PREMIUM 3D STAT CARDS */
+
+.sn-admin-stat-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(145deg, #192a40, #0b1422) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 22px !important;
+  box-shadow:
+    0 16px 35px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.09);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.sn-admin-stat-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 22px 45px rgba(0,0,0,.45);
+}
+
+.sn-admin-stat-card::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -55px;
+  bottom: -75px;
+  border-radius: 50%;
+  filter: blur(35px);
+  opacity: .28;
+  z-index: -1;
+}
+
+.sn-admin-stat-card.orange {
+  border-top: 3px solid #ff5938 !important;
+}
+.sn-admin-stat-card.orange::after {
+  background: #ff5938;
+}
+
+.sn-admin-stat-card.blue {
+  border-top: 3px solid #38bdf8 !important;
+}
+.sn-admin-stat-card.blue::after {
+  background: #38bdf8;
+}
+
+.sn-admin-stat-card.purple {
+  border-top: 3px solid #a78bfa !important;
+}
+.sn-admin-stat-card.purple::after {
+  background: #a78bfa;
+}
+
+.sn-admin-stat-card.green {
+  border-top: 3px solid #34d399 !important;
+}
+.sn-admin-stat-card.green::after {
+  background: #34d399;
+}
+
+.sn-admin-stat-card h3 {
+  color: #ffffff !important;
+  font-size: 38px !important;
+  font-weight: 800 !important;
+  letter-spacing: -1.5px;
+  text-shadow: 0 4px 18px rgba(255,255,255,.12);
+}
+
+.sn-admin-stat-card p {
+  color: #dce7f5 !important;
+}
+
+.sn-admin-stat-footer {
+  color: #91a5bd !important;
+}
+
+.sn-admin-stat-icon {
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 13px;
+}
