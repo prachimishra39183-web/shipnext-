@@ -240,6 +240,600 @@ codAmount: normalizedCodAmount,
   }
 );
 
+// CREATE MULTIPLE SHIPMENT DRAFTS FROM CSV UPLOAD
+
+router.post(
+  '/bulk-drafts',
+  authenticateToken,
+  authorizeRole('CUSTOMER'),
+  validateChildAccount,
+  async (req, res) => {
+    try {
+      const { shipments } = req.body;
+      const customerId = req.user.userId;
+
+      if (!Array.isArray(shipments) || shipments.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please upload shipment rows.',
+        });
+      }
+
+      if (shipments.length > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 100 shipments are allowed per upload.',
+        });
+      }
+
+      const validCategories = [
+        'Clothes',
+        'Electronics',
+        'Accessories',
+        'Household Items',
+        'Gifts',
+        'Other',
+      ];
+
+      const validDrafts = [];
+      const errors = [];
+
+      shipments.forEach((row, index) => {
+        const rowNumber = Number(row.rowNumber) || index + 2;
+
+        const requiredFields = [
+          'pickupName',
+          'pickupPhone',
+          'pickupAddress',
+          'pickupPincode',
+          'deliveryName',
+          'deliveryPhone',
+          'deliveryAddress',
+          'deliveryPincode',
+          'weight',
+        ];
+
+        const missingField = requiredFields.find(
+          (field) =>
+            row[field] === undefined ||
+            row[field] === null ||
+            String(row[field]).trim() === ''
+        );
+
+        if (missingField) {
+          errors.push({
+            rowNumber,
+            message: `${missingField} is required.`,
+          });
+          return;
+        }
+
+        const pickupPhone = String(row.pickupPhone).trim();
+        const deliveryPhone = String(row.deliveryPhone).trim();
+        const pickupPincode = String(row.pickupPincode).trim();
+        const deliveryPincode = String(row.deliveryPincode).trim();
+
+        if (
+          !/^[0-9]{10}$/.test(pickupPhone) ||
+          !/^[0-9]{10}$/.test(deliveryPhone)
+        ) {
+          errors.push({
+            rowNumber,
+            message: 'Both mobile numbers must contain 10 digits.',
+          });
+          return;
+        }
+
+        if (
+          !validPincode(pickupPincode) ||
+          !validPincode(deliveryPincode)
+        ) {
+          errors.push({
+            rowNumber,
+            message: 'Both PIN codes must contain 6 digits.',
+          });
+          return;
+        }
+
+        const weightKg = Number(row.weight);
+
+        if (!Number.isFinite(weightKg) || weightKg < 0.5) {
+          errors.push({
+            rowNumber,
+            message: 'Minimum parcel weight is 500 grams.',
+          });
+          return;
+        }
+
+        const paymentMode = String(row.paymentMode || 'PREPAID')
+          .trim()
+          .toUpperCase();
+
+        if (!['PREPAID', 'COD'].includes(paymentMode)) {
+          errors.push({
+            rowNumber,
+            message: 'Payment mode must be PREPAID or COD.',
+          });
+          return;
+        }
+
+        let codAmount = null;
+
+        if (paymentMode === 'COD') {
+          const amountString = String(row.codAmount ?? '').trim();
+
+          if (
+            !/^\d+(\.\d{1,2})?$/.test(amountString) ||
+            !Number.isFinite(Number(amountString)) ||
+            Number(amountString) <= 0
+          ) {
+            errors.push({
+              rowNumber,
+              message: 'Enter a valid COD amount greater than ₹0.',
+            });
+            return;
+          }
+
+          codAmount = amountString;
+        }
+
+        const shipmentType = String(row.shipmentType || 'DOCUMENT')
+          .trim()
+          .toUpperCase();
+
+        if (!['DOCUMENT', 'NON_DOCUMENT'].includes(shipmentType)) {
+          errors.push({
+            rowNumber,
+            message: 'Shipment type must be DOCUMENT or NON_DOCUMENT.',
+          });
+          return;
+        }
+
+        const itemCategory = String(row.itemCategory || '').trim();
+        const itemName = String(row.itemName || '').trim();
+        const itemDescription = String(row.itemDescription || '').trim();
+
+        if (
+          shipmentType === 'NON_DOCUMENT' &&
+          !validCategories.includes(itemCategory)
+        ) {
+          errors.push({
+            rowNumber,
+            message: 'Please select a valid item category.',
+          });
+          return;
+        }
+
+        if (
+          shipmentType === 'NON_DOCUMENT' &&
+          itemCategory === 'Other' &&
+          (!itemName || !itemDescription)
+        ) {
+          errors.push({
+            rowNumber,
+            message: 'Item name and description are required for Other.',
+          });
+          return;
+        }
+
+        validDrafts.push({
+          customerId,
+
+          pickupName: String(row.pickupName).trim(),
+          pickupPhone,
+          pickupAddress: String(row.pickupAddress).trim(),
+          pickupPincode,
+
+          deliveryName: String(row.deliveryName).trim(),
+          deliveryPhone,
+          deliveryAddress: String(row.deliveryAddress).trim(),
+          deliveryPincode,
+
+          weightGrams: Math.round(weightKg * 1000),
+
+          paymentMode,
+          codAmount,
+
+          shipmentType,
+
+          itemCategory:
+            shipmentType === 'NON_DOCUMENT' ? itemCategory : null,
+
+          itemName:
+            shipmentType === 'NON_DOCUMENT' && itemCategory === 'Other'
+              ? itemName
+              : null,
+
+          itemDescription:
+            shipmentType === 'NON_DOCUMENT' && itemCategory === 'Other'
+              ? itemDescription
+              : null,
+
+          childAccountId: req.childAccount?.id || null,
+
+          rowNumber,
+        });
+      });
+
+      let createdDrafts = [];
+
+      if (validDrafts.length > 0) {
+        createdDrafts = await prisma.$transaction(async (tx) => {
+          const created = [];
+
+          for (const draftData of validDrafts) {
+            const { rowNumber, ...data } = draftData;
+
+            const draft = await tx.shipmentDraft.create({
+              data,
+            });
+
+            created.push({
+              ...draft,
+              rowNumber,
+            });
+          }
+
+          return created;
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Bulk shipment validation completed.',
+        totalRows: shipments.length,
+        successfulRows: createdDrafts.length,
+        failedRows: errors.length,
+        drafts: createdDrafts,
+        errors,
+      });
+    } catch (error) {
+      console.error('Bulk shipment draft error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to process bulk shipment upload.',
+      });
+    }
+  }
+);
+
+// CONFIRM MULTIPLE SHIPMENTS WITH ONE WALLET PAYMENT
+
+router.post(
+  '/bulk-confirm',
+  authenticateToken,
+  authorizeRole('CUSTOMER'),
+  async (req, res) => {
+    try {
+      const { shipments } = req.body;
+      const customerId = req.user.userId;
+
+      if (!Array.isArray(shipments) || shipments.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No shipments provided for confirmation.',
+        });
+      }
+
+      if (shipments.length > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 100 shipments can be confirmed at once.',
+        });
+      }
+
+      const draftIds = shipments.map((item) => item?.draftId);
+
+      if (
+        draftIds.some((id) => !id) ||
+        new Set(draftIds).size !== draftIds.length
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or duplicate shipment draft IDs.',
+        });
+      }
+
+      for (const item of shipments) {
+        if (!VALID_MODES.includes(item.mode)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid shipping mode selected.',
+          });
+        }
+      }
+
+      const result = await prisma.$transaction(
+        async (tx) => {
+          const drafts = await tx.shipmentDraft.findMany({
+            where: {
+              id: { in: draftIds },
+              customerId,
+            },
+          });
+
+          if (drafts.length !== draftIds.length) {
+            throw new Error('DRAFT_NOT_FOUND');
+          }
+
+          const existingShipments = await tx.shipment.findMany({
+            where: {
+              draftId: { in: draftIds },
+            },
+            select: {
+              draftId: true,
+            },
+          });
+
+          if (existingShipments.length > 0) {
+            throw new Error('ALREADY_BOOKED');
+          }
+
+          const serviceabilityRecords =
+            await tx.courierPincodeServiceability.findMany({
+              where: {
+                courier: { in: COURIERS },
+                pincode: {
+                  in: [
+                    ...new Set(
+                      drafts.flatMap((draft) => [
+                        draft.pickupPincode,
+                        draft.deliveryPincode,
+                      ])
+                    ),
+                  ],
+                },
+              },
+            });
+
+          const preparedShipments = [];
+
+          for (const item of shipments) {
+            const draft = drafts.find(
+              (entry) => entry.id === item.draftId
+            );
+
+            if (
+              !validPincode(draft.pickupPincode) ||
+              !validPincode(draft.deliveryPincode)
+            ) {
+              throw new Error('INVALID_PINCODE');
+            }
+
+            const weightKg = draft.weightGrams / 1000;
+
+            if (weightKg < 0.5) {
+              throw new Error('INVALID_WEIGHT');
+            }
+
+            const courier = COURIERS.find((name) => {
+              const hasPickup = serviceabilityRecords.some(
+                (record) =>
+                  record.courier === name &&
+                  record.pincode === draft.pickupPincode
+              );
+
+              const hasDelivery = serviceabilityRecords.some(
+                (record) =>
+                  record.courier === name &&
+                  record.pincode === draft.deliveryPincode
+              );
+
+              return hasPickup && hasDelivery;
+            });
+
+            if (!courier) {
+              throw new Error('NOT_SERVICEABLE');
+            }
+
+            const pickupRecord = serviceabilityRecords.find(
+              (record) =>
+                record.courier === courier &&
+                record.pincode === draft.pickupPincode
+            );
+
+            const deliveryRecord = serviceabilityRecords.find(
+              (record) =>
+                record.courier === courier &&
+                record.pincode === draft.deliveryPincode
+            );
+
+            const zone = getShippingZone(
+              pickupRecord,
+              deliveryRecord
+            );
+
+            const pricingMode = item.mode.endsWith('_AIR')
+              ? 'AIR'
+              : 'SURFACE';
+
+            const charge = calculateShippingCharge(
+              zone,
+              pricingMode,
+              weightKg
+            );
+
+            const amount = Number(
+              Number(charge.total).toFixed(2)
+            );
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+              throw new Error('INVALID_CHARGE');
+            }
+
+            preparedShipments.push({
+              draft,
+              mode: item.mode,
+              amount,
+              trackingId: generateTrackingId(),
+              docketNumber: generateDocketNumber(),
+            });
+          }
+
+          const totalAmount = Number(
+            preparedShipments
+              .reduce((sum, item) => sum + item.amount, 0)
+              .toFixed(2)
+          );
+
+          const wallet = await tx.wallet.upsert({
+            where: { userId: customerId },
+            update: {},
+            create: {
+              userId: customerId,
+              balance: 0,
+            },
+          });
+
+          const debit = await tx.wallet.updateMany({
+            where: {
+              id: wallet.id,
+              balance: { gte: totalAmount },
+            },
+            data: {
+              balance: { decrement: totalAmount },
+            },
+          });
+
+          if (debit.count !== 1) {
+            throw new Error('INSUFFICIENT_BALANCE');
+          }
+
+          const bookedShipments = [];
+
+          for (const item of preparedShipments) {
+            const { draft, mode, amount, trackingId, docketNumber } =
+              item;
+
+            await tx.shipmentDraft.update({
+              where: { id: draft.id },
+              data: {
+                shippingMode: mode,
+              },
+            });
+
+            const shipment = await tx.shipment.create({
+              data: {
+                draftId: draft.id,
+                customerId,
+
+                trackingId,
+                docketNumber,
+                processingDate: new Date(),
+                status: 'CONFIRMED',
+                shippingMode: mode,
+
+                pickupName: draft.pickupName,
+                pickupPhone: draft.pickupPhone,
+                pickupAddress: draft.pickupAddress,
+                pickupPincode: draft.pickupPincode,
+
+                deliveryName: draft.deliveryName,
+                deliveryPhone: draft.deliveryPhone,
+                deliveryAddress: draft.deliveryAddress,
+                deliveryPincode: draft.deliveryPincode,
+
+                weightGrams: draft.weightGrams,
+                shippingCharge: amount.toFixed(2),
+
+                paymentMode: 'WALLET',
+                recipientPaymentMode: draft.paymentMode,
+                codAmount:
+                  draft.paymentMode === 'COD'
+                    ? draft.codAmount
+                    : null,
+
+                codCollectionStatus:
+                  draft.paymentMode === 'COD' ? 'PENDING' : null,
+
+                codRemittanceStatus:
+                  draft.paymentMode === 'COD' ? 'PENDING' : null,
+
+                childAccountId: draft.childAccountId || null,
+              },
+            });
+
+            await tx.walletTransaction.create({
+              data: {
+                userId: customerId,
+                walletId: wallet.id,
+                type: 'DEBIT',
+                amount: amount.toFixed(2),
+                description: `Shipment booking payment - ${trackingId}`,
+                reference: `SHIPMENT-${trackingId}`,
+              },
+            });
+
+            bookedShipments.push({
+              ...shipment,
+              shippingCharge: amount.toFixed(2),
+            });
+          }
+
+          const updatedWallet = await tx.wallet.findUnique({
+            where: { userId: customerId },
+          });
+
+          return {
+            shipments: bookedShipments,
+            totalAmount,
+            walletBalance: updatedWallet.balance.toString(),
+          };
+        },
+        {
+          isolationLevel: 'Serializable',
+        }
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: 'All shipments booked successfully.',
+        shipments: result.shipments,
+        payment: {
+          paymentMode: 'WALLET',
+          amount: result.totalAmount,
+          walletBalance: result.walletBalance,
+          status: 'SUCCESS',
+        },
+      });
+    } catch (error) {
+      console.error('Bulk shipment confirmation error:', error);
+
+      const errors = {
+        DRAFT_NOT_FOUND: [404, 'One or more shipment drafts were not found.'],
+        ALREADY_BOOKED: [409, 'One or more shipments have already been booked.'],
+        INVALID_PINCODE: [400, 'One or more PIN codes are invalid.'],
+        INVALID_WEIGHT: [400, 'One or more shipments have an invalid weight.'],
+        NOT_SERVICEABLE: [404, 'One or more shipments are not serviceable.'],
+        INVALID_CHARGE: [400, 'Unable to calculate a valid shipping charge.'],
+        INSUFFICIENT_BALANCE: [400, 'Insufficient wallet balance for all shipments.'],
+      };
+
+      if (errors[error.message]) {
+        const [status, message] = errors[error.message];
+
+        return res.status(status).json({
+          success: false,
+          message,
+        });
+      }
+
+      if (error.code === 'P2034' || error.code === 'P2002') {
+        return res.status(409).json({
+          success: false,
+          message: 'A booking conflict occurred. Please try again.',
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to confirm bulk shipments.',
+      });
+    }
+  }
+);
+
 // GET ALL DRAFTS BELONGING TO THE LOGGED-IN CUSTOMER
 
 router.get(

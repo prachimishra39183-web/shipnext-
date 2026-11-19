@@ -23,7 +23,10 @@ function AdminWallet() {
   const [paymentError, setPaymentError] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(true);
   const [openingProof, setOpeningProof] = useState('');
-
+const [refunds, setRefunds] = useState([]);
+const [refundLoading, setRefundLoading] = useState(true);
+const [refundError, setRefundError] = useState('');
+const [refundActionLoading, setRefundActionLoading] = useState('');
   const token = sessionStorage.getItem('shipnextToken');
 
   const fetchWalletData = async () => {
@@ -35,8 +38,18 @@ function AdminWallet() {
           fetch(`${API_URL}/api/admin/wallets`, { headers }),
           fetch(`${API_URL}/api/admin/wallet-transactions`, { headers }),
           fetch(`${API_URL}/api/admin/wallet-recharge-requests`, { headers }),
+           fetch(`${API_URL}/api/refunds`, { headers }),
         ]);
+        const refundData = await refundResponse.json();
 
+if (refundResponse.ok) {
+  setRefunds(refundData.refunds || []);
+  setRefundError('');
+} else {
+  setRefundError(refundData.message || 'Unable to load refunds.');
+}
+
+setRefundLoading(false);
       const walletData = await walletResponse.json();
       const transactionData = await transactionResponse.json();
       const paymentData = await paymentResponse.json();
@@ -77,6 +90,7 @@ function AdminWallet() {
     } finally {
       setLoading(false);
       setPaymentLoading(false);
+      setRefundLoading(false);
     }
   };
 
@@ -158,7 +172,48 @@ function AdminWallet() {
     if (method === 'DEBIT_CARD') return 'Debit Card';
     return 'UPI';
   };
+   const handleRefundAction = async (refundId, action) => {
+  let adminNote = '';
 
+  if (action === 'reject') {
+    adminNote = window.prompt('Enter the reason for rejecting this refund:');
+
+    if (!adminNote || !adminNote.trim()) {
+      return;
+    }
+  }
+
+  const token = sessionStorage.getItem('shipnextToken');
+
+  try {
+    setRefundActionLoading(refundId);
+    setRefundError('');
+
+    const response = await fetch(
+      `${API_URL}/api/refunds/${refundId}/${action}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ adminNote }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Refund action failed.');
+    }
+
+    await fetchWalletData();
+  } catch (error) {
+    setRefundError(error.message);
+  } finally {
+    setRefundActionLoading('');
+  }
+};
   return (
     <div className="admin-layout sn-wallet-page">
       <aside className="admin-sidebar sn-wallet-sidebar">
@@ -372,7 +427,121 @@ function AdminWallet() {
             </div>
           )}
         </section>
+          <section className="admin-wallet-section">
+  <div className="admin-wallet-section-header">
+    <div>
+      <h2>Refund Management</h2>
+      <p>Review, approve and process customer refund requests.</p>
+    </div>
+    <span className="refund-count">
+      {refunds.length} Requests
+    </span>
+  </div>
 
+  {refundError && (
+    <div className="admin-wallet-error">{refundError}</div>
+  )}
+
+  {refundLoading ? (
+    <p>Loading refund requests...</p>
+  ) : refunds.length === 0 ? (
+    <p className="admin-wallet-empty">No refund requests found.</p>
+  ) : (
+    <div className="admin-wallet-table-wrapper">
+      <table className="admin-wallet-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Shipment</th>
+            <th>Amount</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Admin Note</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {refunds.map((refund) => (
+            <tr key={refund.id}>
+              <td>
+                {refund.user?.name || refund.user?.email || 'Customer'}
+              </td>
+
+              <td>
+                {refund.shipment?.docketNumber ||
+                  refund.shipment?.trackingId ||
+                  'General refund'}
+              </td>
+
+              <td>
+                ₹{Number(refund.amount).toFixed(2)}
+              </td>
+
+              <td>{refund.reason}</td>
+
+              <td>
+                <span className={`refund-status refund-${refund.status?.toLowerCase()}`}>
+                  {refund.status}
+                </span>
+              </td>
+
+              <td>{refund.adminNote || '—'}</td>
+
+              <td>
+                <div className="refund-actions">
+                  {refund.status === 'PENDING' && (
+                    <>
+                      <button
+                        className="refund-approve-btn"
+                        disabled={refundActionLoading === refund.id}
+                        onClick={() => handleRefundAction(refund.id, 'approve')}
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        className="refund-reject-btn"
+                        disabled={refundActionLoading === refund.id}
+                        onClick={() => handleRefundAction(refund.id, 'reject')}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+
+                  {refund.status === 'APPROVED' && (
+                    <button
+                      className="refund-process-btn"
+                      disabled={refundActionLoading === refund.id}
+                      onClick={() => handleRefundAction(refund.id, 'process')}
+                    >
+                      {refundActionLoading === refund.id
+                        ? 'Processing...'
+                        : 'Process Refund'}
+                    </button>
+                  )}
+
+                  {refund.status === 'COMPLETED' && (
+                    <span className="refund-completed-text">
+                      Wallet Credited
+                    </span>
+                  )}
+
+                  {refund.status === 'REJECTED' && (
+                    <span className="refund-rejected-text">
+                      Rejected
+                    </span>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</section>
         <section className="sn-wallet-section">
           <div className="sn-wallet-section-heading">
             <div>

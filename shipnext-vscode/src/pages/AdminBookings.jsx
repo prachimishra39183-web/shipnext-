@@ -17,7 +17,7 @@ function AdminBookings() {
     <div className="admin-layout sn-bookings-page">
       <aside className="admin-sidebar sn-bookings-sidebar">
         <img
-          src="/logo.png"
+          src="/logo.jpeg"
           alt="ShipNext Logo"
           className="logo-image"
         />

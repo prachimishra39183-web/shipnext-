@@ -186,7 +186,7 @@ function AdminReports() {
     <div className="admin-layout sn-reports-page">
       <aside className="admin-sidebar sn-reports-sidebar">
         <div className="sn-reports-brand">
-          <img src="/logo.png" alt="ShipNext Logo" />
+          <img src="/logo.jpeg" alt="ShipNext Logo" />
           <span>ADMINISTRATION</span>
         </div>
 

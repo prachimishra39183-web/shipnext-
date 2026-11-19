@@ -103,7 +103,7 @@ function Navbar() {
     <header className="navbar" onMouseLeave={closeMenu}>
       <Link to="/" className="logo" onClick={closeMenu}>
         <img
-          src="/logo.png"
+          src="/logo.jpeg"
           alt="ShipNext Logo"
           className="logo-image"
         />

@@ -440,7 +440,7 @@ function CustomerChildAccounts() {
               <div className="child-form-grid">
 
                 <label>
-                  Account Name *
+                  Parrent Account *
                   <input
                     name="accountName"
                     value={form.accountName}
@@ -451,7 +451,7 @@ function CustomerChildAccounts() {
                 </label>
 
                 <label>
-                  Branch Name *
+                  Child Name *
                   <input
                     name="branchName"
                     value={form.branchName}
@@ -462,7 +462,7 @@ function CustomerChildAccounts() {
                 </label>
 
                 <label>
-                  Branch Code *
+                  Child Code *
                   <input
                     name="branchCode"
                     value={form.branchCode}
@@ -484,7 +484,7 @@ function CustomerChildAccounts() {
                 </label>
 
                 <label>
-                  Branch Email *
+                  Child Email *
                   <input
                     type="email"
                     name="email"

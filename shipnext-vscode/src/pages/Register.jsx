@@ -144,7 +144,7 @@ function Register() {
 
       <header className="sn-register-header">
         <Link to="/" className="sn-register-logo">
-          <img src="/logo.png" alt="ShipNext" />
+          <img src="/logo.jpeg" alt="ShipNext" />
         </Link>
 
         <Link to="/login" className="sn-register-header-link">

@@ -138,7 +138,7 @@ function CustomerDashboard() {
    
      
       <img
-        src="/logo.png"
+        src="/logo.jpeg"
         alt="ShipNext Logo"
         className="logo-image"
       />
@@ -149,6 +149,7 @@ function CustomerDashboard() {
         <nav className="sidebar-nav">
           <a href="#overview" className="active"> Dashboard</a>
           <Link to="/shipments"> My Shipments</Link>
+          <Link to="/bulk-booking"> Bulk Booking</Link>
           <Link to="/track"> Track Shipment</Link>
           <Link to="/wallet"> My Wallet</Link>
           <a href="#transactions">↔ Transactions</a>
@@ -231,10 +232,16 @@ function CustomerDashboard() {
         Track My Shipment →
       </Link>
     ) : (
-      <Link to="/book-shipment" className="dashboard-button">
-        + Book a Shipment
-      </Link>
-    )}
+  <div className="dashboard-booking-actions">
+    <Link to="/book-shipment" className="dashboard-button">
+      + Book a Shipment
+    </Link>
+
+    <Link to="/bulk-booking" className="dashboard-button bulk-dashboard-button">
+      Bulk Booking →
+    </Link>
+  </div>
+)}
   </div>
 
   <div className="welcome-icon"></div>

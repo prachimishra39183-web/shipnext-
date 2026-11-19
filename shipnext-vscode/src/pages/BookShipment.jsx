@@ -118,7 +118,7 @@ if (
 
       <header className="booking-header">
         <img
-          src="/logo.png"
+          src="/logo.jpeg"
           alt="ShipNext Logo"
           className="logo-image"
         />

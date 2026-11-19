@@ -92,7 +92,7 @@ function Login() {
 
       <header className="sn-login-topbar">
         <a href="/" className="sn-login-brand">
-          <img src="/logo.png" alt="ShipNext Logo" />
+          <img src="/logo.jpeg" alt="ShipNext Logo" />
         </a>
 
         <a href="/" className="sn-login-home-link">

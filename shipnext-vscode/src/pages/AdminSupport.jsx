@@ -146,7 +146,7 @@ function AdminSupport() {
     <div className="admin-layout sn-support-admin-page">
       <aside className="admin-sidebar sn-support-admin-sidebar">
         <div className="sn-support-admin-brand">
-          <img src="/logo.png" alt="ShipNext Logo" />
+          <img src="/logo.jpeg" alt="ShipNext Logo" />
           <span>SHIP<em>NEXT</em></span>
         </div>
 

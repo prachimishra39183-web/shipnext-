@@ -7,6 +7,7 @@ import Register from './pages/Register.jsx';
 import Enquiry from './pages/Enquiry.jsx';
 import CustomerDashboard from './pages/CustomerDashboard.jsx';
 import BookShipment from './pages/BookShipment.jsx';
+import BulkBooking from './pages/BulkBooking.jsx';
 import ShippingCharges from './pages/ShippingCharges.jsx';
 import Wallet from './pages/Wallet.jsx';
 import MyShipments from './pages/MyShipments.jsx';
@@ -60,6 +61,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRole="CUSTOMER" />}>
               <Route path="/dashboard" element={<CustomerDashboard />} />
               <Route path="/book-shipment" element={<BookShipment />} />
+              <Route path="/bulk-booking" element={<BulkBooking />} />
              <Route path="/shipping-charges/:draftId" element={<ShippingCharges />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/shipments" element={<MyShipments />} />

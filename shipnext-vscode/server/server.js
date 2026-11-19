@@ -18,6 +18,8 @@ const reportsRoutes = require('./routes/reports');
 
 const adminNotificationsRoutes = require('./routes/adminNotifications');
 const ndrRoutes = require('./routes/ndr');
+const refundsRoutes = require('./routes/refunds');
+const profileRoutes = require('./routes/profile');
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -34,6 +36,8 @@ app.use('/api/serviceability', serviceabilityRoutes);
 app.use('/api/admin/reports', reportsRoutes);
 app.use('/api/admin/notifications', adminNotificationsRoutes);
 app.use('/api/ndr', ndrRoutes);
+app.use('/api/refunds', refundsRoutes);
+app.use('/api/profile', profileRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({

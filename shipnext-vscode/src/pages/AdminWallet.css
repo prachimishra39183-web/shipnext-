@@ -646,3 +646,261 @@
     flex-direction: column;
   }
 }
+
+/* ==========================================
+   SHIPNEXT — PREMIUM REFUND MANAGEMENT
+========================================== */
+
+.admin-wallet-section {
+  position: relative;
+  margin: 32px 0;
+  padding: 28px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(255, 75, 45, 0.12), transparent 38%),
+    linear-gradient(145deg, #151b29 0%, #0c1220 55%, #111827 100%);
+  box-shadow:
+    0 24px 65px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.admin-wallet-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  width: 90px;
+  height: 3px;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(90deg, #ff3b1f, #ff977d);
+  box-shadow: 0 0 20px rgba(255, 59, 31, 0.7);
+}
+
+.admin-wallet-section-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.admin-wallet-section-header h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.admin-wallet-section-header p {
+  margin: 0;
+  color: #8491a7;
+  font-size: 13px;
+}
+
+.refund-count {
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 89, 56, 0.3);
+  border-radius: 12px;
+  background: rgba(255, 89, 56, 0.1);
+  color: #ff896f;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 0 22px rgba(255, 59, 31, 0.08);
+  white-space: nowrap;
+}
+
+.admin-wallet-section .admin-wallet-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 15px;
+  background: rgba(5, 10, 20, 0.45);
+}
+
+.admin-wallet-section .admin-wallet-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-wallet-section .admin-wallet-table th {
+  padding: 17px 15px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #91a0b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-align: left;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-wallet-section .admin-wallet-table td {
+  padding: 18px 15px;
+  color: #dbe3ef;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  vertical-align: middle;
+}
+
+.admin-wallet-section .admin-wallet-table tbody tr {
+  transition: background 0.25s ease;
+}
+
+.admin-wallet-section .admin-wallet-table tbody tr:hover {
+  background: rgba(255, 89, 56, 0.045);
+}
+
+.admin-wallet-section .admin-wallet-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-wallet-section .admin-wallet-table td:nth-child(3) {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.refund-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.refund-pending {
+  color: #f5bd4f;
+  background: rgba(245, 189, 79, 0.09);
+  border-color: rgba(245, 189, 79, 0.22);
+}
+
+.refund-approved {
+  color: #67b5ff;
+  background: rgba(103, 181, 255, 0.09);
+  border-color: rgba(103, 181, 255, 0.22);
+}
+
+.refund-completed {
+  color: #4cdaa2;
+  background: rgba(76, 218, 162, 0.09);
+  border-color: rgba(76, 218, 162, 0.22);
+}
+
+.refund-rejected {
+  color: #ff7185;
+  background: rgba(255, 113, 133, 0.09);
+  border-color: rgba(255, 113, 133, 0.22);
+}
+
+.refund-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.refund-actions button {
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.refund-actions button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  filter: brightness(1.18);
+}
+
+.refund-actions button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.refund-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.refund-approve-btn {
+  background: linear-gradient(135deg, #168b68, #086044);
+  border-color: rgba(52, 211, 153, 0.25) !important;
+  box-shadow: 0 5px 15px rgba(16, 185, 129, 0.12);
+}
+
+.refund-reject-btn {
+  background: linear-gradient(135deg, #bd4052, #812537);
+  border-color: rgba(251, 113, 133, 0.25) !important;
+}
+
+.refund-process-btn {
+  background: linear-gradient(135deg, #ff795f, #ed3c20);
+  border-color: rgba(255, 130, 100, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(255, 59, 31, 0.2);
+}
+
+.refund-completed-text,
+.refund-rejected-text {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.refund-completed-text {
+  color: #4cdaa2;
+}
+
+.refund-rejected-text {
+  color: #ff7185;
+}
+
+.admin-wallet-empty {
+  padding: 35px 20px;
+  color: #8996aa;
+  text-align: center;
+  font-size: 13px;
+}
+
+.admin-wallet-error {
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border: 1px solid rgba(255, 113, 133, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 113, 133, 0.08);
+  color: #ff8b9c;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .admin-wallet-section {
+    padding: 19px 14px;
+    border-radius: 16px;
+  }
+
+  .admin-wallet-section-header {
+    align-items: flex-start;
+  }
+
+  .admin-wallet-section-header h2 {
+    font-size: 19px;
+  }
+
+  .refund-count {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+}

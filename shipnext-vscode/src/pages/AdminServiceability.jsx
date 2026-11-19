@@ -192,7 +192,7 @@ function AdminServiceability() {
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <img
-        src="/logo.png"
+        src="/logo.jpeg"
         alt="ShipNext Logo"
         className="logo-image"
       />

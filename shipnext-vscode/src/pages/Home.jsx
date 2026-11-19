@@ -1100,7 +1100,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
     <div className="footer-brand">
       <a href="/" className="logo">
         <img
-          src="/logo.png"
+          src="/logo.jpeg"
           alt="ShipNext Logo"
           className="logo-image"
         />

@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import API_URL from '../config/api';
 import { Link } from 'react-router-dom';
 
 
@@ -10,6 +11,14 @@ function MyProfile() {
     phone: '',
     address: '',
     pincode: '',
+     panNumber: '',
+  aadhaarNumber: '',
+  gstNumber: '',
+  bankName: '',
+  accountHolderName: '',
+  accountNumber: '',
+  branchName: '',
+  ifscCode: '',
   });
 
   const [documents, setDocuments] = useState({
@@ -19,7 +28,40 @@ function MyProfile() {
   });
 
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+const [message, setMessage] = useState('');
+const [loadingProfile, setLoadingProfile] = useState(true);
+const [saving, setSaving] = useState(false);
+
+useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const token = sessionStorage.getItem('shipnextToken');
+
+      const response = await fetch(`${API_URL}/api/profile/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to load profile.');
+      }
+
+      setProfile((previous) => ({
+        ...previous,
+        ...data.profile,
+      }));
+    } catch (err) {
+      setError(err.message || 'Unable to load profile.');
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  fetchProfile();
+}, []);
 
   const handleChange = (event) => {
     setProfile((previous) => ({
@@ -60,26 +102,44 @@ function MyProfile() {
       [name]: file,
     }));
   };
+const handleSubmit = async (event) => {
+  event.preventDefault();
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setError('');
-    setMessage('');
+  setError('');
+  setMessage('');
 
-    if (
-      !documents.aadhaar ||
-      !documents.pan ||
-      !documents.cancelledCheque
-    ) {
-      setError('Please upload all three mandatory KYC documents.');
-      return;
+  try {
+    setSaving(true);
+
+    const token = sessionStorage.getItem('shipnextToken');
+
+    const response = await fetch(`${API_URL}/api/profile/me`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profile),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Unable to save profile.');
     }
 
-    setMessage(
-      'Your details and documents are ready. Profile saving will be connected to the ShipNext backend.'
-    );
-  };
+    setProfile((previous) => ({
+      ...previous,
+      ...data.profile,
+    }));
 
+    setMessage('Your profile has been saved successfully.');
+  } catch (err) {
+    setError(err.message || 'Unable to save profile.');
+  } finally {
+    setSaving(false);
+  }
+};
   const documentFields = [
     {
       name: 'aadhaar',
@@ -115,6 +175,11 @@ function MyProfile() {
       </header>
 
       <main className="sn-profile-container">
+        {loadingProfile && (
+  <div className="sn-profile-alert">
+    Loading your profile...
+  </div>
+)}
         <section className="sn-profile-intro">
           <span className="sn-profile-eyebrow">
             YOUR SHIPNEXT ACCOUNT
@@ -212,11 +277,127 @@ function MyProfile() {
               </div>
             </div>
           </section>
+             
+<section className="sn-profile-card sn-profile-business">
+  <div className="sn-profile-section-heading">
+    <div>
+      <span>02 / BUSINESS & BANK DETAILS</span>
+      <h2>Verification & Bank Details</h2>
+      <p>Provide your identity, GST and bank account information.</p>
+    </div>
+    <div className="sn-profile-section-number">02</div>
+  </div>
+
+  <div className="sn-profile-subheading">
+    <h3>Identity & Tax Information</h3>
+    <p>Enter the applicable identification details.</p>
+  </div>
+
+  <div className="sn-profile-grid">
+    <div className="sn-profile-field">
+      <label>PAN Number</label>
+      <input
+        name="panNumber"
+        value={profile.panNumber}
+        onChange={handleChange}
+        placeholder="ABCDE1234F"
+        maxLength={10}
+        style={{ textTransform: 'uppercase' }}
+      />
+    </div>
+
+    <div className="sn-profile-field">
+      <label>Aadhaar Number</label>
+      <input
+        name="aadhaarNumber"
+        type="password"
+        inputMode="numeric"
+        maxLength={12}
+        value={profile.aadhaarNumber}
+        onChange={handleChange}
+        placeholder="Enter 12-digit Aadhaar number"
+      />
+    </div>
+
+    <div className="sn-profile-field">
+      <label>GST Number</label>
+      <input
+        name="gstNumber"
+        value={profile.gstNumber}
+        onChange={handleChange}
+        placeholder="Enter GSTIN"
+        maxLength={15}
+        style={{ textTransform: 'uppercase' }}
+      />
+    </div>
+  </div>
+
+  <div className="sn-profile-subheading sn-profile-bank-heading">
+    <h3>Bank Account Information</h3>
+    <p>Provide your bank details for account and payment-related purposes.</p>
+  </div>
+
+  <div className="sn-profile-grid">
+    <div className="sn-profile-field">
+      <label>Bank Name</label>
+      <input
+        name="bankName"
+        value={profile.bankName}
+        onChange={handleChange}
+        placeholder="Enter bank name"
+      />
+    </div>
+
+    <div className="sn-profile-field">
+      <label>Account Holder Name</label>
+      <input
+        name="accountHolderName"
+        value={profile.accountHolderName}
+        onChange={handleChange}
+        placeholder="Name as per bank account"
+      />
+    </div>
+
+    <div className="sn-profile-field">
+      <label>Account Number</label>
+      <input
+        name="accountNumber"
+        type="password"
+        inputMode="numeric"
+        value={profile.accountNumber}
+        onChange={handleChange}
+        placeholder="Enter bank account number"
+      />
+    </div>
+
+    <div className="sn-profile-field">
+      <label>Branch Name</label>
+      <input
+        name="branchName"
+        value={profile.branchName}
+        onChange={handleChange}
+        placeholder="Enter branch name"
+      />
+    </div>
+
+    <div className="sn-profile-field">
+      <label>IFSC Code</label>
+      <input
+        name="ifscCode"
+        value={profile.ifscCode}
+        onChange={handleChange}
+        placeholder="ABCD0123456"
+        maxLength={11}
+        style={{ textTransform: 'uppercase' }}
+      />
+    </div>
+  </div>
+</section>
 
           <section className="sn-profile-card sn-profile-kyc">
             <div className="sn-profile-section-heading">
               <div>
-                <span>02 / DOCUMENT VERIFICATION</span>
+                <span>03 / DOCUMENT VERIFICATION</span>
                 <h2>Identity Verification</h2>
                 <p>
                   Submit your documents for ShipNext account verification.
@@ -287,10 +468,10 @@ function MyProfile() {
               Your information is intended for secure account
               verification and profile management.
             </p>
-            <button type="submit">
-              Save Profile
-              <span>→</span>
-            </button>
+            <button type="submit" disabled={saving || loadingProfile}>
+  {saving ? 'Saving Profile...' : 'Save Profile'}
+  <span>→</span>
+</button>
           </div>
         </form>
 

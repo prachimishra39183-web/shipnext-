@@ -143,7 +143,7 @@ function AdminDashboard() {
 
       <aside className="sn-admin-sidebar">
         <div className="sn-admin-brand">
-          <img src="/logo.png" alt="ShipNext" />
+          <img src="/logo.jpeg" alt="ShipNext" />
           <div>
             
            
