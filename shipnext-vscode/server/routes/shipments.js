@@ -208,8 +208,7 @@ codAmount: normalizedCodAmount,
 
 
           shipmentType: normalizedType,
-          paymentMode: normalizedPaymentMode,
-codAmount: normalizedCodAmount,
+          
           itemCategory:
             normalizedType === 'NON_DOCUMENT' ? itemCategory : null,
 
@@ -245,6 +244,7 @@ codAmount: normalizedCodAmount,
 
 router.get(
   '/drafts/my',
+  
   authenticateToken,
   authorizeRole('CUSTOMER'),
   async (req, res) => {
@@ -667,6 +667,12 @@ router.get(
           shippingCharge: true,
           paymentMode: true,
           createdAt: true,
+          recipientPaymentMode: true,
+codAmount: true,
+codCollectionStatus: true,
+codRemittanceStatus: true,
+codCollectedAt: true,
+codRemittanceReference: true,
         },
       });
 
@@ -740,7 +746,7 @@ async function validateChildAccount(req, res, next) {
     const child = await prisma.childAccount.findFirst({
       where: {
         id: childAccountId,
-        parentId: req.user.id,
+       parentId: req.user.userId,
       },
     });
 

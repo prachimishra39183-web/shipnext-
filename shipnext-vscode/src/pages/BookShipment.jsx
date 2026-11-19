@@ -137,10 +137,10 @@ if (
         </div>
 
         <form className="booking-form" onSubmit={handleSubmit}>
-
+           
 {/* PAYMENT DETAILS */}
 <section className="booking-section">
-  <h2>💳 Payment Details</h2>
+  <h2>Payment Details</h2>
 
   <div className="booking-grid">
     <div className="booking-field full-width">
@@ -172,25 +172,40 @@ if (
     </div>
 
     {formData.paymentMode === 'COD' && (
-      <div className="booking-field full-width">
-        <label>COD Amount (₹)</label>
-        <input
-          type="number"
-          name="codAmount"
-          min="0.01"
-          step="0.01"
-          value={formData.codAmount}
-          onChange={handleChange}
-          placeholder="Enter amount to collect from receiver"
-          required
-        />
-        <small>
-          The delivery recipient will pay this amount when the parcel is delivered.
-        </small>
-      </div>
+      <>
+        <div className="booking-field full-width">
+          <label>COD Amount (₹)</label>
+          <input
+            type="number"
+            name="codAmount"
+            min="0.01"
+            step="0.01"
+            value={formData.codAmount}
+            onChange={handleChange}
+            placeholder="Enter amount to collect from receiver"
+            required
+          />
+          <small>
+            Enter the exact amount the delivery recipient must pay.
+          </small>
+        </div>
+
+        <div className="booking-field full-width">
+          <div className="cod-option-a-notice">
+            <strong>ShipNext COD — Direct Merchant Settlement</strong>
+            <p>
+              The courier partner collects the COD amount from the
+              recipient and remits it directly to your registered
+              merchant bank account. ShipNext tracks the collection
+              and remittance status. ShipNext does not hold your COD funds.
+            </p>
+          </div>
+        </div>
+      </>
     )}
   </div>
 </section>
+
 
 
           {/* PICKUP DETAILS */}

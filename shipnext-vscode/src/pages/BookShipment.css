@@ -627,3 +627,31 @@
     text-align: center;
   }
 }
+
+.cod-option-a-notice {
+  width: 100%;
+  padding: 20px 22px;
+  border: 1px solid rgba(255, 89, 56, 0.3);
+  border-left: 4px solid #ff5938;
+  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 89, 56, 0.10),
+    rgba(17, 29, 46, 0.85)
+  );
+  color: #ffffff;
+}
+
+.cod-option-a-notice strong {
+  display: block;
+  margin-bottom: 9px;
+  color: #ff7657;
+  font-size: 15px;
+}
+
+.cod-option-a-notice p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.7;
+}

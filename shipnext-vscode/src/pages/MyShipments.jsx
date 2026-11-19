@@ -67,8 +67,21 @@ function MyShipments() {
     });
   };
 
+  const formatMoney = (amount) =>
+    `₹${Number(amount || 0).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  const formatLabel = (value) =>
+    String(value || 'Pending').replaceAll('_', ' ');
+
   const confirmedCount = shipments.length;
   const draftCount = drafts.length;
+
+  const codShipments = shipments.filter(
+    (shipment) => shipment.recipientPaymentMode === 'COD'
+  );
 
   const filteredShipments = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -79,6 +92,9 @@ function MyShipments() {
         shipment.pickupPincode,
         shipment.deliveryPincode,
         shipment.status,
+        shipment.recipientPaymentMode,
+        shipment.codCollectionStatus,
+        shipment.codRemittanceStatus,
       ].some((value) => String(value || '').toLowerCase().includes(query));
 
       const matchesFilter =
@@ -113,13 +129,28 @@ function MyShipments() {
     return 'general';
   };
 
+  const getCodStatusClass = (status) => {
+    const value = String(status || '').toUpperCase();
+
+    if (value.includes('RECEIVED') || value.includes('COLLECTED') ||
+        value === 'SETTLED') {
+      return 'success';
+    }
+
+    if (value.includes('FAILED') || value.includes('REVERSED')) {
+      return 'failed';
+    }
+
+    return 'pending';
+  };
+
   return (
     <div className="sn-shipments-page">
-     <header className="sn-shipments-header">
-  <Link to="/dashboard" className="sn-back-link">
-    Back to Dashboard
-  </Link>
-</header>
+      <header className="sn-shipments-header">
+        <Link to="/dashboard" className="sn-back-link">
+          Back to Dashboard
+        </Link>
+      </header>
 
       <main className="sn-shipments-main">
         <section className="sn-page-intro">
@@ -172,6 +203,12 @@ function MyShipments() {
                 <span className="sn-card-label">SAVED DRAFTS</span>
                 <strong>{draftCount}</strong>
                 <p>Bookings waiting for completion</p>
+              </article>
+
+              <article className="sn-overview-card">
+                <span className="sn-card-label">COD SHIPMENTS</span>
+                <strong>{codShipments.length}</strong>
+                <p>Bookings with recipient payment due</p>
               </article>
             </section>
 
@@ -237,7 +274,10 @@ function MyShipments() {
                 ) : (
                   <div className="sn-shipment-grid">
                     {filteredDrafts.map((draft) => (
-                      <article className="sn-shipment-card sn-draft-card" key={draft.id}>
+                      <article
+                        className="sn-shipment-card sn-draft-card"
+                        key={draft.id}
+                      >
                         <div className="sn-shipment-card-top">
                           <span className="sn-record-label">SAVED BOOKING</span>
                           <span className="sn-status-pill draft">DRAFT</span>
@@ -248,9 +288,7 @@ function MyShipments() {
                             <span>ORIGIN PIN</span>
                             <strong>{draft.pickupPincode}</strong>
                           </div>
-                          <div className="sn-route-connector">
-                            <span />
-                          </div>
+                          <div className="sn-route-connector"><span /></div>
                           <div>
                             <span>DESTINATION PIN</span>
                             <strong>{draft.deliveryPincode}</strong>
@@ -268,12 +306,24 @@ function MyShipments() {
                           </div>
                           <div>
                             <span>Parcel weight</span>
-                            <strong>{(Number(draft.weightGrams || 0) / 1000).toFixed(2)} kg</strong>
+                            <strong>
+                              {(Number(draft.weightGrams || 0) / 1000).toFixed(2)} kg
+                            </strong>
                           </div>
                           <div>
                             <span>Last saved</span>
                             <strong>{formatDate(draft.createdAt)}</strong>
                           </div>
+                          <div>
+                            <span>Recipient payment</span>
+                            <strong>{draft.paymentMode || 'PREPAID'}</strong>
+                          </div>
+                          {draft.paymentMode === 'COD' && (
+                            <div>
+                              <span>COD amount</span>
+                              <strong>{formatMoney(draft.codAmount)}</strong>
+                            </div>
+                          )}
                         </div>
 
                         <Link
@@ -330,7 +380,7 @@ function MyShipments() {
                           </div>
 
                           <span className={`sn-status-pill ${getStatusClass(shipment.status)}`}>
-                            {String(shipment.status || 'PENDING').replaceAll('_', ' ')}
+                            {formatLabel(shipment.status)}
                           </span>
                         </div>
 
@@ -339,9 +389,7 @@ function MyShipments() {
                             <span>ORIGIN PIN</span>
                             <strong>{shipment.pickupPincode || '—'}</strong>
                           </div>
-                          <div className="sn-route-connector">
-                            <span />
-                          </div>
+                          <div className="sn-route-connector"><span /></div>
                           <div>
                             <span>DESTINATION PIN</span>
                             <strong>{shipment.deliveryPincode || '—'}</strong>
@@ -351,12 +399,84 @@ function MyShipments() {
                         <div className="sn-card-details">
                           <div>
                             <span>Parcel weight</span>
-                            <strong>{(Number(shipment.weightGrams || 0) / 1000).toFixed(2)} kg</strong>
+                            <strong>
+                              {(Number(shipment.weightGrams || 0) / 1000).toFixed(2)} kg
+                            </strong>
                           </div>
                           <div>
                             <span>Booking date</span>
                             <strong>{formatDate(shipment.createdAt)}</strong>
                           </div>
+                          <div>
+                            <span>Shipping charge</span>
+                            <strong>{formatMoney(shipment.shippingCharge)}</strong>
+                          </div>
+                          <div>
+                            <span>Shipping payment</span>
+                            <strong>{shipment.paymentMode || 'WALLET'}</strong>
+                          </div>
+                        </div>
+
+                        <div className="sn-cod-panel">
+                          <div className="sn-cod-heading">
+                            <div>
+                              <span className="sn-section-kicker">RECIPIENT PAYMENT</span>
+                              <h4>
+                                {shipment.recipientPaymentMode === 'COD'
+                                  ? 'Cash on Delivery'
+                                  : 'Prepaid Shipment'}
+                              </h4>
+                            </div>
+                            <span className={`sn-cod-type ${
+                              shipment.recipientPaymentMode === 'COD' ? 'cod' : 'prepaid'
+                            }`}>
+                              {shipment.recipientPaymentMode || 'PREPAID'}
+                            </span>
+                          </div>
+
+                          {shipment.recipientPaymentMode === 'COD' && (
+                            <>
+                              <div className="sn-cod-amount">
+                                <span>COD amount</span>
+                                <strong>{formatMoney(shipment.codAmount)}</strong>
+                              </div>
+
+                              <div className="sn-cod-status-grid">
+                                <div>
+                                  <span>Collection status</span>
+                                  <strong className={`sn-cod-status ${getCodStatusClass(shipment.codCollectionStatus)}`}>
+                                    {formatLabel(shipment.codCollectionStatus)}
+                                  </strong>
+                                </div>
+                                <div>
+                                  <span>Remittance status</span>
+                                  <strong className={`sn-cod-status ${getCodStatusClass(shipment.codRemittanceStatus)}`}>
+                                    {formatLabel(shipment.codRemittanceStatus)}
+                                  </strong>
+                                </div>
+                              </div>
+
+                              {shipment.codCollectedAt && (
+                                <div className="sn-cod-extra">
+                                  <span>Collected on</span>
+                                  <strong>{formatDate(shipment.codCollectedAt)}</strong>
+                                </div>
+                              )}
+
+                              {shipment.codRemittanceReference && (
+                                <div className="sn-cod-extra">
+                                  <span>Remittance reference</span>
+                                  <strong>{shipment.codRemittanceReference}</strong>
+                                </div>
+                              )}
+
+                              <p className="sn-cod-note">
+                                COD is collected and remitted directly by the courier
+                                to the merchant. ShipNext displays the available
+                                tracking information.
+                              </p>
+                            </>
+                          )}
                         </div>
 
                         <Link
@@ -375,7 +495,6 @@ function MyShipments() {
         )}
 
         <footer className="sn-shipments-footer">
-       
           <p>Moving your business forward.</p>
         </footer>
       </main>

@@ -329,10 +329,7 @@ function AdminDashboard() {
                   </div>
                 </div>
                 <h3>Shipment activity will appear here</h3>
-                <p>
-                  Once shipment records are available, your latest
-                  operations will be displayed in this section.
-                </p>
+                
                 <Link to="/admin/shipments">
                   Open shipment management <ArrowUpRight size={15} />
                 </Link>
