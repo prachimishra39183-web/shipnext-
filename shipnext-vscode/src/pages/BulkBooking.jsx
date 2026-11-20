@@ -559,7 +559,6 @@ function BulkBooking() {
             <p><strong>Important:</strong></p>
             <ul>
               <li>Maximum 100 shipments per upload.</li>
-              <li>Minimum parcel weight is 0.5 kg.</li>
               <li>Mobile numbers must contain 10 digits.</li>
               <li>PIN codes must contain 6 digits.</li>
               <li>Payment mode must be PREPAID or COD.</li>

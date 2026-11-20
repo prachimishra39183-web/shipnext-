@@ -1,8 +1,21 @@
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { UserRound } from 'lucide-react';
 import API_URL from '../config/api';
 function CustomerDashboard() {
+   const loggedInUser = JSON.parse(
+    sessionStorage.getItem('shipnextUser') || '{}'
+  );
+
+  const accountName =
+    loggedInUser.name ||
+    loggedInUser.fullName ||
+    loggedInUser.email ||
+    'My Account';
+
+  const accountRole =
+    loggedInUser.role === 'ADMIN' ? 'Admin' : 'Customer';
     const location = useLocation();
 
   const bookingAccess = location.state?.bookingAccess === true;
@@ -195,13 +208,16 @@ function CustomerDashboard() {
     </div>
   </details>
 
-  <div className="dashboard-user">
-    <div className="user-avatar">C</div>
-    <div>
-      <strong>Customer</strong>
-      <small>ShipNext Member</small>
-    </div>
+ <div className="dashboard-user">
+  <div className="user-avatar">
+    <UserRound size={21} strokeWidth={2} />
   </div>
+
+  <div className="dashboard-user-info">
+    <strong>{accountName}</strong>
+    <small>ShipNext {accountRole}</small>
+  </div>
+</div>
 
 </div>
         </header>

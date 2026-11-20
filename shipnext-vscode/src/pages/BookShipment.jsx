@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
-
+import './BookShipment.css';
 function BookShipment() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -328,7 +328,7 @@ if (
 
           {/* PARCEL DETAILS */}
           <section className="booking-section">
-            <h2>📦 Parcel Details</h2>
+            <h2> Parcel Details</h2>
 
             <div className="booking-grid">
 
@@ -428,25 +428,108 @@ if (
 
             </div>
           </section>
-             <div className="restricted-items-section">
-  <h3>⚠️ Restricted & Dangerous Goods</h3>
+           
+<div className="restricted-items-section">
+  <div className="restricted-header">
+    <span className="restricted-eyebrow">SHIPMENT SAFETY GUIDELINES</span>
+    <h3>⚠️ Restricted & Dangerous Goods</h3>
+    <p>
+      Certain goods require special handling and may be prohibited
+      from transportation. Please review these classifications
+      carefully before booking.
+    </p>
+  </div>
 
-  <p>
-    Please review the following list before booking your shipment.
-    These items are restricted or prohibited for transport.
-  </p>
+  <div className="dangerous-goods-grid">
 
-  <img
-    src="/res.png"
-    alt="Dangerous goods and restricted items according to the displayed IATA classification chart"
-    className="restricted-items-image"
-  />
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 01</span>
+      <div className="goods-icon">💥</div>
+      <h4>Explosives</h4>
+      <p>Arms and ammunition, fireworks, explosive charges and rockets.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 02</span>
+      <div className="goods-icon">🧯</div>
+      <h4>Gases</h4>
+      <p>Compressed gases, spray cans, fire extinguishers and LPG cylinders.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 03</span>
+      <div className="goods-icon">⛽</div>
+      <h4>Flammable Liquids</h4>
+      <p>Nail paints, perfumes, petrol, diesel, kerosene, turpentine and lighter fluid.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 04</span>
+      <div className="goods-icon">🔥</div>
+      <h4>Flammable Solids</h4>
+      <p>Matches, wet explosives and mothballs.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 05</span>
+      <div className="goods-icon">🧪</div>
+      <h4>Oxidizing Substances</h4>
+      <p>Oxidizing substances such as domestic bleach.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 06</span>
+      <div className="goods-icon">☣️</div>
+      <h4>Toxic & Infectious</h4>
+      <p>Insecticides, cyanide solutions, diagnostic samples and suspected pathogens.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 07</span>
+      <div className="goods-icon">☢️</div>
+      <h4>Radioactive Materials</h4>
+      <p>Radioactive materials such as uranium and plutonium.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 08</span>
+      <div className="goods-icon">⚗️</div>
+      <h4>Corrosives</h4>
+      <p>Caustic soda, acids, drain cleaning products and wet car batteries.</p>
+      <span className="goods-status">Restricted / Prohibited</span>
+    </div>
+
+    <div className="dangerous-goods-card">
+      <span className="goods-class">CLASS 09</span>
+      <div className="goods-icon">🔋</div>
+      <h4>Miscellaneous</h4>
+      <p>Dry ice, inflatable camping equipment, lithium-ion batteries (not more than 20 Wh) and hot air balloons.</p>
+      <span className="goods-status">Special Restrictions</span>
+    </div>
+
+  </div>
 
   <div className="restricted-items-warning">
-    Please do not book shipments containing prohibited or restricted
-    goods. Additional carrier and applicable transport restrictions may apply.
+    <div className="warning-symbol">!</div>
+    <div>
+      <h4>Important Shipping Notice</h4>
+      <p>
+        Do not book shipments containing prohibited or restricted
+        goods without prior authorization. Additional packaging,
+        documentation, carrier and applicable transport regulations
+        may apply. Always confirm acceptance before dispatch.
+      </p>
+    </div>
   </div>
 </div>
+
           <div className="booking-note">
             Shipping charges will be calculated using your PIN codes,
             parcel weight and selected shipping mode.

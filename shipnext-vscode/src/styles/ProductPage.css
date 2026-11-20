@@ -1,0 +1,617 @@
+
+/* =========================================
+   SHIPNEXT - PREMIUM PRODUCT PAGES
+========================================= */
+
+.product-page {
+  min-height: 100vh;
+  background: #f7f8fa;
+  color: #17191d;
+  font-family: inherit;
+  overflow: hidden;
+}
+
+/* HERO SECTION */
+
+.product-hero {
+  min-height: 650px;
+  padding: 100px 8%;
+  background:
+    radial-gradient(circle at 80% 50%, rgba(255, 59, 31, 0.17), transparent 35%),
+    linear-gradient(120deg, #111316, #202328);
+  color: white;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 50px;
+  position: relative;
+}
+
+.product-hero-content {
+  max-width: 700px;
+  position: relative;
+  z-index: 2;
+}
+
+.product-eyebrow,
+.product-section-label {
+  display: inline-block;
+  color: #ff3b1f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  margin-bottom: 22px;
+}
+
+.product-hero h1 {
+  font-size: clamp(42px, 5.3vw, 72px);
+  line-height: 1.08;
+  font-weight: 850;
+  letter-spacing: -2.5px;
+  margin: 0 0 24px;
+  color: #fff;
+}
+
+.product-hero-subtitle {
+  font-size: 21px;
+  line-height: 1.5;
+  color: #f0f0f0;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.product-hero-description {
+  max-width: 590px;
+  color: #b8bdc5;
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.product-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.product-primary-btn,
+.product-secondary-btn {
+  min-height: 52px;
+  padding: 0 25px;
+  border-radius: 8px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-weight: 750;
+  transition: 0.3s ease;
+}
+
+.product-primary-btn {
+  background: #ff3b1f;
+  color: #fff;
+  box-shadow: 0 8px 25px rgba(255, 59, 31, 0.22);
+}
+
+.product-primary-btn:hover {
+  background: #e92d14;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(255, 59, 31, 0.3);
+}
+
+.product-secondary-btn {
+  border: 1px solid #60646b;
+  color: white;
+}
+
+.product-secondary-btn:hover {
+  border-color: #ff3b1f;
+  color: #ff684f;
+  transform: translateY(-3px);
+}
+
+.product-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  margin-top: 42px;
+}
+
+.product-trust span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c4c8ce;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.product-trust svg {
+  width: 17px;
+  color: #ff6048;
+}
+
+/* HERO VISUAL */
+
+.product-hero-visual {
+  min-height: 410px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.product-visual-glow {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: rgba(255, 59, 31, 0.15);
+  filter: blur(65px);
+}
+
+.product-icon-card {
+  position: relative;
+  width: 280px;
+  height: 300px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 30px;
+  background: linear-gradient(145deg, #30343b, #191b20);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+  transform: rotate(-5deg);
+}
+
+.product-icon-card svg {
+  color: #ff4b31;
+  filter: drop-shadow(0 0 20px rgba(255,59,31,0.35));
+}
+
+.product-icon-card span {
+  color: white;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 3px;
+}
+
+.product-icon-card small {
+  color: #a9adb5;
+  font-size: 10px;
+  letter-spacing: 3px;
+}
+
+.product-floating-card {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  background: #fff;
+  color: #17191d;
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.22);
+  z-index: 2;
+}
+
+.product-floating-card svg {
+  color: #ff3b1f;
+}
+
+.product-floating-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-floating-card strong {
+  font-size: 12px;
+}
+
+.product-floating-card small {
+  color: #777;
+  font-size: 10px;
+}
+
+.product-floating-one {
+  top: 55px;
+  left: -10px;
+}
+
+.product-floating-two {
+  bottom: 50px;
+  right: -5px;
+}
+
+/* INTRO SECTION */
+
+.product-intro {
+  max-width: 900px;
+  margin: auto;
+  padding: 100px 25px 80px;
+  text-align: center;
+}
+
+.product-intro h2,
+.product-section-heading h2,
+.product-process h2,
+.product-industries h2 {
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: 850;
+  letter-spacing: -1.5px;
+  margin: 0 0 20px;
+}
+
+.product-intro p,
+.product-section-heading p,
+.product-process > p,
+.product-industries > p {
+  max-width: 720px;
+  margin: auto;
+  color: #717783;
+  line-height: 1.9;
+  font-size: 16px;
+}
+
+/* FEATURES */
+
+.product-features {
+  padding: 80px 8% 110px;
+  background: #fff;
+}
+
+.product-section-heading {
+  max-width: 700px;
+  margin-bottom: 55px;
+}
+
+.product-section-heading h2 span,
+.product-benefits h2 span {
+  color: #ff3b1f;
+}
+
+.product-section-heading p {
+  margin: 0;
+}
+
+.product-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.product-feature-card {
+  position: relative;
+  min-height: 270px;
+  padding: 30px 25px;
+  border: 1px solid #e9eaed;
+  border-radius: 16px;
+  background: #fff;
+  transition: 0.35s ease;
+}
+
+.product-feature-card:hover {
+  transform: translateY(-9px);
+  border-color: rgba(255,59,31,0.4);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.07);
+}
+
+.product-feature-number {
+  color: #d2d5da;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.product-feature-icon {
+  width: 53px;
+  height: 53px;
+  margin: 22px 0;
+  background: #fff0ed;
+  color: #ff3b1f;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-feature-card h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  font-weight: 800;
+}
+
+.product-feature-card p {
+  font-size: 13px;
+  color: #777e88;
+  line-height: 1.8;
+}
+
+.product-feature-arrow {
+  position: absolute;
+  bottom: 22px;
+  right: 22px;
+  color: #ff3b1f;
+}
+
+/* PROCESS */
+
+.product-process {
+  padding: 100px 8%;
+  text-align: center;
+  background: #f3f4f6;
+}
+
+.product-process-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  margin-top: 55px;
+  text-align: left;
+}
+
+.product-process-card {
+  padding: 35px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e8e9ed;
+  transition: 0.3s ease;
+}
+
+.product-process-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.06);
+}
+
+.product-process-card > span {
+  font-size: 40px;
+  font-weight: 900;
+  color: #ff3b1f;
+}
+
+.product-process-card h3 {
+  margin: 20px 0 12px;
+  font-size: 23px;
+}
+
+.product-process-card p {
+  color: #777e88;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+/* BENEFITS */
+
+.product-benefits {
+  padding: 110px 10%;
+  background: #17191d;
+  color: white;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.product-benefits h2 {
+  font-size: clamp(36px, 4.5vw, 55px);
+  line-height: 1.2;
+  letter-spacing: -1.8px;
+  margin: 0 0 25px;
+}
+
+.product-benefits > div:first-child p {
+  color: #aeb3bc;
+  line-height: 1.9;
+  max-width: 480px;
+}
+
+.product-benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.product-benefit-list > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 21px;
+  background: #24272d;
+  border: 1px solid #383c44;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.product-benefit-list > div:hover {
+  border-color: #ff3b1f;
+  transform: translateX(6px);
+}
+
+.product-benefit-list svg {
+  color: #ff6048;
+  flex-shrink: 0;
+}
+
+/* INDUSTRIES */
+
+.product-industries {
+  padding: 100px 8%;
+  text-align: center;
+  background: white;
+}
+
+.product-industry-list {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 45px;
+}
+
+.product-industry-list span {
+  padding: 15px 24px;
+  border-radius: 50px;
+  border: 1px solid #e3e4e8;
+  background: #fafafa;
+  font-size: 14px;
+  font-weight: 700;
+  transition: 0.3s;
+}
+
+.product-industry-list span:hover {
+  background: #fff0ed;
+  border-color: #ff3b1f;
+  color: #ff3b1f;
+}
+
+/* FINAL CTA */
+
+.product-final-cta {
+  padding: 100px 25px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(255,59,31,0.2), transparent 50%),
+    #17191d;
+  color: white;
+}
+
+.product-final-cta > span {
+  color: #ff6048;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.product-final-cta h2 {
+  font-size: clamp(34px, 4vw, 50px);
+  margin: 22px 0;
+  font-weight: 850;
+}
+
+.product-final-cta p {
+  color: #b7bbc3;
+  margin-bottom: 30px;
+  line-height: 1.8;
+}
+
+.product-not-found {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  font-size: 25px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1000px) {
+  .product-hero {
+    padding: 85px 6%;
+    grid-template-columns: 1fr 0.8fr;
+  }
+
+  .product-feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .product-floating-one {
+    left: -5px;
+  }
+}
+
+@media (max-width: 700px) {
+  .product-hero {
+    padding: 75px 6% 50px;
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .product-hero h1 {
+    font-size: 43px;
+    letter-spacing: -1.5px;
+  }
+
+  .product-hero-subtitle {
+    font-size: 18px;
+  }
+
+  .product-hero-actions,
+  .product-trust {
+    justify-content: center;
+  }
+
+  .product-hero-visual {
+    min-height: 350px;
+  }
+
+  .product-icon-card {
+    width: 230px;
+    height: 250px;
+  }
+
+  .product-floating-one {
+    left: 0;
+    top: 25px;
+  }
+
+  .product-floating-two {
+    right: 0;
+    bottom: 25px;
+  }
+
+  .product-intro,
+  .product-features,
+  .product-process,
+  .product-benefits,
+  .product-industries {
+    padding: 70px 6%;
+  }
+
+  .product-feature-grid,
+  .product-process-grid,
+  .product-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .product-benefits {
+    gap: 35px;
+  }
+
+  .product-feature-card {
+    min-height: 245px;
+  }
+
+  .product-process-card {
+    padding: 28px;
+  }
+
+  .product-final-cta {
+    padding: 75px 6%;
+  }
+}
+
+@media (max-width: 420px) {
+  .product-hero h1 {
+    font-size: 36px;
+  }
+
+  .product-hero-actions {
+    flex-direction: column;
+  }
+
+  .product-primary-btn,
+  .product-secondary-btn {
+    width: 100%;
+  }
+
+  .product-trust {
+    gap: 13px;
+  }
+
+  .product-trust span {
+    font-size: 10px;
+  }
+}

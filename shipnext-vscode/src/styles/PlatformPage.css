@@ -1,0 +1,524 @@
+
+/* =========================================
+   SHIPNEXT PLATFORM PAGES - PREMIUM THEME
+========================================= */
+
+.platform-page {
+  color: #ffffff;
+  background: #20232b;
+  overflow: hidden;
+}
+
+.platform-page section {
+  position: relative;
+  padding-left: 8%;
+  padding-right: 8%;
+}
+
+/* HERO */
+
+.platform-hero {
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  align-items: center;
+  gap: 60px;
+  padding-top: 90px;
+  padding-bottom: 90px;
+  background: #242832;
+}
+
+.platform-hero-content {
+  max-width: 720px;
+}
+
+.platform-eyebrow,
+.platform-section-label {
+  display: inline-block;
+  color: #ff684d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.platform-hero h1 {
+  font-size: clamp(42px, 5.5vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -2.5px;
+  font-weight: 800;
+  margin: 0 0 20px;
+  color: #ffffff;
+}
+
+.platform-hero h2 {
+  font-size: clamp(23px, 2.5vw, 34px);
+  line-height: 1.3;
+  margin: 0 0 18px;
+  color: #ff795f;
+}
+
+.platform-hero-content > p {
+  color: #d0d3dc;
+  font-size: 16px;
+  line-height: 1.9;
+  max-width: 620px;
+}
+
+.platform-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 34px;
+}
+
+.platform-primary-btn,
+.platform-secondary-btn {
+  min-height: 52px;
+  padding: 0 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: 0.3s ease;
+}
+
+.platform-primary-btn {
+  background: #ff3b1f;
+  color: #ffffff;
+  box-shadow: 0 8px 28px rgba(255,59,31,0.2);
+}
+
+.platform-primary-btn:hover {
+  background: #e92e14;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(255,59,31,0.3);
+}
+
+.platform-secondary-btn {
+  border: 1px solid #687080;
+  color: #ffffff;
+  background: #343946;
+}
+
+.platform-secondary-btn:hover {
+  border-color: #ff6548;
+  background: #414653;
+}
+
+.platform-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 38px;
+}
+
+.platform-trust span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d0d3dc;
+  font-size: 12px;
+}
+
+.platform-trust svg {
+  color: #ff795f;
+}
+
+/* HERO VISUAL */
+
+.platform-hero-visual {
+  min-height: 410px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.platform-visual-glow {
+  position: absolute;
+  width: 310px;
+  height: 310px;
+  border-radius: 50%;
+  background: rgba(255,90,65,0.2);
+  filter: blur(85px);
+}
+
+.platform-icon-card {
+  width: 250px;
+  height: 250px;
+  position: relative;
+  z-index: 1;
+  border: 1px solid #596171;
+  border-radius: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff795f;
+  background: linear-gradient(145deg, #414653, #2c303b);
+  box-shadow: 0 25px 80px rgba(0,0,0,0.25);
+}
+
+.platform-floating-card {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 18px;
+  border: 1px solid #596171;
+  border-radius: 12px;
+  background: #343946;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.22);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.platform-floating-card svg {
+  color: #ff795f;
+}
+
+.platform-floating-one {
+  top: 65px;
+  right: -10px;
+}
+
+.platform-floating-two {
+  bottom: 65px;
+  left: -10px;
+}
+
+/* INTRO */
+
+.platform-intro {
+  text-align: center;
+  padding-top: 100px;
+  padding-bottom: 100px;
+  background: #20232b;
+  border-top: 1px solid #414653;
+}
+
+.platform-intro h2,
+.platform-section-heading h2 {
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.2;
+  letter-spacing: -1.5px;
+  margin: 0 auto 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.platform-intro > p {
+  max-width: 760px;
+  margin: auto;
+  color: #c5cad4;
+  line-height: 1.9;
+  font-size: 15px;
+}
+
+/* FEATURES */
+
+.platform-features {
+  padding-top: 90px;
+  padding-bottom: 100px;
+  background: #292e39;
+}
+
+.platform-section-heading {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.platform-section-heading h2 span,
+.platform-benefits h2 span {
+  color: #ff795f;
+}
+
+.platform-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.platform-feature-card {
+  min-height: 145px;
+  padding: 27px;
+  border-radius: 15px;
+  border: 1px solid #4a5261;
+  background: #363c49;
+  transition: 0.3s ease;
+}
+
+.platform-feature-card:hover {
+  transform: translateY(-5px);
+  border-color: #ff795f;
+  background: #404654;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+.platform-feature-card svg {
+  color: #ff795f;
+  margin-bottom: 17px;
+}
+
+.platform-feature-card h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 650;
+}
+
+/* WORKFLOW */
+
+.platform-process {
+  padding-top: 90px;
+  padding-bottom: 100px;
+  background: #242832;
+}
+
+.platform-process-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.platform-process-card {
+  padding: 28px 23px;
+  min-height: 205px;
+  border-radius: 15px;
+  background: #363c49;
+  border: 1px solid #4a5261;
+  transition: 0.3s ease;
+}
+
+.platform-process-card:hover {
+  transform: translateY(-5px);
+  border-color: #ff795f;
+}
+
+.platform-process-card > span {
+  color: #ff795f;
+  font-size: 27px;
+  font-weight: 800;
+}
+
+.platform-process-card h3 {
+  font-size: 17px;
+  margin: 22px 0 12px;
+  color: #ffffff;
+}
+
+.platform-process-card p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #c5cad4;
+}
+
+/* BENEFITS */
+
+.platform-benefits {
+  padding-top: 110px;
+  padding-bottom: 110px;
+  display: grid;
+  grid-template-columns: 1fr 0.8fr;
+  align-items: center;
+  gap: 80px;
+  background: #292e39;
+}
+
+.platform-benefits h2 {
+  font-size: clamp(34px, 4.5vw, 55px);
+  line-height: 1.2;
+  letter-spacing: -1.5px;
+  margin: 0 0 22px;
+  color: #ffffff;
+}
+
+.platform-benefits-content > p {
+  color: #c5cad4;
+  line-height: 1.9;
+  font-size: 15px;
+}
+
+.platform-benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.platform-benefit-list > div {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  border-radius: 11px;
+  background: #363c49;
+  border: 1px solid #4a5261;
+  color: #ffffff;
+  font-size: 14px;
+  transition: 0.3s ease;
+}
+
+.platform-benefit-list > div:hover {
+  border-color: #ff795f;
+  transform: translateX(4px);
+}
+
+.platform-benefit-list svg {
+  flex-shrink: 0;
+  color: #ff795f;
+}
+
+/* INDUSTRIES */
+
+.platform-industries {
+  padding-top: 90px;
+  padding-bottom: 100px;
+  background: #242832;
+}
+
+.platform-industry-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+}
+
+.platform-industry-list span {
+  padding: 15px 24px;
+  border: 1px solid #596171;
+  border-radius: 50px;
+  background: #363c49;
+  color: #ffffff;
+  font-size: 13px;
+  transition: 0.3s ease;
+}
+
+.platform-industry-list span:hover {
+  background: #ff3b1f;
+  border-color: #ff3b1f;
+}
+
+/* FINAL CTA */
+
+.platform-final-cta {
+  text-align: center;
+  padding-top: 110px;
+  padding-bottom: 120px;
+  background: #20232b;
+}
+
+.platform-final-cta h2 {
+  max-width: 760px;
+  margin: 0 auto 18px;
+  font-size: clamp(34px, 4.5vw, 55px);
+  line-height: 1.2;
+  letter-spacing: -1.5px;
+  color: #ffffff;
+}
+
+.platform-final-cta > p {
+  color: #c5cad4;
+  line-height: 1.8;
+  margin: 0 auto 30px;
+  max-width: 650px;
+  font-size: 15px;
+}
+
+/* NOT FOUND */
+
+.platform-not-found {
+  min-height: 100vh;
+  color: #ffffff;
+  background: #20232b;
+  text-align: center;
+}
+
+.platform-not-found h1 {
+  padding-top: 100px;
+}
+
+.platform-not-found a {
+  color: #ff795f;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1000px) {
+  .platform-hero {
+    grid-template-columns: 1fr 0.75fr;
+    gap: 25px;
+  }
+
+  .platform-feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .platform-process-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .platform-benefits {
+    gap: 40px;
+  }
+}
+
+@media (max-width: 700px) {
+  .platform-page section {
+    padding-left: 6%;
+    padding-right: 6%;
+  }
+
+  .platform-hero {
+    grid-template-columns: 1fr;
+    padding-top: 75px;
+    padding-bottom: 55px;
+    gap: 15px;
+  }
+
+  .platform-hero-visual {
+    min-height: 330px;
+  }
+
+  .platform-icon-card {
+    width: 190px;
+    height: 190px;
+  }
+
+  .platform-floating-one {
+    right: 0;
+  }
+
+  .platform-floating-two {
+    left: 0;
+  }
+
+  .platform-trust {
+    gap: 14px;
+  }
+
+  .platform-feature-grid,
+  .platform-process-grid,
+  .platform-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-benefits {
+    gap: 35px;
+  }
+
+  .platform-intro,
+  .platform-features,
+  .platform-process,
+  .platform-industries {
+    padding-top: 70px;
+    padding-bottom: 70px;
+  }
+}

@@ -1303,3 +1303,39 @@
   border: 1px solid rgba(255,255,255,.13);
   border-radius: 13px;
 }
+.sn-admin-top-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+}
+
+.sn-admin-top-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #ff3b1f, #ff7955);
+}
+
+.sn-admin-top-user {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sn-admin-top-user strong {
+  font-size: 12px;
+  color: inherit;
+}
+
+.sn-admin-top-user span {
+  font-size: 10px;
+  color: #999;
+}

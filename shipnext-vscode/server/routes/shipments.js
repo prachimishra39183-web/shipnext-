@@ -668,6 +668,7 @@ router.post(
               amount,
               trackingId: generateTrackingId(),
               docketNumber: generateDocketNumber(),
+              courierPartner: courier,
             });
           }
 
@@ -703,8 +704,14 @@ router.post(
           const bookedShipments = [];
 
           for (const item of preparedShipments) {
-            const { draft, mode, amount, trackingId, docketNumber } =
-              item;
+           const {
+  draft,
+  mode,
+  amount,
+  trackingId,
+  docketNumber,
+  courierPartner,
+} = item; 
 
             await tx.shipmentDraft.update({
               where: { id: draft.id },
@@ -1114,6 +1121,8 @@ router.post(
 
               trackingId,
               docketNumber,
+              courierPartner,
+              courierPartner: selectedCourier,
 
               processingDate: new Date(),
               status: 'CONFIRMED',

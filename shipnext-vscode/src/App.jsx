@@ -29,6 +29,8 @@ import AdminReports from './pages/AdminReports';
 import AdminLayout from './components/AdminLayout.jsx';
 import AdminChildAccounts from './pages/AdminChildAccounts.jsx';
 import CustomerChildAccounts from './pages/CustomerChildAccounts.jsx';
+import ProductPage from './pages/ProductPage.jsx';
+import PlatformPage from './pages/PlatformPage.jsx';
 function App() {
   return (
     <BrowserRouter>
@@ -56,6 +58,8 @@ function App() {
              <Route path="/enquiry" element={<Enquiry />} />
             <Route path="/track" element={<TrackShipment />} />
             <Route path="/track/:trackingId" element={<TrackShipment />} />
+            <Route path="/products/:slug" element={<ProductPage />} />
+            <Route path="/platform/:slug" element={<PlatformPage />} />
 
             {/* CUSTOMER PROTECTED PAGES */}
             <Route element={<ProtectedRoute allowedRole="CUSTOMER" />}>
@@ -67,6 +71,7 @@ function App() {
               <Route path="/shipments" element={<MyShipments />} />
               <Route path="/profile" element={<MyProfile />} />
               <Route path="/support" element={<Support />} />
+              
               <Route
   path="/child-accounts"
   element={<CustomerChildAccounts />}

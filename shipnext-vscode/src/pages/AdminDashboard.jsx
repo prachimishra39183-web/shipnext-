@@ -74,6 +74,15 @@ const statCards = [
   }
 ];
 function AdminDashboard() {
+    const loggedInUser = JSON.parse(
+    sessionStorage.getItem('shipnextUser') || '{}'
+  );
+
+  const adminName =
+    loggedInUser.name ||
+    loggedInUser.fullName ||
+    loggedInUser.email ||
+    'Administrator';
   const [dashboardStats, setDashboardStats] = useState({
     totalCustomers: 0,
     totalShipments: 0,
@@ -219,13 +228,23 @@ function AdminDashboard() {
           </div>
 
           <div className="sn-admin-top-actions">
-            <div className="sn-admin-live">
-              <i />
-              ADMIN WORKSPACE
-            </div>
-            <AdminNotificationBell />
-           
-          </div>
+  <div className="sn-admin-live">
+    <i />
+    ADMIN WORKSPACE
+  </div>
+
+  <div className="sn-admin-top-profile">
+    <div className="sn-admin-top-avatar">
+      <ShieldCheck size={19} />
+    </div>
+    <div className="sn-admin-top-user">
+      <strong>{adminName}</strong>
+      <span>Administrator</span>
+    </div>
+  </div>
+
+  <AdminNotificationBell />
+</div>
         </header>
 
         <div className="sn-admin-content">

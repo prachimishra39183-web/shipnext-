@@ -164,6 +164,10 @@ model Shipment {
   id             String         @id @default(uuid())
   trackingId     String         @unique
   docketNumber   String?        @unique
+  courierPartner String?
+courierAwb     String?   @unique
+labelUrl       String?
+awbAssignedAt  DateTime?
   processingDate DateTime?      @db.Date
   customerId     String
   status         ShipmentStatus @default(PENDING)

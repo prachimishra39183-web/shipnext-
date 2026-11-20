@@ -349,11 +349,13 @@ function AdminShipments() {
                     <th>Customer</th>
                     <th>Pickup PIN</th>
                     <th>Delivery PIN</th>
+                    <th>Courier Partner</th>
                     <th>Weight</th>
                     <th>Charge</th>
                     <th>Booking Date</th>
                     <th>Processing Date</th>
                     <th>Status Control</th>
+                    
                   </tr>
                 </thead>
 
@@ -382,10 +384,15 @@ function AdminShipments() {
                       </td>
 
                       <td>{shipment.pickupPincode || '—'}</td>
-                      <td>{shipment.deliveryPincode || '—'}</td>
-                      <td>
-                        {((Number(shipment.weightGrams) || 0) / 1000).toFixed(2)} kg
-                      </td>
+<td>{shipment.deliveryPincode || '—'}</td>
+<td>
+  <strong className="sn-courier-partner">
+    {shipment.courierPartner || 'Not assigned'}
+  </strong>
+</td>
+<td>
+  {((Number(shipment.weightGrams) || 0) / 1000).toFixed(2)} kg
+</td>
                       <td className="sn-shipment-charge">
                         {formatCurrency(shipment.shippingCharge)}
                       </td>

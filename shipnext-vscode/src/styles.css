@@ -16611,3 +16611,43 @@ body [class*="Icon-"] {
     overflow-x: auto;
   }
 }
+.dashboard-booking-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.dashboard-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff3b1f, #ff754d);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 59, 31, 0.25);
+  flex-shrink: 0;
+}
+
+.dashboard-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-user-info strong {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dashboard-user-info small {
+  color: #9299a5;
+  font-size: 12px;
+}
