@@ -96,6 +96,10 @@ router.post(
           });
         }
       }
+      const customer = await prisma.user.findUnique({
+  where: { id: req.user.userId },
+  select: { name: true, email: true },
+});
 
       const ticket = await prisma.supportTicket.create({
         data: {
@@ -115,6 +119,15 @@ router.post(
           },
         },
       });
+      // Notify admins about the new support ticket.
+await prisma.adminNotification.create({
+  data: {
+    title: 'New Support Ticket',
+    message: `${customer?.name || customer?.email || 'A customer'} raised ticket ${ticket.ticketNumber}: ${subject.trim()}`,
+    type: 'SUPPORT_TICKET',
+    link: '/admin/support',
+  },
+});
 
       return res.status(201).json({
         success: true,

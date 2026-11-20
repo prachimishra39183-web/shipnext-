@@ -180,7 +180,15 @@ router.post(
           role: true
         }
       });
-
+            // Notify admins about the new customer registration.
+      await prisma.adminNotification.create({
+        data: {
+          title: 'New Customer Registered',
+          message: `${user.name} (${user.email}) has registered on ShipNext.`,
+          type: 'CUSTOMER_REGISTERED',
+          link: '/admin/customers',
+        },
+      });
       return res.status(201).json({
         success: true,
         message: 'ShipNext account and KYC documents created successfully.',

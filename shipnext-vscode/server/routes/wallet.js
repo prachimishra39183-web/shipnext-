@@ -242,7 +242,25 @@ const recharge = await prisma.$transaction(async (tx) => {
       reference: 'WALLET_RECHARGE_' + reference,
     },
   });
+// Notify customer about successful wallet recharge.
+await tx.notification.create({
+  data: {
+    userId: req.user.userId,
+    title: 'Wallet Recharge Successful',
+    message: `₹${amountString} has been added to your ShipNext wallet.`,
+    type: 'WALLET',
+  },
+});
 
+// Notify admins about the wallet recharge.
+await tx.adminNotification.create({
+  data: {
+    title: 'New Wallet Recharge',
+    message: `A customer has recharged their wallet with ₹${amountString} through ${method}.`,
+    type: 'WALLET_TOPUP',
+    link: '/admin/wallet',
+  },
+});
   return {
     request,
     wallet,

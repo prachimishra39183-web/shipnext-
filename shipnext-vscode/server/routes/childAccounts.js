@@ -94,7 +94,10 @@ router.post(
           message: 'Daily wallet limit must be zero or greater.',
         });
       }
-
+     const customer = await prisma.user.findUnique({
+  where: { id: req.user.id },
+  select: { name: true, email: true },
+});
       const child = await prisma.childAccount.create({
         data: {
           parentId: req.user.id,
@@ -113,7 +116,15 @@ router.post(
           status: 'INACTIVE',
         },
       });
-
+     // Notify admins about the new child account.
+await prisma.adminNotification.create({
+  data: {
+    title: 'New Child Account Created',
+    message: `${customer?.name || customer?.email || 'A customer'} created branch "${branchName.trim()}" (${branchCode.trim().toUpperCase()}).`,
+    type: 'CHILD_ACCOUNT_CREATED',
+    link: '/admin/child-accounts',
+  },
+});
       res.status(201).json({
         success: true,
         message: 'Child account created successfully.',

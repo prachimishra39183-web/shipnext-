@@ -24,7 +24,7 @@ function CustomerDashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
   const [notificationError, setNotificationError] = useState('');
-
+const [recentTransactions, setRecentTransactions] = useState([]);
   const fetchNotifications = async () => {
         if (bookingAccess) {
       setLoadingNotifications(false);
@@ -63,7 +63,29 @@ function CustomerDashboard() {
       setLoadingNotifications(false);
     }
   };
+    useEffect(() => {
+  const fetchRecentTransactions = async () => {
+    try {
+      const token = sessionStorage.getItem('shipnextToken');
 
+      const response = await fetch(`${API_URL}/api/wallet/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setRecentTransactions(data.wallet?.transactions || []);
+      }
+    } catch (error) {
+      console.error('Wallet transactions error:', error);
+    }
+  };
+
+  fetchRecentTransactions();
+}, []);
     useEffect(() => {
     fetchNotifications();
   }, [bookingAccess]);
@@ -375,19 +397,12 @@ function CustomerDashboard() {
 
                   {!notification.isRead && (
                     <button
-                      onClick={() => markAsRead(notification.id)}
-                      style={{
-                        border: 'none',
-                        background: 'none',
-                        color: '#2563eb',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Mark as Read
-                    </button>
+  className="notification-mark-read"
+  onClick={() => markAsRead(notification.id)}
+>
+  <CheckCheck size={14} />
+  Mark as Read
+</button>
                   )}
                 </div>
               ))}
@@ -444,18 +459,40 @@ function CustomerDashboard() {
         </section>
 
         <section className="dashboard-panel" id="transactions">
-          <div className="panel-heading">
-            <div>
-              <h2>Recent Transactions</h2>
-              <p>Your latest wallet activity.</p>
-            </div>
-            <a href="#all-transactions">View All →</a>
+  <div className="panel-heading">
+    <div>
+      <h2>Recent Transactions</h2>
+      <p>Your latest wallet activity.</p>
+    </div>
+    <a href="/wallet">View All →</a>
+  </div>
+
+  {recentTransactions.length > 0 ? (
+    <div className="recent-transactions-list">
+      {recentTransactions.slice(0, 5).map((transaction) => (
+        <div className="recent-transaction-item" key={transaction.id}>
+          <div>
+            <strong>{transaction.description || 'Wallet Transaction'}</strong>
+            <small>
+              {new Date(transaction.createdAt).toLocaleString()}
+            </small>
           </div>
 
-          <div className="empty-state compact">
-            <p>No transactions available yet.</p>
-          </div>
-        </section>
+          <strong className={
+            transaction.type === 'CREDIT' ? 'transaction-credit' : 'transaction-debit'
+          }>
+            {transaction.type === 'CREDIT' ? '+' : '-'}
+            ₹{Number(transaction.amount).toFixed(2)}
+          </strong>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="empty-state compact">
+      <p>No transactions available yet.</p>
+    </div>
+  )}
+</section>
 
         <footer className="dashboard-footer">
           © {new Date().getFullYear()} ShipNext. All rights reserved.

@@ -187,6 +187,10 @@ if (normalizedPaymentMode === 'COD') {
           });
         }
       }
+      const customer = await prisma.user.findUnique({
+  where: { id: req.user.userId },
+  select: { name: true, email: true },
+});
 
       const draft = await prisma.shipmentDraft.create({
         data: {
@@ -221,6 +225,15 @@ codAmount: normalizedCodAmount,
             normalizedType === 'NON_DOCUMENT' && itemCategory === 'Other'
               ? itemDescription.trim()
               : null,
+        },
+      });
+            // Notify admins about the new shipment draft.
+      await prisma.adminNotification.create({
+        data: {
+          title: 'New Shipment Draft',
+          message: `${customer?.name || customer?.email || 'A customer'} saved a shipment draft (${pickupPincode} → ${deliveryPincode}).`,
+          type: 'SHIPMENT_DRAFT',
+          link: '/admin/shipments',
         },
       });
 
@@ -921,6 +934,10 @@ router.post(
     try {
       const { draftId, mode } = req.body;
       const customerId = req.user.userId;
+      const customer = await prisma.user.findUnique({
+  where: { id: customerId },
+  select: { name: true, email: true },
+});
 
       if (!draftId) {
         return res.status(400).json({
@@ -1121,7 +1138,7 @@ router.post(
 
               trackingId,
               docketNumber,
-              courierPartner,
+             
               courierPartner: selectedCourier,
 
               processingDate: new Date(),
@@ -1158,7 +1175,15 @@ codRemittanceStatus:
   draft.paymentMode === 'COD' ? 'REMITTANCE_PENDING' : null,
             },
           });
-
+           // Notify admins about the new shipment booking.
+await tx.adminNotification.create({
+  data: {
+    title: 'New Shipment Booked',
+    message: `${customer?.name || customer?.email || 'A customer'} booked shipment ${trackingId}.`,
+    type: 'SHIPMENT_BOOKED',
+    link: '/admin/shipments',
+  },
+});
           const updatedWallet = await tx.wallet.findUnique({
             where: {
               id: wallet.id,

@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
-
+import './AdminNotificationBell.css';
+import { CheckCheck } from 'lucide-react';
 function AdminNotificationBell() {
   const navigate = useNavigate();
 
@@ -101,7 +102,14 @@ function AdminNotificationBell() {
       <button
         className="admin-notification-bell"
         title="Notifications"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+  const nextState = !isOpen;
+  setIsOpen(nextState);
+
+  if (nextState) {
+    fetchNotifications();
+  }
+}}
       >
         🔔
 
@@ -118,9 +126,13 @@ function AdminNotificationBell() {
             <strong>Notifications</strong>
 
             {unreadCount > 0 && (
-              <button onClick={markAllAsRead}>
-                Mark all as read
-              </button>
+             <button
+  className="notification-read-all"
+  onClick={markAllAsRead}
+>
+  <CheckCheck size={15} />
+  Mark all as read
+</button>
             )}
           </div>
 
