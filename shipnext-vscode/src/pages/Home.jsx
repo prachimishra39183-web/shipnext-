@@ -662,21 +662,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
     onSubmit={handleRateCalculation}
   >
 
-    <div className="rate-calculator-field">
-      <label>Delivery Zone</label>
-
-      <select
-        value={rateZone}
-        onChange={(e) => {
-          setRateZone(e.target.value);
-          setRateResult(null);
-        }}
-      >
-        <option value="METRO">Metro</option>
-        <option value="ROI">ROI</option>
-        <option value="NE">North East (NE)</option>
-      </select>
-    </div>
+   
 
     <div className="rate-calculator-field">
       <label>Shipping Mode</label>
@@ -736,11 +722,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
       </div>
 
       <div className="rate-result-details">
-        <div>
-          <span>Delivery Zone</span>
-          <strong>{rateResult.zone}</strong>
-        </div>
-
+        
         <div>
           <span>Shipping Mode</span>
           <strong>{rateResult.mode}</strong>
@@ -772,43 +754,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
     </div>
   )}
 
-  <div className="standard-rate-reference">
 
-    <h3>Standard General Rates (&gt;500g)</h3>
-
-    <div className="rate-table-wrapper">
-      <table className="rate-table">
-        <thead>
-          <tr>
-            <th>Zone</th>
-            <th>Standard Rate</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr>
-            <td>Metro</td>
-            <td>₹35</td>
-          </tr>
-
-          <tr>
-            <td>ROI</td>
-            <td>₹40</td>
-          </tr>
-
-          <tr>
-            <td>NE</td>
-            <td>₹60</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>
-      Standard rates are displayed separately as the general tariff.
-    </p>
-
-  </div>
 
 </div>
 </section>
