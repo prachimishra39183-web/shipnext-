@@ -22,7 +22,13 @@ const refundsRoutes = require('./routes/refunds');
 const profileRoutes = require('./routes/profile');
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    if (req.originalUrl === '/api/wallet/webhook') {
+      req.rawBody = Buffer.from(buf);
+    }
+  }
+}));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/child-accounts', childAccountsRoutes);

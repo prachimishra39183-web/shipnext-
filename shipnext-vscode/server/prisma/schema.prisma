@@ -29,13 +29,18 @@ enum TransactionType {
 }
 
 model WalletRechargeRequest {
-  id            String  @id @default(uuid())
-  userId        String
-  amount        Decimal @db.Decimal(12, 2)
-  upiReference  String  @unique
-  paymentMethod String  @default("UPI")
+  id                String  @id @default(uuid())
+  userId            String
+  amount            Decimal @db.Decimal(12, 2)
 
-  // Encrypted payment screenshot
+  // Razorpay payment details
+  upiReference      String? @unique
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String? @unique
+  status            String  @default("PENDING")
+  paymentMethod     String  @default("RAZORPAY")
+
+  // Legacy encrypted payment screenshot fields
   proofOriginalName  String?
   proofMimeType      String?
   proofFileSize      Int?
@@ -49,7 +54,9 @@ model WalletRechargeRequest {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
+  @@index([status])
 }
+
 
 enum ShippingMode {
   EXPRESS_AIR

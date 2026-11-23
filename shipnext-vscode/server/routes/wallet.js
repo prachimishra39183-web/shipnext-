@@ -1,9 +1,9 @@
 
 const express = require('express');
 const prisma = require('../prisma');
-const multer = require('multer');
+const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const path = require('path');
+
 const {
   authenticateToken,
   authorizeRole,
@@ -11,81 +11,19 @@ const {
 
 const router = express.Router();
 
-const paymentProofUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-    files: 1,
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'application/pdf',
-    ];
-
-    if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error('Only JPG, PNG, WEBP and PDF files are allowed.'));
-    }
-
-    cb(null, true);
-  },
-});
-
-function encryptPaymentProof(buffer) {
-  const key = Buffer.from(
-    process.env.KYC_ENCRYPTION_KEY || '',
-    'base64'
-  );
-
-  if (key.length !== 32) {
-    throw new Error('Payment proof encryption key is missing or invalid.');
+function getRazorpay() {
+  if (
+    !process.env.RAZORPAY_KEY_ID ||
+    !process.env.RAZORPAY_KEY_SECRET
+  ) {
+    throw new Error('Razorpay API credentials are not configured.');
   }
 
-  const iv = crypto.randomBytes(12);
-
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-
-  const encryptedData = Buffer.concat([
-    cipher.update(buffer),
-    cipher.final(),
-  ]);
-
-  return {
-    encryptedData,
-    encryptionIv: iv.toString('hex'),
-    authTag: cipher.getAuthTag().toString('hex'),
-  };
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
 }
-
-function isValidPaymentProof(buffer, mimeType) {
-  if (mimeType === 'image/jpeg') {
-    return buffer.subarray(0, 3).equals(
-      Buffer.from([0xff, 0xd8, 0xff])
-    );
-  }
-
-  if (mimeType === 'image/png') {
-    return buffer.subarray(0, 8).equals(
-      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-    );
-  }
-
-  if (mimeType === 'image/webp') {
-    return (
-      buffer.toString('ascii', 0, 4) === 'RIFF' &&
-      buffer.toString('ascii', 8, 12) === 'WEBP'
-    );
-  }
-
-  if (mimeType === 'application/pdf') {
-    return buffer.toString('ascii', 0, 5) === '%PDF-';
-  }
-
-  return false;
-}
-
 
 // GET CUSTOMER WALLET BALANCE AND TRANSACTION HISTORY
 router.get(
@@ -95,18 +33,12 @@ router.get(
   async (req, res) => {
     try {
       const wallet = await prisma.wallet.upsert({
-        where: {
-          userId: req.user.userId,
-        },
+        where: { userId: req.user.userId },
         update: {},
-        create: {
-          userId: req.user.userId,
-        },
+        create: { userId: req.user.userId },
         include: {
           transactions: {
-            orderBy: {
-              createdAt: 'desc',
-            },
+            orderBy: { createdAt: 'desc' },
             take: 50,
           },
         },
@@ -130,28 +62,14 @@ router.get(
   }
 );
 
+// CREATE RAZORPAY WALLET RECHARGE ORDER
 router.post(
-  '/recharge-requests',
+  '/recharge-orders',
   authenticateToken,
   authorizeRole('CUSTOMER'),
-  (req, res, next) => {
-    paymentProofUpload.single('paymentProof')(req, res, (err) => {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          message: err.message || 'Invalid payment screenshot.',
-        });
-      }
-      next();
-    });
-  },
   async (req, res) => {
     try {
-      const { amount, upiReference, paymentMethod } = req.body;
-
-      const amountString = String(amount ?? '').trim();
-      const reference = String(upiReference ?? '').trim();
-      const method = String(paymentMethod ?? '').trim();
+      const amountString = String(req.body.amount ?? '').trim();
 
       if (
         !/^\d+(\.\d{1,2})?$/.test(amountString) ||
@@ -161,146 +79,255 @@ router.post(
       ) {
         return res.status(400).json({
           success: false,
-          message: 'Enter a valid recharge amount between ₹1 and ₹10,00,000.',
+          message: 'Enter an amount between ₹1 and ₹10,00,000.',
         });
       }
 
-      const allowedMethods = ['UPI', 'CREDIT_CARD', 'DEBIT_CARD'];
+      const amountPaise = Math.round(Number(amountString) * 100);
+      const amountRupees = (amountPaise / 100).toFixed(2);
 
-      if (!allowedMethods.includes(method)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Please select a valid payment method.',
-        });
-      }
+      const razorpay = getRazorpay();
 
-      if (!reference || reference.length > 100) {
-        return res.status(400).json({
-          success: false,
-          message: 'Please enter a valid payment reference or transaction ID.',
-        });
-      }
+      const order = await razorpay.orders.create({
+        amount: amountPaise,
+        currency: 'INR',
+        receipt: `wr_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
+        notes: {
+          userId: req.user.userId,
+          purpose: 'SHIPNEXT_WALLET_RECHARGE',
+        },
+      });
 
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: 'Please upload your payment screenshot.',
-        });
-      }
+      const recharge = await prisma.walletRechargeRequest.create({
+        data: {
+          userId: req.user.userId,
+          amount: amountRupees,
+          razorpayOrderId: order.id,
+          paymentMethod: 'RAZORPAY',
+          status: 'PENDING',
+        },
+      });
 
-      if (!isValidPaymentProof(req.file.buffer, req.file.mimetype)) {
-        return res.status(400).json({
-          success: false,
-          message: 'The uploaded file does not match its file type.',
-        });
-      }
-
-     
-const encryptedProof = encryptPaymentProof(req.file.buffer);
-
-const recharge = await prisma.$transaction(async (tx) => {
-  // Create wallet if it does not exist, or add the recharge amount.
-  const wallet = await tx.wallet.upsert({
-    where: {
-      userId: req.user.userId,
-    },
-    update: {
-      balance: {
-        increment: amountString,
-      },
-    },
-    create: {
-      userId: req.user.userId,
-      balance: amountString,
-    },
-  });
-
-  // Save recharge details and encrypted payment proof.
-  const request = await tx.walletRechargeRequest.create({
-    data: {
-      userId: req.user.userId,
-      amount: amountString,
-      upiReference: reference,
-      paymentMethod: method,
-      proofOriginalName: path.basename(req.file.originalname).slice(0, 150),
-      proofMimeType: req.file.mimetype,
-      proofFileSize: req.file.size,
-      proofEncryptedData: encryptedProof.encryptedData,
-      proofEncryptionIv: encryptedProof.encryptionIv,
-      proofAuthTag: encryptedProof.authTag,
-    },
-  });
-
-  // Record the wallet credit.
-  await tx.walletTransaction.create({
-    data: {
-      userId: req.user.userId,
-      walletId: wallet.id,
-      type: 'CREDIT',
-      amount: amountString,
-      description: 'Wallet recharge through ' + method,
-      reference: 'WALLET_RECHARGE_' + reference,
-    },
-  });
-// Notify customer about successful wallet recharge.
-await tx.notification.create({
-  data: {
-    userId: req.user.userId,
-    title: 'Wallet Recharge Successful',
-    message: `₹${amountString} has been added to your ShipNext wallet.`,
-    type: 'WALLET',
-  },
-});
-
-// Notify admins about the wallet recharge.
-await tx.adminNotification.create({
-  data: {
-    title: 'New Wallet Recharge',
-    message: `A customer has recharged their wallet with ₹${amountString} through ${method}.`,
-    type: 'WALLET_TOPUP',
-    link: '/admin/wallet',
-  },
-});
-  return {
-    request,
-    wallet,
-  };
-});
-
-return res.status(201).json({
-  success: true,
-  message: 'Wallet recharged successfully.',
-  rechargeRequest: {
-    id: recharge.request.id,
-    amount: recharge.request.amount.toString(),
-    paymentMethod: recharge.request.paymentMethod,
-    upiReference: recharge.request.upiReference,
-    createdAt: recharge.request.createdAt,
-    status: 'COMPLETED',
-  },
-  balance: recharge.wallet.balance.toString(),
-});
-
+      return res.status(201).json({
+        success: true,
+        message: 'Payment order created.',
+        order: {
+          id: order.id,
+          amount: order.amount,
+          currency: order.currency,
+        },
+        rechargeId: recharge.id,
+        keyId: process.env.RAZORPAY_KEY_ID,
+      });
     } catch (error) {
-      if (error.code === 'P2002') {
-        return res.status(409).json({
-          success: false,
-          message: 'This payment reference has already been submitted.',
-        });
-      }
-
-      console.error('Create recharge request error:', error);
+      console.error('Create Razorpay order error:', error);
 
       return res.status(500).json({
         success: false,
-        message: 'Unable to submit recharge request.',
+        message: 'Unable to create payment order.',
       });
     }
   }
 );
 
-// CUSTOMER: VIEW OWN RECHARGE REQUESTS
+// VERIFY PAYMENT AND CREDIT CUSTOMER WALLET
+router.post(
+  '/verify-recharge',
+  authenticateToken,
+  authorizeRole('CUSTOMER'),
+  async (req, res) => {
+    try {
+      const {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      } = req.body;
 
+      if (
+        !razorpay_order_id ||
+        !razorpay_payment_id ||
+        !razorpay_signature
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment verification details are incomplete.',
+        });
+      }
+
+      const recharge = await prisma.walletRechargeRequest.findFirst({
+        where: {
+          userId: req.user.userId,
+          razorpayOrderId: razorpay_order_id,
+        },
+      });
+
+      if (!recharge) {
+        return res.status(404).json({
+          success: false,
+          message: 'Recharge order not found.',
+        });
+      }
+
+      // Already credited: never credit the same order twice.
+      if (recharge.status === 'COMPLETED') {
+        if (recharge.razorpayPaymentId !== razorpay_payment_id) {
+          return res.status(409).json({
+            success: false,
+            message: 'This order has already been processed.',
+          });
+        }
+
+        const wallet = await prisma.wallet.findUnique({
+          where: { userId: req.user.userId },
+        });
+
+        return res.json({
+          success: true,
+          message: 'Payment was already verified.',
+          balance: wallet.balance.toString(),
+        });
+      }
+
+      if (recharge.status !== 'PENDING') {
+        return res.status(409).json({
+          success: false,
+          message: 'This recharge order cannot be processed.',
+        });
+      }
+
+      const secret = process.env.RAZORPAY_KEY_SECRET;
+
+      const expectedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+      const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+      const receivedBuffer = Buffer.from(razorpay_signature, 'hex');
+
+      if (
+        expectedBuffer.length !== receivedBuffer.length ||
+        !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid payment signature.',
+        });
+      }
+
+      // Independently verify payment and order with Razorpay.
+      const razorpay = getRazorpay();
+
+      const [payment, order] = await Promise.all([
+        razorpay.payments.fetch(razorpay_payment_id),
+        razorpay.orders.fetch(razorpay_order_id),
+      ]);
+
+      const expectedPaise = Math.round(Number(recharge.amount) * 100);
+
+      if (
+        payment.order_id !== razorpay_order_id ||
+        payment.amount !== expectedPaise ||
+        order.amount !== expectedPaise ||
+        payment.currency !== 'INR' ||
+        order.currency !== 'INR' ||
+        payment.status !== 'captured' ||
+        order.status !== 'paid'
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment is not captured or the payment details do not match.',
+        });
+      }
+
+      // Credit wallet, record transaction and notifications atomically.
+      const result = await prisma.$transaction(async (tx) => {
+        const updated = await tx.walletRechargeRequest.updateMany({
+          where: {
+            id: recharge.id,
+            status: 'PENDING',
+          },
+          data: {
+            status: 'COMPLETED',
+            razorpayPaymentId: razorpay_payment_id,
+            paymentMethod: 'RAZORPAY',
+          },
+        });
+
+        if (updated.count !== 1) {
+          throw new Error('RECHARGE_ALREADY_PROCESSED');
+        }
+
+        const wallet = await tx.wallet.upsert({
+          where: { userId: req.user.userId },
+          update: {
+            balance: { increment: recharge.amount },
+          },
+          create: {
+            userId: req.user.userId,
+            balance: recharge.amount,
+          },
+        });
+
+        await tx.walletTransaction.create({
+          data: {
+            userId: req.user.userId,
+            walletId: wallet.id,
+            type: 'CREDIT',
+            amount: recharge.amount,
+            description: 'Wallet recharge through Razorpay',
+            reference: `RAZORPAY_${razorpay_payment_id}`,
+          },
+        });
+
+        await tx.notification.create({
+          data: {
+            userId: req.user.userId,
+            title: 'Wallet Recharge Successful',
+            message: `₹${recharge.amount.toString()} has been added to your ShipNext wallet.`,
+            type: 'WALLET',
+          },
+        });
+
+        await tx.adminNotification.create({
+          data: {
+            title: 'New Wallet Recharge',
+            message: `A customer has recharged their wallet with ₹${recharge.amount.toString()} through Razorpay.`,
+            type: 'WALLET_TOPUP',
+            link: '/admin/wallet',
+          },
+        });
+
+        return wallet;
+      });
+
+      return res.json({
+        success: true,
+        message: 'Wallet recharged successfully.',
+        balance: result.balance.toString(),
+      });
+    } catch (error) {
+      if (
+        error.message === 'RECHARGE_ALREADY_PROCESSED' ||
+        error.code === 'P2002'
+      ) {
+        return res.status(409).json({
+          success: false,
+          message: 'This payment has already been processed.',
+        });
+      }
+
+      console.error('Verify Razorpay payment error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to verify payment. Please contact support if money was deducted.',
+      });
+    }
+  }
+);
+
+// CUSTOMER: VIEW OWN RECHARGE HISTORY
 router.get(
   '/recharge-requests',
   authenticateToken,
@@ -315,7 +342,10 @@ router.get(
           id: true,
           amount: true,
           upiReference: true,
+          razorpayOrderId: true,
+          razorpayPaymentId: true,
           paymentMethod: true,
+          status: true,
           createdAt: true,
         },
         orderBy: {
@@ -337,5 +367,142 @@ router.get(
     }
   }
 );
+// RAZORPAY WEBHOOK: AUTOMATICALLY CONFIRM SUCCESSFUL RECHARGES
+router.post('/webhook', async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers['x-razorpay-signature'];
+
+    if (!webhookSecret || !req.rawBody || !signature) {
+      return res.status(400).send('Invalid webhook configuration.');
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(req.rawBody)
+      .digest('hex');
+
+    const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+    const receivedBuffer = Buffer.from(signature, 'hex');
+
+    if (
+      expectedBuffer.length !== receivedBuffer.length ||
+      !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+    ) {
+      return res.status(400).send('Invalid webhook signature.');
+    }
+
+    const event = JSON.parse(req.rawBody.toString('utf8'));
+
+    // Only process successfully captured payments.
+    if (event.event !== 'payment.captured') {
+      return res.status(200).json({ received: true });
+    }
+
+    const payment = event.payload?.payment?.entity;
+
+    if (
+      !payment ||
+      !payment.order_id ||
+      payment.status !== 'captured' ||
+      payment.currency !== 'INR'
+    ) {
+      return res.status(200).json({ received: true });
+    }
+
+    const recharge = await prisma.walletRechargeRequest.findUnique({
+      where: { razorpayOrderId: payment.order_id },
+    });
+
+    if (!recharge) {
+      console.error('Webhook: Recharge order not found:', payment.order_id);
+      return res.status(200).json({ received: true });
+    }
+
+    // Already credited: never credit this recharge twice.
+    if (recharge.status === 'COMPLETED') {
+      return res.status(200).json({ received: true });
+    }
+
+    const expectedPaise = Math.round(Number(recharge.amount) * 100);
+
+    if (payment.amount !== expectedPaise) {
+      console.error('Webhook: Payment amount mismatch:', payment.order_id);
+      return res.status(200).json({ received: true });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.walletRechargeRequest.updateMany({
+        where: {
+          id: recharge.id,
+          status: 'PENDING',
+        },
+        data: {
+          status: 'COMPLETED',
+          razorpayPaymentId: payment.id,
+          paymentMethod: 'RAZORPAY',
+        },
+      });
+
+      if (updated.count !== 1) {
+        throw new Error('RECHARGE_ALREADY_PROCESSED');
+      }
+
+      const wallet = await tx.wallet.upsert({
+        where: { userId: recharge.userId },
+        update: {
+          balance: { increment: recharge.amount },
+        },
+        create: {
+          userId: recharge.userId,
+          balance: recharge.amount,
+        },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          userId: recharge.userId,
+          walletId: wallet.id,
+          type: 'CREDIT',
+          amount: recharge.amount,
+          description: 'Wallet recharge through Razorpay',
+          reference: `RAZORPAY_${payment.id}`,
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: recharge.userId,
+          title: 'Wallet Recharge Successful',
+          message: `₹${recharge.amount.toString()} has been added to your ShipNext wallet.`,
+          type: 'WALLET',
+        },
+      });
+
+      await tx.adminNotification.create({
+        data: {
+          title: 'New Wallet Recharge',
+          message: `A customer has recharged their wallet with ₹${recharge.amount.toString()} through Razorpay.`,
+          type: 'WALLET_TOPUP',
+          link: '/admin/wallet',
+        },
+      });
+    });
+
+    console.log('Razorpay webhook: Wallet recharge completed:', payment.id);
+
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    if (
+      error.message === 'RECHARGE_ALREADY_PROCESSED' ||
+      error.code === 'P2002'
+    ) {
+      return res.status(200).json({ received: true });
+    }
+
+    console.error('Razorpay webhook error:', error);
+    return res.status(500).json({ received: false });
+  }
+});
 
 module.exports = router;
