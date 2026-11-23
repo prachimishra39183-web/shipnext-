@@ -557,7 +557,7 @@ router.patch(
 );
 
 
-// GET CUSTOMER WALLET RECHARGE REQUESTS — ADMIN VIEW ONLY
+// GET COMPLETED CUSTOMER WALLET RECHARGES — ADMIN VIEW ONLY
 router.get(
   '/wallet-recharge-requests',
   authenticateToken,
@@ -565,15 +565,17 @@ router.get(
   async (req, res) => {
     try {
       const requests = await prisma.walletRechargeRequest.findMany({
+        where: {
+          status: 'COMPLETED',
+        },
         select: {
           id: true,
           userId: true,
           amount: true,
           upiReference: true,
+          razorpayPaymentId: true,
           paymentMethod: true,
-          proofOriginalName: true,
-          proofMimeType: true,
-          proofFileSize: true,
+          status: true,
           createdAt: true,
           user: {
             select: {
@@ -598,10 +600,8 @@ router.get(
           phone: request.user.phone,
           amount: request.amount.toString(),
           paymentMethod: request.paymentMethod,
-          reference: request.upiReference,
-          fileName: request.proofOriginalName,
-          fileType: request.proofMimeType,
-          fileSize: request.proofFileSize,
+          status: request.status,
+          reference: request.razorpayPaymentId || request.upiReference,
           createdAt: request.createdAt,
         })),
       });
@@ -609,11 +609,12 @@ router.get(
       console.error('Admin recharge requests error:', error);
       return res.status(500).json({
         success: false,
-        message: 'Unable to retrieve payment documents.',
+        message: 'Unable to retrieve completed payments.',
       });
     }
   }
 );
+
 
 // VIEW PAYMENT PROOF — ADMIN ONLY
 router.get(

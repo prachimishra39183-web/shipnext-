@@ -195,13 +195,23 @@ awbAssignedAt  DateTime?
   shippingCharge       Decimal @db.Decimal(12, 2)
   paymentMode          String  @default("WALLET") // ShipNext shipping-charge payment
   recipientPaymentMode String  @default("PREPAID") // Recipient payment type: PREPAID or COD
+// CASH ON DELIVERY TRACKING
+codAmount              Decimal?  @db.Decimal(12, 2)
+codCharge              Decimal?  @db.Decimal(12, 2)
+codNetAmount           Decimal?  @db.Decimal(12, 2)
 
-  // CASH ON DELIVERY TRACKING
-  codAmount              Decimal?  @db.Decimal(12, 2)
-  codCollectionStatus    String?
-  codRemittanceStatus    String?
-  codCollectedAt         DateTime?
-  codRemittanceReference String?
+codCollectionStatus    String?   @default("PENDING")
+
+// Courier → ShipNext remittance
+codRemittanceStatus    String?   @default("PENDING")
+codCollectedAt         DateTime?
+codRemittedAt          DateTime?
+codRemittanceReference String?
+
+// ShipNext → Customer settlement
+codSettlementStatus    String?   @default("PENDING")
+codSettledAt           DateTime?
+codSettlementReference String?
 
   customer User @relation(fields: [customerId], references: [id])
 
@@ -368,12 +378,27 @@ model CourierPincodeServiceability {
   cod           Boolean @default(false)
   cash          Boolean @default(false)
 
+  // Skyking-specific information
+  serviceabilityStatus String?
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([courier, pincode])
+ @@unique([courier, pincode])
   @@index([pincode])
   @@index([courier, pincode])
+}
+
+
+model BlockedPincode {
+  id        String   @id @default(uuid())
+  pincode   String   @unique
+  reason    String?
+  blockedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pincode])
 }
 
 model AdminNotification {

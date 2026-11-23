@@ -1,0 +1,181 @@
+
+.customer-cod-page {
+  min-height: 100vh;
+  padding: 32px;
+  box-sizing: border-box;
+  color: #f8fafc;
+  background:  #080e19;
+  border-radius: 18px;
+}
+
+.customer-cod-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.customer-cod-header span {
+  color: #ff5a36;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.customer-cod-header h1 {
+  margin: 8px 0;
+  font-size: 30px;
+}
+
+.customer-cod-header p {
+  color: #f8f9f9;
+  font-size: 13px;
+}
+
+.customer-cod-header button {
+  padding: 11px 18px;
+  color: rgb(6, 3, 3);
+  background: #ff4b2b;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.customer-cod-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+  margin-bottom: 25px;
+}
+
+.customer-cod-card {
+  padding: 23px;
+  background: linear-gradient(145deg, #ea6a02, #ca1006);
+  border: 1px solid rgba(148, 163, 184, .17);
+  border-radius: 15px;
+}
+
+.customer-cod-card span {
+  display: block;
+  color: #020e1f;
+  font-size: 15px;
+  margin-bottom: 13px;
+}
+
+.customer-cod-card strong {
+  font-size: 24px;
+}
+
+.customer-cod-table-panel {
+  background: #04046d;
+  border: 1px solid rgba(148, 163, 184, .17);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.customer-cod-table-heading {
+  padding: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(148, 163, 184, .15);
+}
+
+.customer-cod-table-heading h2 {
+  font-size: 18px;
+}
+
+.customer-cod-table-heading span {
+  color: #ff765b;
+  font-size: 12px;
+}
+
+.customer-cod-table-scroll {
+  overflow-x: auto;
+}
+
+.customer-cod-table {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.customer-cod-table th {
+  padding: 15px;
+  background: #1b0599;
+  color: #94a3b8;
+  font-size: 11px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.customer-cod-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, .1);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.customer-cod-table td strong,
+.customer-cod-table td small {
+  display: block;
+}
+
+.customer-cod-table td small {
+  color: #8291a6;
+  margin-top: 5px;
+}
+
+.customer-cod-status {
+  padding: 6px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.customer-cod-status.completed {
+  color: #86efac;
+  background: rgba(34, 197, 94, .13);
+}
+
+.customer-cod-status.pending {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, .13);
+}
+
+.customer-cod-empty {
+  padding: 45px 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.customer-cod-error {
+  padding: 13px;
+  margin-bottom: 18px;
+  color: #fecaca;
+  background: rgba(220, 38, 38, .13);
+  border-radius: 9px;
+}
+
+@media (max-width: 900px) {
+  .customer-cod-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .customer-cod-page {
+    padding: 17px;
+  }
+
+  .customer-cod-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .customer-cod-summary {
+    grid-template-columns: 1fr;
+  }
+}

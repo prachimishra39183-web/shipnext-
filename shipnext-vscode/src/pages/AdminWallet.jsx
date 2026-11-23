@@ -33,7 +33,12 @@ const [refundActionLoading, setRefundActionLoading] = useState('');
     try {
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [walletResponse, transactionResponse, paymentResponse] =
+      const [
+  walletResponse,
+  transactionResponse,
+  paymentResponse,
+  refundResponse,
+] =
         await Promise.all([
           fetch(`${API_URL}/api/admin/wallets`, { headers }),
           fetch(`${API_URL}/api/admin/wallet-transactions`, { headers }),

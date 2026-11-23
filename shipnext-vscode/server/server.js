@@ -20,6 +20,8 @@ const adminNotificationsRoutes = require('./routes/adminNotifications');
 const ndrRoutes = require('./routes/ndr');
 const refundsRoutes = require('./routes/refunds');
 const profileRoutes = require('./routes/profile');
+const pincodeBlockageRoutes = require('./routes/pincodeBlockage');
+const codRemittanceRoutes = require('./routes/codRemittance');
 // Middleware
 app.use(cors());
 app.use(express.json({
@@ -44,6 +46,8 @@ app.use('/api/admin/notifications', adminNotificationsRoutes);
 app.use('/api/ndr', ndrRoutes);
 app.use('/api/refunds', refundsRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/admin/pincode-blockage', pincodeBlockageRoutes);
+app.use('/api/cod-remittance', codRemittanceRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({

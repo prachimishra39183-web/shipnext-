@@ -33,7 +33,39 @@ const COURIERS = [
 function validPincode(pin) {
   return /^\d{6}$/.test(String(pin || '').trim());
 }
+async function getBlockedPincodes(pincodes) {
+  const blocked = await prisma.blockedPincode.findMany({
+    where: {
+      pincode: { in: pincodes },
+    },
+    select: {
+      pincode: true,
+      reason: true,
+    },
+  });
 
+  return new Map(
+    blocked.map((item) => [item.pincode, item])
+  );
+}
+function getSkykingStatus(record) {
+  return record?.serviceabilityStatus || 'Serviceable';
+}
+
+function isCourierPinUsable(record, courier) {
+  if (!record) return false;
+
+  if (courier === 'SKYKING') {
+    return getSkykingStatus(record) !== 'No Service';
+  }
+
+  return true;
+}
+
+function isPartiallyServiceable(record, courier) {
+  return courier === 'SKYKING' &&
+    getSkykingStatus(record) === 'Partially Serviceable';
+}
 // PUBLIC: Check PIN-code availability for all courier partners
 router.post('/couriers/check', async (req, res) => {
   try {
@@ -49,8 +81,25 @@ router.post('/couriers/check', async (req, res) => {
         message: 'Enter valid six-digit pickup and delivery PIN codes.',
       });
     }
+  const blockedPincodes = await getBlockedPincodes([
+  pickupPincode,
+  deliveryPincode,
+]);
 
+if (blockedPincodes.size > 0) {
+  return res.json({
+    success: true,
+    blocked: true,
+    serviceable: false,
+    pickupPincode,
+    deliveryPincode,
+    blockedPincodes: Array.from(blockedPincodes.values()),
+    courierResults: [],
+    message: 'Service is unavailable for one or more entered PIN codes.',
+  });
+}
     const records = await prisma.courierPincodeServiceability.findMany({
+      
       where: {
         courier: { in: COURIERS },
         pincode: { in: [pickupPincode, deliveryPincode] },
@@ -63,42 +112,52 @@ router.post('/couriers/check', async (req, res) => {
         record,
       ])
     );
+      const courierResults = COURIERS.map((courier) => {
+  const pickup = recordMap.get(`${courier}:${pickupPincode}`);
+  const delivery = recordMap.get(`${courier}:${deliveryPincode}`);
 
-    const courierResults = COURIERS.map((courier) => {
-      const pickup = recordMap.get(`${courier}:${pickupPincode}`);
-      const delivery = recordMap.get(`${courier}:${deliveryPincode}`);
+  const pickupUsable = isCourierPinUsable(pickup, courier);
+  const deliveryUsable = isCourierPinUsable(delivery, courier);
 
-      return {
-        courier,
-        serviceable: Boolean(pickup && delivery),
+  return {
+    courier,
+    serviceable: pickupUsable && deliveryUsable,
 
-        pickup: pickup
-          ? {
-              available: true,
-              district: pickup.district,
-              stateCode: pickup.stateCode,
-              prepaid: pickup.prepaid,
-              reversePickup: pickup.reversePickup,
-              repl: pickup.repl,
-              cod: pickup.cod,
-              cash: pickup.cash,
-            }
-          : { available: false },
+    partiallyServiceable:
+      isPartiallyServiceable(pickup, courier) ||
+      isPartiallyServiceable(delivery, courier),
 
-        delivery: delivery
-          ? {
-              available: true,
-              district: delivery.district,
-              stateCode: delivery.stateCode,
-              prepaid: delivery.prepaid,
-              reversePickup: delivery.reversePickup,
-              repl: delivery.repl,
-              cod: delivery.cod,
-              cash: delivery.cash,
-            }
-          : { available: false },
-      };
-    });
+    pickup: pickup
+      ? {
+          available: pickupUsable,
+          serviceabilityStatus:
+            courier === 'SKYKING' ? getSkykingStatus(pickup) : null,
+          district: pickup.district,
+          stateCode: pickup.stateCode,
+          prepaid: pickup.prepaid,
+          reversePickup: pickup.reversePickup,
+          repl: pickup.repl,
+          cod: pickup.cod,
+          cash: pickup.cash,
+        }
+      : { available: false },
+
+    delivery: delivery
+      ? {
+          available: deliveryUsable,
+          serviceabilityStatus:
+            courier === 'SKYKING' ? getSkykingStatus(delivery) : null,
+          district: delivery.district,
+          stateCode: delivery.stateCode,
+          prepaid: delivery.prepaid,
+          reversePickup: delivery.reversePickup,
+          repl: delivery.repl,
+          cod: delivery.cod,
+          cash: delivery.cash,
+        }
+      : { available: false },
+  };
+});
 
     return res.json({
       success: true,
@@ -141,31 +200,46 @@ router.post('/check', async (req, res) => {
     });
 
     // A courier must cover BOTH pickup and delivery PIN codes.
-    const serviceableCouriers = COURIERS.filter((courier) => {
-      const hasPickup = records.some(
-        (record) =>
-          record.courier === courier &&
-          record.pincode === pickupPincode
-      );
+   // A courier must cover BOTH pickup and delivery PIN codes.
+const serviceableCouriers = COURIERS.filter((courier) => {
+  const pickup = records.find(
+    (record) =>
+      record.courier === courier &&
+      record.pincode === pickupPincode
+  );
 
-      const hasDelivery = records.some(
-        (record) =>
-          record.courier === courier &&
-          record.pincode === deliveryPincode
-      );
+  const delivery = records.find(
+    (record) =>
+      record.courier === courier &&
+      record.pincode === deliveryPincode
+  );
 
-      return hasPickup && hasDelivery;
-    });
+  return (
+    isCourierPinUsable(pickup, courier) &&
+    isCourierPinUsable(delivery, courier)
+  );
+});
 
-    if (serviceableCouriers.length === 0) {
-      return res.status(404).json({
-        success: false,
-        serviceable: false,
-        availableModes: [],
-        message: 'No courier currently covers both PIN codes.',
-      });
-    }
+const partiallyServiceableCouriers = serviceableCouriers.filter(
+  (courier) => {
+    const pickup = records.find(
+      (record) =>
+        record.courier === courier &&
+        record.pincode === pickupPincode
+    );
 
+    const delivery = records.find(
+      (record) =>
+        record.courier === courier &&
+        record.pincode === deliveryPincode
+    );
+
+    return (
+      isPartiallyServiceable(pickup, courier) ||
+      isPartiallyServiceable(delivery, courier)
+    );
+  }
+);
     // TEMPORARY: The imported dataset does not identify Air/Surface modes.
     const availableModes = VALID_MODES.map((mode, index) => ({
       mode,
@@ -180,6 +254,8 @@ router.post('/check', async (req, res) => {
       message: 'Shipping options retrieved using courier PIN coverage.',
       availabilityBasis: 'COURIER_PIN_COVERAGE',
       provisionalModes: true,
+      serviceableCouriers,
+partiallyServiceableCouriers,
     });
   } catch (error) {
     console.error('Serviceability check error:', error);
@@ -230,22 +306,25 @@ router.post('/quote', async (req, res) => {
         },
       });
 
-    // Find one courier that covers both locations.
-    const selectedCourier = COURIERS.find((courier) => {
-      const hasPickup = locationRecords.some(
-        (item) =>
-          item.courier === courier &&
-          item.pincode === pickupPincode
-      );
+   // Find one courier that can serve both locations.
+const selectedCourier = COURIERS.find((courier) => {
+  const pickup = locationRecords.find(
+    (item) =>
+      item.courier === courier &&
+      item.pincode === pickupPincode
+  );
 
-      const hasDelivery = locationRecords.some(
-        (item) =>
-          item.courier === courier &&
-          item.pincode === deliveryPincode
-      );
+  const delivery = locationRecords.find(
+    (item) =>
+      item.courier === courier &&
+      item.pincode === deliveryPincode
+  );
 
-      return hasPickup && hasDelivery;
-    });
+  return (
+    isCourierPinUsable(pickup, courier) &&
+    isCourierPinUsable(delivery, courier)
+  );
+});
 
     if (!selectedCourier) {
       return res.status(404).json({

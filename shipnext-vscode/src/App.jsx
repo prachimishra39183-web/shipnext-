@@ -28,9 +28,12 @@ import AdminServiceability from './pages/AdminServiceability.jsx';
 import AdminReports from './pages/AdminReports';
 import AdminLayout from './components/AdminLayout.jsx';
 import AdminChildAccounts from './pages/AdminChildAccounts.jsx';
+import AdminPincodeBlockage from './pages/AdminPincodeBlockage.jsx';
 import CustomerChildAccounts from './pages/CustomerChildAccounts.jsx';
 import ProductPage from './pages/ProductPage.jsx';
 import PlatformPage from './pages/PlatformPage.jsx';
+import AdminCodRemittance from './pages/AdminCodRemittance.jsx';
+import CustomerCodRemittance from './pages/CustomerCodRemittance.jsx';
 function App() {
   return (
     <BrowserRouter>
@@ -76,6 +79,10 @@ function App() {
   path="/child-accounts"
   element={<CustomerChildAccounts />}
 />
+<Route
+  path="/cod-remittance"
+  element={<CustomerCodRemittance />}
+/>
               
             </Route>
 
@@ -93,7 +100,15 @@ function App() {
     <Route path="/admin/serviceability" element={<AdminServiceability />} />
     <Route path="/admin/reports" element={<AdminReports />} />
     <Route path="/admin/child-accounts" element={<AdminChildAccounts />} />
+    <Route
+  path="/admin/pincode-blockage"
+  element={<AdminPincodeBlockage />}
+/>
   </Route>
+  <Route
+  path="/admin/cod-remittance"
+  element={<AdminCodRemittance />}
+/>
 </Route>
 
 

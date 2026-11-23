@@ -1131,7 +1131,24 @@ router.post(
           });
 
           // Create confirmed ShipNext shipment.
-          const shipment = await tx.shipment.create({
+          // Calculate COD charges
+const isCod = draft.paymentMode === 'COD';
+const codAmount = isCod ? Number(draft.codAmount || 0) : null;
+
+if (isCod && (!Number.isFinite(codAmount) || codAmount <= 0)) {
+  throw new Error('Please enter a valid COD amount.');
+}
+
+const codCharge = isCod
+  ? (codAmount <= 1500 ? 30 : Number((codAmount * 0.015).toFixed(2)))
+  : null;
+
+const codNetAmount = isCod
+  ? Number((codAmount - codCharge).toFixed(2))
+  : null;
+
+// Create confirmed ShipNext shipment.
+const shipment = await tx.shipment.create({
             data: {
               draftId: draft.id,
               customerId,
@@ -1162,17 +1179,15 @@ shippingCharge: amount,
 paymentMode: 'WALLET',
 
 // Recipient payment details
-recipientPaymentMode: draft.paymentMode || 'PREPAID',
-codAmount:
-  draft.paymentMode === 'COD'
-    ? draft.codAmount
-    : null,
+// Recipient payment details
+recipientPaymentMode: isCod ? 'COD' : 'PREPAID',
+codAmount: isCod ? codAmount : null,
+codCharge,
+codNetAmount,
 
-codCollectionStatus:
-  draft.paymentMode === 'COD' ? 'COD_PENDING' : null,
-
-codRemittanceStatus:
-  draft.paymentMode === 'COD' ? 'REMITTANCE_PENDING' : null,
+codCollectionStatus: isCod ? 'COD_PENDING' : null,
+codRemittanceStatus: isCod ? 'REMITTANCE_PENDING' : null,
+codSettlementStatus: isCod ? 'PENDING' : null,
             },
           });
            // Notify admins about the new shipment booking.

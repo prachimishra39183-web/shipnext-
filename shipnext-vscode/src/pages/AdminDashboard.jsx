@@ -19,7 +19,9 @@ import {
   Activity,
   ShieldCheck,
   Clock3,
-  TrendingUp
+  TrendingUp,
+  MapPin,
+  IndianRupee 
 } from 'lucide-react';
 
 import './AdminDashboard.css';
@@ -31,13 +33,19 @@ const navigation = [
     { label: 'Shipments', path: '/admin/shipments', icon: Package },
     { label: 'Bookings', path: '/admin/bookings', icon: ClipboardList }
   ]},
-  { title: 'OPERATIONS', items: [
+ {
+  title: 'OPERATIONS',
+  items: [
     { label: 'Wallet Management', path: '/admin/wallet', icon: Wallet },
     { label: 'Enquiries', path: '/admin/enquiries', icon: MessageSquare },
     { label: 'Support Tickets', path: '/admin/support', icon: Headset },
     { label: 'Child Accounts', path: '/admin/child-accounts', icon: Building2 },
-    { label: 'Reports & Analytics', path: '/admin/reports', icon: ChartNoAxesCombined }
-  ]}
+    { label: 'PIN Code Blockage', path: '/admin/pincode-blockage', icon: MapPin },
+    { label: 'Reports & Analytics', path: '/admin/reports', icon: ChartNoAxesCombined },
+    { label: 'COD Remittance', path: '/admin/cod-remittance', icon: IndianRupee },
+   
+  ]
+}
 ];
 const statCards = [
   {

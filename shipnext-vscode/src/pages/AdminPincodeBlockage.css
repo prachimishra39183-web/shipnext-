@@ -1,0 +1,364 @@
+
+/* =========================================
+   SHIPNEXT - PREMIUM PINCODE BLOCKAGE
+========================================= */
+
+.sn-pincode-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 34px;
+  color: #f8fafc;
+  background: #030f08;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* HEADER */
+
+.sn-pincode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.sn-pincode-eyebrow {
+  display: inline-block;
+  color: #ff633e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  margin-bottom: 12px;
+}
+
+.sn-pincode-header h1 {
+  margin: 0;
+  font-size: clamp(27px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  color: #0937ee;
+}
+
+.sn-pincode-header p {
+  color: #eff2f7;
+  font-size: 14px;
+  margin: 10px 0 0;
+}
+
+.sn-pincode-count {
+  min-width: 185px;
+  padding: 19px 23px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #172b46, #101c30);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.sn-pincode-count span {
+  display: block;
+  color: #a8b5c7;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.sn-pincode-count strong {
+  display: block;
+  color: #ff633e;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+/* CARDS */
+
+.sn-pincode-card {
+  position: relative;
+  padding: 27px;
+  margin-bottom: 25px;
+  border-radius: 19px;
+  background: linear-gradient(
+    145deg,
+    rgba(19, 37, 61, 0.97),
+    rgba(11, 24, 42, 0.97)
+  );
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.sn-pincode-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #ff633e,
+    rgba(255, 99, 62, 0.1),
+    transparent
+  );
+}
+
+.sn-pincode-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 26px;
+}
+
+.sn-pincode-card-heading h2 {
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 750;
+  margin: 0 0 8px;
+}
+
+.sn-pincode-card-heading p {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* FORM */
+
+.sn-pincode-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 23px;
+}
+
+.sn-pincode-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sn-pincode-field label {
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.sn-pincode-field input {
+  width: 100%;
+  height: 49px;
+  padding: 0 16px;
+  border-radius: 10px;
+  outline: none;
+  color: #ffffff;
+  font-size: 14px;
+  background: rgba(5, 15, 29, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  transition: border-color 0.25s, box-shadow 0.25s;
+  box-sizing: border-box;
+}
+
+.sn-pincode-field input::placeholder {
+  color: #64748b;
+}
+
+.sn-pincode-field input:focus {
+  border-color: #ff633e;
+  box-shadow: 0 0 0 3px rgba(255, 99, 62, 0.12);
+}
+
+/* BUTTONS */
+
+.sn-pincode-block-btn {
+  min-width: 175px;
+  height: 46px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #ff7049, #f04427);
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 7px 20px rgba(240, 68, 39, 0.2);
+  transition: all 0.25s ease;
+}
+
+.sn-pincode-block-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(240, 68, 39, 0.35);
+}
+
+.sn-pincode-block-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sn-pincode-refresh {
+  padding: 10px 17px;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sn-pincode-refresh:hover {
+  background: rgba(255, 99, 62, 0.13);
+  border-color: #ff633e;
+}
+
+.sn-pincode-unblock-btn {
+  padding: 8px 15px;
+  border-radius: 7px;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(220, 38, 38, 0.1);
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sn-pincode-unblock-btn:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
+}
+
+/* TABLE */
+
+.sn-pincode-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 12px;
+}
+
+.sn-pincode-table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.sn-pincode-table thead {
+  background: rgba(4, 14, 27, 0.8);
+}
+
+.sn-pincode-table th {
+  padding: 16px 19px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  white-space: nowrap;
+}
+
+.sn-pincode-table td {
+  padding: 17px 19px;
+  color: #cbd5e1;
+  font-size: 13px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.sn-pincode-table tbody tr {
+  transition: background 0.2s;
+}
+
+.sn-pincode-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.sn-pincode-number {
+  color: #ffffff !important;
+  font-weight: 800;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ALERTS */
+
+.sn-pincode-alert {
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sn-pincode-alert.success {
+  color: #d72f0d;
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.sn-pincode-alert.error {
+  color: #fca5a5;
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+/* EMPTY STATE */
+
+.sn-pincode-empty {
+  padding: 35px 15px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 11px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+  .sn-pincode-page {
+    padding: 20px 14px;
+  }
+
+  .sn-pincode-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .sn-pincode-count {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sn-pincode-form-grid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+
+  .sn-pincode-card {
+    padding: 19px 15px;
+  }
+
+  .sn-pincode-card-heading {
+    align-items: flex-start;
+  }
+
+  .sn-pincode-block-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .sn-pincode-header h1 {
+    font-size: 26px;
+  }
+
+  .sn-pincode-card-heading h2 {
+    font-size: 17px;
+  }
+
+  .sn-pincode-card-heading p {
+    line-height: 1.6;
+  }
+}
