@@ -46,9 +46,16 @@ function DocketSlip({ shipment }) {
           borderBottom: '3px solid #ff3b1f',
           paddingBottom: '18px',
         }}>
-          <h1 style={{ margin: 0, fontSize: '28px' }}>
-            SHIP<span style={{ color: '#ff3b1f' }}>NEXT</span>
-          </h1>
+       <img
+  src="/logo.jpeg"
+  alt="ShipNext"
+  style={{
+    height: '45px',
+    width: 'auto',
+    objectFit: 'contain',
+    display: 'block',
+  }}
+/>
 
           <strong>SHIPPING DOCKET</strong>
         </div>

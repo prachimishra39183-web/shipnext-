@@ -39,6 +39,7 @@ function ShippingCharges() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [bookingResult, setBookingResult] = useState(null);
+  const isCod = shipment?.paymentMode === 'COD';
 
   // LOAD SAVED SHIPMENT
   useEffect(() => {
@@ -92,6 +93,13 @@ function ShippingCharges() {
   // LOAD CUSTOMER WALLET BALANCE
   useEffect(() => {
     if (!shipment) return;
+
+if (shipment.paymentMode === 'COD') {
+  setWalletBalance(null);
+  setWalletError('');
+  setWalletLoading(false);
+  return;
+}
 
     const fetchWallet = async () => {
       const token = sessionStorage.getItem('shipnextToken');
@@ -318,15 +326,17 @@ setBookingError('Please select an available shipping mode.');
 }
     
 
-    if (walletBalance === null || walletLoading) {
-      setBookingError('Please wait until your wallet balance is available.');
-      return;
-    }
+    if (!isCod) {
+  if (walletBalance === null || walletLoading) {
+    setBookingError('Please wait until your wallet balance is available.');
+    return;
+  }
 
-    if (walletBalance < quote.total) {
-      setBookingError('Insufficient wallet balance. Please recharge your wallet.');
-      return;
-    }
+  if (walletBalance < quote.total) {
+    setBookingError('Insufficient wallet balance. Please recharge your wallet.');
+    return;
+  }
+}
 
     const token = sessionStorage.getItem('shipnextToken');
 
@@ -361,8 +371,12 @@ setBookingError('Please select an available shipping mode.');
         throw new Error(data.message || 'Unable to confirm shipment.');
       }
 
-      setBookingResult(data);
-      setWalletBalance(Number(data.payment.walletBalance));
+     setBookingResult(data);
+
+if (data.payment.walletBalance !== null &&
+    data.payment.walletBalance !== undefined) {
+  setWalletBalance(Number(data.payment.walletBalance));
+}
 
       sessionStorage.removeItem('shipnextDraftId');
     } catch (err) {
@@ -422,7 +436,11 @@ setBookingError('Please select an available shipping mode.');
 
             <h1>Shipment Booked Successfully!</h1>
 
-            <p>Your wallet payment was successful.</p>
+            <p>
+  {bookingResult.payment.paymentMode === 'COD'
+    ? 'Your COD shipment has been booked successfully.'
+    : 'Your wallet payment was successful.'}
+</p>
 
             <div style={{
               padding: '20px',
@@ -453,18 +471,25 @@ setBookingError('Please select an available shipping mode.');
               </div>
 
               <div className="charge-row">
-                <span>Amount Paid</span>
-                <strong>
-                  ₹{Number(bookingResult.payment.amount).toFixed(2)}
-                </strong>
-              </div>
+  <span>
+    {bookingResult.payment.paymentMode === 'COD'
+      ? 'Wallet Deduction'
+      : 'Amount Paid'}
+  </span>
+  <strong>
+    ₹{Number(bookingResult.payment.amount).toFixed(2)}
+  </strong>
+</div>
 
-              <div className="charge-row">
-                <span>Remaining Wallet Balance</span>
-                <strong>
-                  ₹{Number(bookingResult.payment.walletBalance).toFixed(2)}
-                </strong>
-              </div>
+              {bookingResult.payment.walletBalance !== null &&
+  bookingResult.payment.walletBalance !== undefined && (
+    <div className="charge-row">
+      <span>Remaining Wallet Balance</span>
+      <strong>
+        ₹{Number(bookingResult.payment.walletBalance).toFixed(2)}
+      </strong>
+    </div>
+  )}
             </div>
 
             <Link
@@ -724,8 +749,8 @@ setBookingError('Please select an available shipping mode.');
             )}
           </div>
 
-          {/* WALLET PAYMENT */}
-          {quote && (
+        {/* WALLET PAYMENT - PREPAID ONLY */}
+{quote && !isCod && (
             <div style={{
               marginTop: '24px',
               padding: '20px',
@@ -796,7 +821,41 @@ setBookingError('Please select an available shipping mode.');
               )}
             </div>
           )}
+             {/* COD BOOKING - NO WALLET DEDUCTION */}
+{quote && isCod && (
+  <div style={{
+    marginTop: '24px',
+    padding: '20px',
+    border: '1px solid #bbf7d0',
+    borderRadius: '12px',
+    background: '#f0fdf4',
+  }}>
+    <h2>Cash on Delivery (COD)</h2>
 
+    <p style={{ color: '#166534' }}>
+      The recipient will pay the COD amount to the courier.
+      No money will be deducted from your ShipNext wallet.
+    </p>
+
+    <div className="charge-row">
+      <span>Wallet Deduction</span>
+      <strong>₹0.00</strong>
+    </div>
+
+    <button
+      type="button"
+      className="booking-submit"
+      onClick={confirmBooking}
+      disabled={bookingLoading}
+      style={{
+        width: '100%',
+        marginTop: '18px',
+      }}
+    >
+      {bookingLoading ? 'Booking Shipment...' : 'Confirm COD Booking'}
+    </button>
+  </div>
+)}
           {bookingError && (
             <div style={{
               padding: '14px',

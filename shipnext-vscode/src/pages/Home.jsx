@@ -467,11 +467,11 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
   </div>
 
   {/* CHECK SERVICEABILITY */}
-  <div className="tool-card">
+  <div className="tool-card" id="rate-calculator">
     <div className="tool-icon">🚚</div>
 
     <div className="tool-content">
-      <h3>Check serviceability</h3>
+      <h3>Check serviceability and Rate Calculator</h3>
 
       <p>
         Check courier availability between your pickup and delivery PIN codes.

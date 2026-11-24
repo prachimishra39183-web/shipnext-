@@ -11113,8 +11113,8 @@ body,
 
 .about-eyebrow {
   display: inline-block;
-  color: #ff8954 !important;
-  font-size: 11px;
+  color:  black!important;
+  font-size: 16px;
   font-weight: 950;
   letter-spacing: 2.5px;
 }

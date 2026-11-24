@@ -727,34 +727,41 @@ router.post(
             });
           }
 
-          const totalAmount = Number(
-            preparedShipments
-              .reduce((sum, item) => sum + item.amount, 0)
-              .toFixed(2)
-          );
+          
+         const totalAmount = Number(
+  preparedShipments
+    .filter((item) => item.draft.paymentMode !== 'COD')
+    .reduce((sum, item) => sum + item.amount, 0)
+    .toFixed(2)
+);
 
-          const wallet = await tx.wallet.upsert({
-            where: { userId: customerId },
-            update: {},
-            create: {
-              userId: customerId,
-              balance: 0,
-            },
-          });
+let wallet = null;
 
-          const debit = await tx.wallet.updateMany({
-            where: {
-              id: wallet.id,
-              balance: { gte: totalAmount },
-            },
-            data: {
-              balance: { decrement: totalAmount },
-            },
-          });
+if (totalAmount > 0) {
+  wallet = await tx.wallet.upsert({
+    where: { userId: customerId },
+    update: {},
+    create: {
+      userId: customerId,
+      balance: 0,
+    },
+  });
 
-          if (debit.count !== 1) {
-            throw new Error('INSUFFICIENT_BALANCE');
-          }
+  const debit = await tx.wallet.updateMany({
+    where: {
+      id: wallet.id,
+      balance: { gte: totalAmount },
+    },
+    data: {
+      balance: { decrement: totalAmount },
+    },
+  });
+
+  if (debit.count !== 1) {
+    throw new Error('INSUFFICIENT_BALANCE');
+  }
+}
+
 
           const bookedShipments = [];
 
@@ -799,13 +806,34 @@ router.post(
                 weightGrams: draft.weightGrams,
                 shippingCharge: amount.toFixed(2),
 
-                paymentMode: 'WALLET',
-                recipientPaymentMode: draft.paymentMode,
-                codAmount:
-                  draft.paymentMode === 'COD'
-                    ? draft.codAmount
-                    : null,
+                paymentMode: draft.paymentMode === 'COD' ? 'COD' : 'WALLET',
+recipientPaymentMode: draft.paymentMode,
 
+codAmount:
+  draft.paymentMode === 'COD'
+    ? draft.codAmount
+    : null,
+
+codCharge:
+  draft.paymentMode === 'COD'
+    ? (
+        Number(draft.codAmount) <= 1500
+          ? 30
+          : Number((Number(draft.codAmount) * 0.015).toFixed(2))
+      )
+    : null,
+
+codNetAmount:
+  draft.paymentMode === 'COD'
+    ? Number((
+        Number(draft.codAmount) -
+        (
+          Number(draft.codAmount) <= 1500
+            ? 30
+            : Number((Number(draft.codAmount) * 0.015).toFixed(2))
+        )
+      ).toFixed(2))
+    : null,
                 codCollectionStatus:
                   draft.paymentMode === 'COD' ? 'PENDING' : null,
 
@@ -816,16 +844,18 @@ router.post(
               },
             });
 
-            await tx.walletTransaction.create({
-              data: {
-                userId: customerId,
-                walletId: wallet.id,
-                type: 'DEBIT',
-                amount: amount.toFixed(2),
-                description: `Shipment booking payment - ${trackingId}`,
-                reference: `SHIPMENT-${trackingId}`,
-              },
-            });
+            if (draft.paymentMode !== 'COD') {
+  await tx.walletTransaction.create({
+    data: {
+      userId: customerId,
+      walletId: wallet.id,
+      type: 'DEBIT',
+      amount: amount.toFixed(2),
+      description: `Shipment booking payment - ${trackingId}`,
+      reference: `SHIPMENT-${trackingId}`,
+    },
+  });
+}
 
             bookedShipments.push({
               ...shipment,
@@ -833,15 +863,19 @@ router.post(
             });
           }
 
-          const updatedWallet = await tx.wallet.findUnique({
-            where: { userId: customerId },
-          });
+         const updatedWallet = wallet
+  ? await tx.wallet.findUnique({
+      where: { userId: customerId },
+    })
+  : null;
 
-          return {
-            shipments: bookedShipments,
-            totalAmount,
-            walletBalance: updatedWallet.balance.toString(),
-          };
+return {
+  shipments: bookedShipments,
+  totalAmount,
+  walletBalance: updatedWallet
+    ? updatedWallet.balance.toString()
+    : null,
+};
         },
         {
           isolationLevel: 'Serializable',
@@ -849,16 +883,29 @@ router.post(
       );
 
       return res.status(201).json({
-        success: true,
-        message: 'All shipments booked successfully.',
-        shipments: result.shipments,
-        payment: {
-          paymentMode: 'WALLET',
-          amount: result.totalAmount,
-          walletBalance: result.walletBalance,
-          status: 'SUCCESS',
-        },
-      });
+  success: true,
+  message: 'All shipments booked successfully.',
+  shipments: result.shipments,
+  payment: {
+    paymentMode:
+      result.shipments.every(
+        (shipment) => shipment.recipientPaymentMode === 'COD'
+      )
+        ? 'COD'
+        : result.shipments.some(
+            (shipment) => shipment.recipientPaymentMode === 'COD'
+          )
+          ? 'MIXED'
+          : 'WALLET',
+
+    amount: result.totalAmount,
+    walletBalance: result.walletBalance,
+    status:
+      result.totalAmount === 0
+        ? 'NOT_REQUIRED'
+        : 'SUCCESS',
+  },
+});
     } catch (error) {
       console.error('Bulk shipment confirmation error:', error);
 
@@ -995,7 +1042,6 @@ if (!allowedCouriers.includes(requestedCourier)) {
     name: true,
     email: true,
     companyName: true,
-    gstNumber: true,
     address: true,
     city: true,
     state: true,
@@ -1244,55 +1290,72 @@ const amount = taxInclusive
   ? grossCharge
   : Number((taxableAmount + totalTax).toFixed(2));
 
-          // Get or create the customer's wallet.
-          const wallet = await tx.wallet.upsert({
-            where: {
-              userId: customerId,
-            },
-            create: {
-              userId: customerId,
-              balance: 0,
-            },
-            update: {},
-          });
+         
+const isCod = draft.paymentMode === 'COD';
+const codAmount = isCod ? Number(draft.codAmount || 0) : null;
 
-          // Atomically deduct only if sufficient funds exist.
-          const debit = await tx.wallet.updateMany({
-            where: {
-              id: wallet.id,
-              balance: {
-                gte: amount,
-              },
-            },
-            data: {
-              balance: {
-                decrement: amount,
-              },
-            },
-          });
+if (isCod && (!Number.isFinite(codAmount) || codAmount <= 0)) {
+  const error = new Error('Please enter a valid COD amount.');
+  error.code = 'INVALID_COD_AMOUNT';
+  throw error;
+}
 
-          if (debit.count !== 1) {
-            const error = new Error(
-              'Insufficient wallet balance. Please recharge your wallet.'
-            );
-            error.code = 'INSUFFICIENT_BALANCE';
-            throw error;
-          }
+const codCharge = isCod
+  ? (codAmount <= 1500 ? 30 : Number((codAmount * 0.015).toFixed(2)))
+  : null;
 
-          const trackingId = generateTrackingId();
-          const docketNumber = generateDocketNumber();
+const codNetAmount = isCod
+  ? Number((codAmount - codCharge).toFixed(2))
+  : null;
 
-          // Record wallet debit.
-          await tx.walletTransaction.create({
-            data: {
-              userId: customerId,
-              walletId: wallet.id,
-              type: 'DEBIT',
-              amount,
-              description: `Shipment booking payment - ${trackingId}`,
-              reference: `SHIPMENT-${trackingId}`,
-            },
-          });
+// Generate shipment identifiers before creating wallet transactions.
+const trackingId = generateTrackingId();
+const docketNumber = generateDocketNumber();
+
+let wallet = null;
+
+if (!isCod) {
+  wallet = await tx.wallet.upsert({
+    where: { userId: customerId },
+    create: {
+      userId: customerId,
+      balance: 0,
+    },
+    update: {},
+  });
+
+  const debit = await tx.wallet.updateMany({
+    where: {
+      id: wallet.id,
+      balance: { gte: amount },
+    },
+    data: {
+      balance: { decrement: amount },
+    },
+  });
+
+  if (debit.count !== 1) {
+    const error = new Error(
+      'Insufficient wallet balance. Please recharge your wallet.'
+    );
+    error.code = 'INSUFFICIENT_BALANCE';
+    throw error;
+  }
+}
+
+
+          if (!isCod) {
+  await tx.walletTransaction.create({
+    data: {
+      userId: customerId,
+      walletId: wallet.id,
+      type: 'DEBIT',
+      amount,
+      description: `Shipment booking payment - ${trackingId}`,
+      reference: `SHIPMENT-${trackingId}`,
+    },
+  });
+}
 
           // Store selected mode in the draft.
           await tx.shipmentDraft.update({
@@ -1303,23 +1366,6 @@ const amount = taxInclusive
               shippingMode: mode,
             },
           });
-
-          // Create confirmed ShipNext shipment.
-          // Calculate COD charges
-const isCod = draft.paymentMode === 'COD';
-const codAmount = isCod ? Number(draft.codAmount || 0) : null;
-
-if (isCod && (!Number.isFinite(codAmount) || codAmount <= 0)) {
-  throw new Error('Please enter a valid COD amount.');
-}
-
-const codCharge = isCod
-  ? (codAmount <= 1500 ? 30 : Number((codAmount * 0.015).toFixed(2)))
-  : null;
-
-const codNetAmount = isCod
-  ? Number((codAmount - codCharge).toFixed(2))
-  : null;
 
 // Create confirmed ShipNext shipment.
 const shipment = await tx.shipment.create({
@@ -1348,7 +1394,7 @@ pickupPincode: draft.pickupPincode,
 shippingCharge: amount,
 
 // ShipNext shipping-charge payment
-paymentMode: 'WALLET',
+           paymentMode: isCod ? 'COD' : 'WALLET',
 
 // Recipient payment details
 // Recipient payment details
@@ -1376,7 +1422,7 @@ const invoice = await tx.shipmentInvoice.create({
     docketNumber: shipment.docketNumber,
 
     billingName: customer.companyName || customer.name,
-    billingGst: customer.gstNumber || null,
+   billingGst: customer.gstNumber || null,
     billingAddress: customer.address || null,
     billingState: billingState,
     billingPincode: customer.pincode || null,
@@ -1392,7 +1438,7 @@ const invoice = await tx.shipmentInvoice.create({
     totalTax,
     totalAmount: amount,
 
-    paymentStatus: 'PAID',
+    paymentStatus: isCod ? 'PENDING' : 'PAID',
   },
 });
            // Notify admins about the new shipment booking.
@@ -1404,16 +1450,19 @@ await tx.adminNotification.create({
     link: '/admin/shipments',
   },
 });
-          const updatedWallet = await tx.wallet.findUnique({
-            where: {
-              id: wallet.id,
-            },
-          });
+          
 
-          return {
+       const updatedWallet = wallet
+  ? await tx.wallet.findUnique({
+      where: { userId: customerId },
+    })
+  : null;
+
+return {
   shipment,
   invoice,
-  walletBalance: updatedWallet.balance,
+  walletBalance: updatedWallet?.balance ?? null,
+  isCod,
   charge,
 };
         },
@@ -1502,27 +1551,31 @@ if (requestedCourier === 'SHADOWFAX') {
     });
 
     return res.status(502).json({
-      success: false,
-      paymentStatus: 'PAID',
-      message:
-        'Wallet payment was completed, but Shadowfax confirmation is pending. Do not book or pay again. Contact ShipNext support with tracking ID: ' +
-        result.shipment.trackingId,
-      trackingId: result.shipment.trackingId,
-    });
+  success: false,
+  paymentStatus: result.isCod ? 'NOT_REQUIRED' : 'PAID',
+  message:
+    'Shipment record was created, but Shadowfax confirmation is pending. Do not book again. Contact ShipNext support with tracking ID: ' +
+    result.shipment.trackingId,
+  trackingId: result.shipment.trackingId,
+});
   }
 }
-      return res.status(201).json({
-        success: true,
-        message: 'Shipment booked and wallet payment successful.',
-        shipment: result.shipment,
-        invoice: result.invoice,
-        payment: {
-          paymentMode: 'WALLET',
-          amount: Number(result.shipment.shippingCharge),
-          walletBalance: result.walletBalance,
-          status: 'SUCCESS',
-        },
-      });
+     return res.status(201).json({
+  success: true,
+  message: result.isCod
+    ? 'COD shipment booked successfully.'
+    : 'Shipment booked and wallet payment successful.',
+  shipment: result.shipment,
+  invoice: result.invoice,
+  payment: {
+    paymentMode: result.isCod ? 'COD' : 'WALLET',
+    amount: result.isCod
+      ? 0
+      : Number(result.shipment.shippingCharge),
+    walletBalance: result.walletBalance,
+    status: result.isCod ? 'NOT_REQUIRED' : 'SUCCESS',
+  },
+});
     } catch (error) {
       console.error('Shipment booking error:', error);
 
@@ -1555,7 +1608,12 @@ if (requestedCourier === 'SHADOWFAX') {
           message: error.message,
         });
       }
-
+     if (error.code === 'INVALID_COD_AMOUNT') {
+  return res.status(400).json({
+    success: false,
+    message: error.message,
+  });
+}
       if (error.code === 'INSUFFICIENT_BALANCE') {
         return res.status(400).json({
           success: false,
