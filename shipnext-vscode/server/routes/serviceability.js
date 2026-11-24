@@ -374,6 +374,116 @@ const selectedCourier = COURIERS.find((courier) => {
   }
 });
 
+// ADMIN: Compare all available courier partners and shipping modes
+router.post(
+  '/admin/rate-comparison',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const pickupPincode = String(req.body.pickupPincode || '').trim();
+      const deliveryPincode = String(req.body.deliveryPincode || '').trim();
+      const weight = Number(req.body.weight);
+
+      if (
+        !validPincode(pickupPincode) ||
+        !validPincode(deliveryPincode)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Enter valid six-digit PIN codes.',
+        });
+      }
+
+      if (!Number.isFinite(weight) || weight < 0.5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum shipment weight is 500 grams.',
+        });
+      }
+
+      const blocked = await getBlockedPincodes([
+        pickupPincode,
+        deliveryPincode,
+      ]);
+
+      if (blocked.size > 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'One or both PIN codes are blocked.',
+          blockedPincodes: Array.from(blocked.values()),
+        });
+      }
+
+      const records = await prisma.courierPincodeServiceability.findMany({
+        where: {
+          courier: { in: COURIERS },
+          pincode: { in: [pickupPincode, deliveryPincode] },
+        },
+      });
+
+      const results = [];
+
+      for (const courier of COURIERS) {
+        const pickup = records.find(
+          (r) => r.courier === courier && r.pincode === pickupPincode
+        );
+
+        const delivery = records.find(
+          (r) => r.courier === courier && r.pincode === deliveryPincode
+        );
+
+        if (
+          !isCourierPinUsable(pickup, courier) ||
+          !isCourierPinUsable(delivery, courier)
+        ) {
+          continue;
+        }
+
+        const zone = getShippingZone(pickup, delivery);
+
+        for (const mode of VALID_MODES) {
+          const pricingMode = mode.endsWith('_AIR') ? 'AIR' : 'SURFACE';
+
+          const charge = calculateShippingCharge(
+            zone,
+            pricingMode,
+            weight
+          );
+
+          results.push({
+            courier,
+            mode,
+            ...charge,
+          });
+        }
+      }
+
+      results.sort((a, b) => a.total - b.total);
+
+      return res.json({
+        success: true,
+        pickupPincode,
+        deliveryPincode,
+        weight,
+        results,
+        count: results.length,
+        message: results.length
+          ? 'Rate comparison completed.'
+          : 'No courier partner serves both PIN codes.',
+      });
+    } catch (error) {
+      console.error('Admin rate comparison error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to compare shipping rates.',
+      });
+    }
+  }
+);
+
+
 // ADMIN: View all configured routes
 router.get(
   '/admin/routes',

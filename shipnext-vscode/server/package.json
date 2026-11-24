@@ -22,6 +22,7 @@
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.74.0",
     "multer": "^2.5.0",
+    "pdfkit": "^0.21.0",
     "pg": "^8.23.1",
     "prisma": "^7.10.1",
     "qrcode": "^1.5.4",

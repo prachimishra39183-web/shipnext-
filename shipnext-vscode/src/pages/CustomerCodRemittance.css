@@ -36,7 +36,7 @@
 .customer-cod-header button {
   padding: 11px 18px;
   color: rgb(6, 3, 3);
-  background: #ff4b2b;
+  background: #4d0e03;
   border: none;
   border-radius: 9px;
   cursor: pointer;
@@ -51,7 +51,7 @@
 
 .customer-cod-card {
   padding: 23px;
-  background: linear-gradient(145deg, #ea6a02, #ca1006);
+  background: linear-gradient(145deg, #f1f1f4, #1b0f69);
   border: 1px solid rgba(148, 163, 184, .17);
   border-radius: 15px;
 }
@@ -68,7 +68,7 @@
 }
 
 .customer-cod-table-panel {
-  background: #04046d;
+  background: #450697;
   border: 1px solid rgba(148, 163, 184, .17);
   border-radius: 16px;
   overflow: hidden;

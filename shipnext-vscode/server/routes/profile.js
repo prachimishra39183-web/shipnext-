@@ -75,6 +75,10 @@ const formatProfile = (user) => ({
   phone: user.phone || '',
   address: user.address || '',
   pincode: user.pincode || '',
+  companyName: user.companyName || '',
+city: user.city || '',
+state: user.state || '',
+companyLogoUrl: user.companyLogoUrl || '',
 
   panNumber: decryptValue(user.panNumberEncrypted),
   aadhaarNumber: decryptValue(user.aadhaarNumberEncrypted),
@@ -140,6 +144,10 @@ router.put(
         accountNumber,
         branchName,
         ifscCode,
+        companyName,
+city,
+state,
+companyLogoUrl,
       } = req.body;
 
       const clean = (value) =>
@@ -227,6 +235,10 @@ router.put(
           accountNumberEncrypted: encryptValue(account),
           branchName: clean(branchName) || null,
           ifscCode: ifsc || null,
+          companyName: clean(companyName) || null,
+city: clean(city) || null,
+state: clean(state) || null,
+companyLogoUrl: clean(companyLogoUrl) || null,
         },
       });
 

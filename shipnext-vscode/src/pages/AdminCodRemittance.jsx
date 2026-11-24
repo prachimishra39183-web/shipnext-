@@ -97,7 +97,7 @@ export default function AdminCodRemittance() {
         <div>
           <span className="cod-eyebrow">FINANCE MANAGEMENT</span>
           <h1>COD Remittance</h1>
-          <p>Monitor courier collections and customer settlements.</p>
+       
         </div>
 
         <button className="cod-refresh-btn" onClick={fetchRecords}>
@@ -134,7 +134,7 @@ export default function AdminCodRemittance() {
         <div className="cod-table-heading">
           <div>
             <h2>COD Shipment Records</h2>
-            <p>Track each collection, remittance and settlement.</p>
+           
           </div>
           <span>{shipments.length} Records</span>
         </div>

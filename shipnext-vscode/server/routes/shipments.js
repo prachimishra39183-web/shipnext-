@@ -16,6 +16,7 @@ const {
   getShippingZone,
 } = require('../utils/shippingZone');
 
+const { getProcessingDate, generateDocketNumber } = require('../utils/shipmentUtils');
 const router = express.Router();
 
 const VALID_MODES = [
@@ -39,9 +40,7 @@ function generateTrackingId() {
   return `SN${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
-function generateDocketNumber() {
-  return `SNX${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-}
+
 
 // SAVE SHIPMENT DETAILS AS A DRAFT
 
@@ -934,9 +933,18 @@ router.post(
     try {
       const { draftId, mode } = req.body;
       const customerId = req.user.userId;
-      const customer = await prisma.user.findUnique({
+     const customer = await prisma.user.findUnique({
   where: { id: customerId },
-  select: { name: true, email: true },
+  select: {
+    name: true,
+    email: true,
+    companyName: true,
+    gstNumber: true,
+    address: true,
+    city: true,
+    state: true,
+    pincode: true,
+  },
 });
 
       if (!draftId) {
@@ -1068,7 +1076,56 @@ router.post(
             weightKg
           );
 
-          const amount = charge.total;
+          // Load customer's saved tax preferences.
+const taxSettings = await tx.customerTaxSettings.findUnique({
+  where: { userId: customerId },
+});
+
+const gstRate = Number(taxSettings?.defaultGstRate ?? 18);
+const taxInclusive = taxSettings?.taxInclusive ?? false;
+
+// Determine billing state.
+const billingState =
+  taxSettings?.placeOfSupply || customer?.state || '';
+
+const normalizedState = billingState.trim().toLowerCase();
+
+if (!normalizedState) {
+  const error = new Error(
+    'Please update your billing state in Company Details before booking.'
+  );
+  error.code = 'BILLING_STATE_REQUIRED';
+  throw error;
+}
+
+// Gujarat supplier GST registration.
+const isIntraState =
+  normalizedState === 'gujarat' || normalizedState === 'gj' ||
+  normalizedState === '24';
+
+// Calculate taxable value and GST.
+const grossCharge = Number(charge.total);
+const taxableAmount = taxInclusive
+  ? Number((grossCharge / (1 + gstRate / 100)).toFixed(2))
+  : grossCharge;
+
+const totalTax = Number(
+  (taxableAmount * gstRate / 100).toFixed(2)
+);
+
+const cgstAmount = isIntraState
+  ? Number((totalTax / 2).toFixed(2))
+  : 0;
+
+const sgstAmount = isIntraState
+  ? Number((totalTax - cgstAmount).toFixed(2))
+  : 0;
+
+const igstAmount = isIntraState ? 0 : totalTax;
+
+const amount = taxInclusive
+  ? grossCharge
+  : Number((taxableAmount + totalTax).toFixed(2));
 
           // Get or create the customer's wallet.
           const wallet = await tx.wallet.upsert({
@@ -1157,8 +1214,7 @@ const shipment = await tx.shipment.create({
               docketNumber,
              
               courierPartner: selectedCourier,
-
-              processingDate: new Date(),
+                processingDate: getProcessingDate(),
               status: 'CONFIRMED',
               shippingMode: mode,
 
@@ -1190,6 +1246,39 @@ codRemittanceStatus: isCod ? 'REMITTANCE_PENDING' : null,
 codSettlementStatus: isCod ? 'PENDING' : null,
             },
           });
+          // Automatically generate invoice for the confirmed shipment.
+const invoiceNumber = `SN-INV-${Date.now()}-${crypto
+  .randomBytes(4)
+  .toString('hex')
+  .toUpperCase()}`;
+
+const invoice = await tx.shipmentInvoice.create({
+  data: {
+    invoiceNumber,
+    shipmentId: shipment.id,
+    customerId,
+    docketNumber: shipment.docketNumber,
+
+    billingName: customer.companyName || customer.name,
+    billingGst: customer.gstNumber || null,
+    billingAddress: customer.address || null,
+    billingState: billingState,
+    billingPincode: customer.pincode || null,
+
+    shippingCharge: taxableAmount,
+    codCharge: 0,
+    taxableAmount,
+
+    gstRate,
+    cgstAmount,
+    sgstAmount,
+    igstAmount,
+    totalTax,
+    totalAmount: amount,
+
+    paymentStatus: 'PAID',
+  },
+});
            // Notify admins about the new shipment booking.
 await tx.adminNotification.create({
   data: {
@@ -1206,10 +1295,11 @@ await tx.adminNotification.create({
           });
 
           return {
-            shipment,
-            walletBalance: updatedWallet.balance,
-            charge,
-          };
+  shipment,
+  invoice,
+  walletBalance: updatedWallet.balance,
+  charge,
+};
         },
         {
           isolationLevel: 'Serializable',
@@ -1220,6 +1310,7 @@ await tx.adminNotification.create({
         success: true,
         message: 'Shipment booked and wallet payment successful.',
         shipment: result.shipment,
+        invoice: result.invoice,
         payment: {
           paymentMode: 'WALLET',
           amount: result.charge.total,
@@ -1274,7 +1365,12 @@ await tx.adminNotification.create({
             'This booking may already have been processed. Please refresh your shipments before trying again.',
         });
       }
-
+    if (error.code === 'BILLING_STATE_REQUIRED') {
+  return res.status(400).json({
+    success: false,
+    message: error.message,
+  });
+}
       return res.status(500).json({
         success: false,
         message: 'Unable to complete shipment booking.',

@@ -88,7 +88,7 @@ router.get(
 
       const where = {
         shipment: {
-          customerId: req.user.id,
+          customerId: req.user.userId,
         },
         ...(dateFilter ? { reportedAt: dateFilter } : {}),
         ...(req.query.status
@@ -132,7 +132,7 @@ router.get(
       const records = await prisma.nDRRecord.findMany({
         where: {
           shipment: {
-            customerId: req.user.id,
+            customerId: req.user.userId,
           },
           ...(dateFilter ? { reportedAt: dateFilter } : {}),
           ...(req.query.status
@@ -338,7 +338,7 @@ router.patch(
         where: {
           id: req.params.id,
           shipment: {
-            customerId: req.user.id,
+            customerId: req.user.userId,
           },
         },
       });

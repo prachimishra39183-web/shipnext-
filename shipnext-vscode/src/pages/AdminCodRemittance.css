@@ -31,9 +31,9 @@
 
 .cod-admin-header p,
 .cod-table-heading p {
-  color: #00040a;
+  color: #df104b;
   margin: 0;
-  font-size: 13px;
+  font-size: 18px;
 }
 
 .cod-refresh-btn,
@@ -65,14 +65,14 @@
   padding: 23px;
   border: 1px solid rgba(148, 163, 184, 0.17);
   border-radius: 16px;
-  background: linear-gradient(145deg, #3e067f, #6130e6);
+  background: linear-gradient(145deg, #d3d3d8, #04247d);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
 }
 
 .cod-summary-card span {
   display: block;
-  color: #2ac408;
-  font-size: 15px;
+  color: #0e140d;
+  font-size: 18px;
   margin-bottom: 13px;
 }
 
@@ -86,7 +86,7 @@
 .cod-table-panel {
   border: 1px solid rgba(148, 163, 184, 0.17);
   border-radius: 17px;
-  background: rgba(188, 92, 20, 0.94);
+  background: rgba(21, 3, 139, 0.94);
   overflow: hidden;
 }
 
@@ -106,7 +106,7 @@
 
 .cod-table-heading > span {
   color: #ff765b;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 800;
 }
 

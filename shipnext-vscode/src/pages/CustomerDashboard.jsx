@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown,FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { UserRound } from 'lucide-react';
@@ -179,22 +179,24 @@ const [recentTransactions, setRecentTransactions] = useState([]);
       />
   
 
-        <p className="sidebar-label">MAIN MENU</p>
+       <p className="sidebar-label">MAIN MENU</p>
 
-        <nav className="sidebar-nav">
-          <a href="#overview" className="active"> Dashboard</a>
-          <Link to="/shipments"> My Shipments</Link>
-          <Link to="/bulk-booking"> Bulk Booking</Link>
-          <Link to="/track"> Track Shipment</Link>
-          <Link to="/wallet"> My Wallet</Link>
-           <Link to="/cod-remittance">COD Remittance</Link>
-          <a href="#transactions">↔ Transactions</a>
-          <Link to="/profile"> My Profile</Link>
-          <Link to="/support">
-   Support Tickets
+<nav className="sidebar-nav">
+  <a href="#overview" className="active">Dashboard</a>
+  <Link to="/shipments">My Shipments</Link>
+  <Link to="/invoices" className="sidebar-link">
+  <FileText size={20} />
+  <span>My Invoices</span>
 </Link>
-
-        </nav>
+  <Link to="/bulk-booking">Bulk Booking</Link>
+  <Link to="/track">Track Shipment</Link>
+  <Link to="/wallet">My Wallet</Link>
+  <Link to="/cod-remittance">COD Remittance</Link>
+  <a href="#transactions">↔ Transactions</a>
+  <Link to="/profile">My Profile</Link>
+  <Link to="/settings">Settings</Link>
+  <Link to="/support">Support Tickets</Link>
+</nav>
 
         <div className="sidebar-bottom">
           <Link to="/">← Back to Website</Link>
@@ -223,11 +225,11 @@ const [recentTransactions, setRecentTransactions] = useState([]);
 
     <div className="customer-child-menu">
       <Link to="/child-accounts">
-        <span>◈</span> Manage Branches
+        <span>◈</span> Manage Child Accounts
       </Link>
 
       <Link to="/child-accounts">
-        <span>＋</span> Add New Branch
+        <span>＋</span> Add New Child Account
       </Link>
     </div>
   </details>
@@ -271,6 +273,7 @@ const [recentTransactions, setRecentTransactions] = useState([]);
       >
         Track My Shipment →
       </Link>
+      
     ) : (
   <div className="dashboard-booking-actions">
     <Link to="/book-shipment" className="dashboard-button">

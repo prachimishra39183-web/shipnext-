@@ -16,7 +16,7 @@ router.get(
   async (req, res) => {
     try {
       const children = await prisma.childAccount.findMany({
-        where: { parentId: req.user.id },
+        where: { parentId: req.user.userId },
         orderBy: { createdAt: 'desc' },
       });
 
@@ -95,12 +95,12 @@ router.post(
         });
       }
      const customer = await prisma.user.findUnique({
-  where: { id: req.user.id },
+  where: { id: req.user.userId },
   select: { name: true, email: true },
 });
       const child = await prisma.childAccount.create({
         data: {
-          parentId: req.user.id,
+          parentId: req.user.userId,
           accountName: accountName.trim(),
           branchName: branchName.trim(),
           branchCode: branchCode.trim().toUpperCase(),
@@ -153,7 +153,7 @@ router.patch(
       const existing = await prisma.childAccount.findFirst({
         where: {
           id: req.params.id,
-          parentId: req.user.id,
+          parentId: req.user.userId,
         },
       });
 
@@ -227,7 +227,7 @@ router.patch(
       const existing = await prisma.childAccount.findFirst({
         where: {
           id: req.params.id,
-          parentId: req.user.id,
+          parentId: req.user.userId,
         },
       });
 

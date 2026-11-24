@@ -22,6 +22,15 @@ const refundsRoutes = require('./routes/refunds');
 const profileRoutes = require('./routes/profile');
 const pincodeBlockageRoutes = require('./routes/pincodeBlockage');
 const codRemittanceRoutes = require('./routes/codRemittance');
+const pickupLocationsRoutes = require('./routes/pickupLocations');
+const invoiceSettingsRoutes = require('./routes/invoiceSettings');
+const shippingLabelSettingsRoutes = require('./routes/shippingLabelSettings');
+const customerApiKeysRoutes = require('./routes/customerApiKeys');
+const customerTaxSettingsRoutes = require('./routes/customerTaxSettings');
+const customerInvoicesRoutes = require('./routes/customerInvoices');
+const adminCustomerAnalyticsRoutes = require('./routes/adminCustomerAnalytics');
+const adminDeliveryHistoryRoutes = require('./routes/adminDeliveryHistory');
+
 // Middleware
 app.use(cors());
 app.use(express.json({
@@ -48,6 +57,16 @@ app.use('/api/refunds', refundsRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin/pincode-blockage', pincodeBlockageRoutes);
 app.use('/api/cod-remittance', codRemittanceRoutes);
+app.use('/api/pickup-locations', pickupLocationsRoutes);
+app.use('/api/invoice-settings', invoiceSettingsRoutes);
+app.use('/api/shipping-label-settings', shippingLabelSettingsRoutes);
+app.use('/api/customer-api-keys', customerApiKeysRoutes);
+app.use('/api/customer-tax-settings', customerTaxSettingsRoutes);
+app.use('/api/customer-invoices', customerInvoicesRoutes);
+app.use('/api/admin/customer-analytics', adminCustomerAnalyticsRoutes);
+app.use('/api/admin/delivery-history', adminDeliveryHistoryRoutes);
+
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({

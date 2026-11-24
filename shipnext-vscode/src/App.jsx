@@ -34,20 +34,21 @@ import ProductPage from './pages/ProductPage.jsx';
 import PlatformPage from './pages/PlatformPage.jsx';
 import AdminCodRemittance from './pages/AdminCodRemittance.jsx';
 import CustomerCodRemittance from './pages/CustomerCodRemittance.jsx';
+import AdminPincodeRates from './pages/AdminPincodeRates.jsx';
+import CustomerSettings from './pages/CustomerSettings.jsx';
+import CustomerInvoices from './pages/CustomerInvoices.jsx';
+import AdminCustomerAnalytics from './pages/AdminCustomerAnalytics.jsx';
+import AdminCustomerHistory from './pages/AdminCustomerHistory';
 function App() {
   return (
     <BrowserRouter>
       <div className="website-background">
 
-        <video
-          className="website-bg-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-        >
-          <source src="/shipnext-bg.mp4" type="video/mp4" />
-        </video>
+        <img
+  className="website-bg-video"
+  src="/bg.png"
+  alt=""
+/>
 
         <div className="website-bg-overlay"></div>
 
@@ -75,6 +76,7 @@ function App() {
               <Route path="/profile" element={<MyProfile />} />
               <Route path="/support" element={<Support />} />
               
+              
               <Route
   path="/child-accounts"
   element={<CustomerChildAccounts />}
@@ -83,6 +85,8 @@ function App() {
   path="/cod-remittance"
   element={<CustomerCodRemittance />}
 />
+              <Route path="/settings" element={<CustomerSettings />} />
+              <Route path="/invoices" element={<CustomerInvoices />} />
               
             </Route>
 
@@ -109,7 +113,20 @@ function App() {
   path="/admin/cod-remittance"
   element={<AdminCodRemittance />}
 />
+<Route
+  path="/admin/customer-analytics"
+  element={<AdminCustomerAnalytics />}
+/>
+<Route
+  path="/admin/customer-history"
+  element={<AdminCustomerHistory />}
+/>
+<Route
+  path="/admin/pincode-rates"
+  element={<AdminPincodeRates />}
+/>
 </Route>
+
 
 
           </Routes>

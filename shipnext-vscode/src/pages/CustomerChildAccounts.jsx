@@ -186,7 +186,7 @@ function CustomerChildAccounts() {
           </Link>
           <div className="child-brand-title">
             <GitBranch size={23} />
-            <span>SHIPNEXT <b>BRANCH NETWORK</b></span>
+            <span>SHIPNEXT <b> NETWORK</b></span>
           </div>
         </div>
 
@@ -197,7 +197,7 @@ function CustomerChildAccounts() {
             setShowModal(true);
           }}
         >
-          <Plus size={18} /> Add New Branch
+          <Plus size={18} /> Add New  Child Account
         </button>
       </header>
 
@@ -208,9 +208,9 @@ function CustomerChildAccounts() {
             <span className="child-eyebrow">
               PARENT MERCHANT CONTROL CENTRE
             </span>
-            <h1>Manage Your Branch Network</h1>
+            <h1>Manage Your Child Network</h1>
             <p>
-              Manage your business branches, monitor their status
+              Manage your business accounts, monitor their status
               and keep your shipping operations connected.
             </p>
           </div>
@@ -237,9 +237,9 @@ function CustomerChildAccounts() {
               <GitBranch size={21} />
             </div>
             <div>
-              <span>Total Branches</span>
+              <span>Total Child Account</span>
               <h2>{stats.total}</h2>
-              <small>Your registered branches</small>
+              <small>Your registered Account</small>
             </div>
           </div>
 
@@ -248,7 +248,7 @@ function CustomerChildAccounts() {
               <Power size={21} />
             </div>
             <div>
-              <span>Active Branches</span>
+              <span>Active Child Account</span>
               <h2>{stats.active}</h2>
               <small>Currently activated</small>
             </div>
@@ -259,7 +259,7 @@ function CustomerChildAccounts() {
               <Building2 size={21} />
             </div>
             <div>
-              <span>Inactive Branches</span>
+              <span>Inactive Child Account</span>
               <h2>{stats.inactive}</h2>
               <small>Awaiting activation</small>
             </div>
@@ -272,7 +272,7 @@ function CustomerChildAccounts() {
             <div>
               <span>Suspended</span>
               <h2>{stats.suspended}</h2>
-              <small>Restricted branches</small>
+              <small>Restricted  Child Account</small>
             </div>
           </div>
 
@@ -282,11 +282,11 @@ function CustomerChildAccounts() {
 
           <div className="child-directory-heading">
             <div>
-              <h2>Branch Directory</h2>
-              <p>All branches connected to your parent account.</p>
+              <h2>Child Accounts Directory</h2>
+              <p>All  Child Account connected to your parent account.</p>
             </div>
             <span className="child-record-count">
-              {filteredChildren.length} Branches
+              {filteredChildren.length} Child Account
             </span>
           </div>
 
@@ -316,12 +316,12 @@ function CustomerChildAccounts() {
 
           {loading ? (
             <div className="child-empty">
-              Loading your branch network...
+              Loading your Child Account network...
             </div>
           ) : filteredChildren.length === 0 ? (
             <div className="child-empty">
               <Building2 size={42} />
-              <h3>No branches found</h3>
+              <h3>No Child Accounts found</h3>
               <p>
                 {children.length === 0
                   ? 'Create your first branch to expand your ShipNext network.'
@@ -332,7 +332,7 @@ function CustomerChildAccounts() {
                   className="child-add-button"
                   onClick={() => setShowModal(true)}
                 >
-                  <Plus size={17} /> Create Your First Branch
+                  <Plus size={17} /> Create Your First Child Account
                 </button>
               )}
             </div>
@@ -341,8 +341,8 @@ function CustomerChildAccounts() {
               <table className="child-table">
                 <thead>
                   <tr>
-                    <th>BRANCH DETAILS</th>
-                    <th>BRANCH CODE</th>
+                    <th>Child Account DETAILS</th>
+                    <th>Child Accounts CODE</th>
                     <th>CONTACT</th>
                     <th>LOCATION</th>
                     <th>STATUS</th>
@@ -404,7 +404,7 @@ function CustomerChildAccounts() {
         </section>
 
         <footer className="child-footer">
-          © {new Date().getFullYear()} ShipNext. Parent Merchant Branch Management.
+          © {new Date().getFullYear()} ShipNext. Parent Merchant Child Account Management.
         </footer>
 
       </main>
@@ -423,8 +423,8 @@ function CustomerChildAccounts() {
             <div className="child-modal-heading">
               <div>
                 <span>EXPAND YOUR NETWORK</span>
-                <h2>Create New Branch</h2>
-                <p>Enter your new branch information below.</p>
+                <h2>Create New Child Accounts</h2>
+                <p>Enter your new Child Account information below.</p>
               </div>
               <button
                 type="button"
@@ -440,7 +440,7 @@ function CustomerChildAccounts() {
               <div className="child-form-grid">
 
                 <label>
-                  Parrent Account *
+                  Parent Account *
                   <input
                     name="accountName"
                     value={form.accountName}
@@ -451,7 +451,7 @@ function CustomerChildAccounts() {
                 </label>
 
                 <label>
-                  Child Name *
+                   Child Account Name *
                   <input
                     name="branchName"
                     value={form.branchName}
@@ -462,7 +462,7 @@ function CustomerChildAccounts() {
                 </label>
 
                 <label>
-                  Child Code *
+                  Child Account Code *
                   <input
                     name="branchCode"
                     value={form.branchCode}
@@ -484,7 +484,7 @@ function CustomerChildAccounts() {
                 </label>
 
                 <label>
-                  Child Email *
+                  Child Account Email *
                   <input
                     type="email"
                     name="email"
@@ -580,7 +580,7 @@ function CustomerChildAccounts() {
               </div>
 
               <div className="child-modal-note">
-                New branches are created as INACTIVE. You can activate
+                New Child Account are created as INACTIVE. You can activate
                 them after reviewing their details.
               </div>
 

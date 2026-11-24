@@ -1,0 +1,287 @@
+
+.admin-pincode-rates {
+  min-height: 100vh;
+  padding: 30px 4%;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(5, 12, 27, 0.97), rgba(12, 24, 45, 0.94));
+  font-family: inherit;
+}
+
+.rates-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 55px;
+}
+
+.rates-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #d7deeb;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.rates-back:hover {
+  color: #ff5a36;
+}
+
+.rates-admin-label,
+.rates-eyebrow {
+  color: #ff6847;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.rates-heading {
+  margin-bottom: 32px;
+}
+
+.rates-heading h1 {
+  margin: 12px 0;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 850;
+  letter-spacing: -1.5px;
+}
+
+.rates-heading h1 span {
+  color: #ff5533;
+}
+
+.rates-heading p,
+.rates-results-heading p {
+  color: #9baac0;
+  font-size: 14px;
+}
+
+.rates-search-card {
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+
+.rates-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.rates-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rates-form-grid label span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #aab7c9;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.rates-form-grid input {
+  width: 100%;
+  height: 48px;
+  padding: 0 15px;
+  color: #fff;
+  background: rgba(3, 10, 22, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  outline: none;
+  font-size: 15px;
+}
+
+.rates-form-grid input:focus {
+  border-color: #ff5533;
+  box-shadow: 0 0 0 3px rgba(255, 85, 51, 0.12);
+}
+
+.rates-search-card button {
+  min-height: 46px;
+  padding: 0 22px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  background: #ff4930;
+  border: 0;
+  border-radius: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.rates-search-card button:hover {
+  background: #e83b24;
+  transform: translateY(-1px);
+}
+
+.rates-search-card button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rates-error {
+  margin-top: 20px;
+  padding: 14px 18px;
+  color: #ffb5a7;
+  background: rgba(255, 65, 48, 0.1);
+  border: 1px solid rgba(255, 65, 48, 0.25);
+  border-radius: 10px;
+}
+
+.rates-results {
+  margin-top: 38px;
+}
+
+.rates-results-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.rates-results-heading h2 {
+  margin: 9px 0 5px;
+  font-size: 25px;
+}
+
+.rates-count {
+  padding: 9px 14px;
+  color: #ffb29e;
+  background: rgba(255, 85, 51, 0.12);
+  border: 1px solid rgba(255, 85, 51, 0.25);
+  border-radius: 30px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rates-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.rates-table-wrap table {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.rates-table-wrap th {
+  padding: 17px 16px;
+  color: #a5b2c4;
+  background: rgba(255, 255, 255, 0.055);
+  font-size: 10px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.rates-table-wrap td {
+  padding: 18px 16px;
+  color: #dce4ef;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.rates-table-wrap tbody tr:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.rates-rank {
+  color: #9baac0;
+  font-weight: 800;
+}
+
+.rates-rank.best {
+  color: #ff795c;
+}
+
+.rates-total {
+  color: #fff !important;
+  font-size: 15px !important;
+  font-weight: 850;
+}
+
+.rates-total svg {
+  display: inline;
+  vertical-align: -2px;
+}
+
+.rates-best-label {
+  margin-left: 8px;
+  padding: 4px 6px;
+  color: #ffb29e;
+  background: rgba(255, 85, 51, 0.15);
+  border-radius: 4px;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+.rates-empty {
+  padding: 35px;
+  text-align: center;
+  color: #b5c1d1;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+}
+
+.rates-note {
+  margin-top: 16px;
+  color: #8f9db1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.rates-spin {
+  animation: rates-rotate 1s linear infinite;
+}
+
+@keyframes rates-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-pincode-rates {
+    padding: 22px 16px;
+  }
+
+  .rates-topbar {
+    margin-bottom: 38px;
+  }
+
+  .rates-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rates-search-card {
+    padding: 20px;
+  }
+
+  .rates-search-card button {
+    width: 100%;
+  }
+
+  .rates-results-heading {
+    align-items: flex-start;
+  }
+}
