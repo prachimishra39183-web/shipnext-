@@ -7,24 +7,29 @@ function BookShipment() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
-    pickupName: '',
-    pickupPhone: '',
-    pickupAddress: '',
-    pickupPincode: '',
-    deliveryName: '',
-    deliveryPhone: '',
-    deliveryAddress: '',
-    deliveryPincode: '',
-    weight: '',
-    paymentMode: 'PREPAID',
-codAmount: '',
-    shipmentType: 'DOCUMENT',
-    itemCategory: '',
-    itemName: '',
-    itemDescription: '',
-  });
+ const [formData, setFormData] = useState({
+  pickupName: '',
+  pickupPhone: '',
+  pickupAddress: '',
+  pickupCity: '',
+  pickupPincode: '',
 
+  deliveryName: '',
+  deliveryPhone: '',
+  deliveryAddress: '',
+  deliveryCity: '',
+  deliveryPincode: '',
+
+  weight: '',
+  productValue: '',
+  paymentMode: 'PREPAID',
+  codAmount: '',
+
+  shipmentType: 'DOCUMENT',
+  itemCategory: '',
+  itemName: '',
+  itemDescription: '',
+});
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -41,6 +46,24 @@ codAmount: '',
       alert('Minimum parcel weight is 500 grams (0.5 kg).');
       return;
     }
+    if (
+  !formData.productValue ||
+  !Number.isFinite(Number(formData.productValue)) ||
+  Number(formData.productValue) <= 0
+) {
+  alert('Enter a valid declared parcel value.');
+  return;
+}
+
+if (!formData.pickupCity.trim() || !formData.deliveryCity.trim()) {
+  alert('Enter both pickup city and delivery city.');
+  return;
+}
+
+if (!formData.itemName.trim()) {
+  alert('Enter the item or product name.');
+  return;
+}
 if (
   formData.paymentMode === 'COD' &&
   (!formData.codAmount ||
@@ -86,6 +109,7 @@ if (
     formData.paymentMode === 'COD'
       ? formData.codAmount
       : null,
+      
 }),
         }
       );
@@ -249,7 +273,16 @@ if (
                   required
                 />
               </div>
-
+                    <div className="booking-field">
+  <label>Pickup City</label>
+  <input
+    name="pickupCity"
+    value={formData.pickupCity}
+    onChange={handleChange}
+    placeholder="Enter pickup city"
+    required
+  />
+</div>
               <div className="booking-field">
                 <label>Pickup PIN Code</label>
                 <input
@@ -308,7 +341,16 @@ if (
                   required
                 />
               </div>
-
+                <div className="booking-field">
+  <label>Delivery City</label>
+  <input
+    name="deliveryCity"
+    value={formData.deliveryCity}
+    onChange={handleChange}
+    placeholder="Enter delivery city"
+    required
+  />
+</div>
               <div className="booking-field">
                 <label>Delivery PIN Code</label>
                 <input
@@ -346,7 +388,31 @@ if (
                 />
                 <small>Minimum booking weight: 500 grams.</small>
               </div>
+                 <div className="booking-field">
+  <label>Declared Parcel Value (₹)</label>
+  <input
+    name="productValue"
+    type="number"
+    min="1"
+    step="0.01"
+    value={formData.productValue}
+    onChange={handleChange}
+    placeholder="Enter actual product value"
+    required
+  />
+  <small>Enter the actual value of the goods being shipped.</small>
+</div>
 
+<div className="booking-field full-width">
+  <label>Item / Product Name</label>
+  <input
+    name="itemName"
+    value={formData.itemName}
+    onChange={handleChange}
+    placeholder="Example: Documents, T-shirt, Mobile accessory"
+    required
+  />
+</div>
               <div className="booking-field full-width">
                 <label>Shipment Type</label>
 

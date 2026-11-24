@@ -14,7 +14,9 @@ const {
 const {
   getShippingZone,
 } = require('../utils/shippingZone');
-
+const {
+  checkServiceability: checkShadowfaxServiceability,
+} = require('../integrations/shadowfax');
 const router = express.Router();
 
 const VALID_MODES = [
@@ -112,7 +114,8 @@ if (blockedPincodes.size > 0) {
         record,
       ])
     );
-      const courierResults = COURIERS.map((courier) => {
+    
+const courierResults = COURIERS.map((courier) => {
   const pickup = recordMap.get(`${courier}:${pickupPincode}`);
   const delivery = recordMap.get(`${courier}:${deliveryPincode}`);
 
@@ -159,13 +162,108 @@ if (blockedPincodes.size > 0) {
   };
 });
 
-    return res.json({
-      success: true,
-      pickupPincode,
-      deliveryPincode,
-      courierResults,
-      message: 'Courier PIN-code availability checked successfully.',
-    });
+// Add live Shadowfax result
+try {
+  const [pickupResponse, returnResponse, deliveryResponse] =
+    await Promise.all([
+      checkShadowfaxServiceability(pickupPincode, 'seller_pickup'),
+      checkShadowfaxServiceability(pickupPincode, 'seller_delivery'),
+      checkShadowfaxServiceability(deliveryPincode, 'customer_delivery'),
+    ]);
+
+  const hasTier = (response, pin, tier) => {
+    if (!Array.isArray(response)) return false;
+
+    const result = response.find(
+      item => String(item.code) === String(pin)
+    );
+
+    return result?.services?.includes(tier) || false;
+  };
+
+  const regularPickup = hasTier(
+    pickupResponse, pickupPincode, 'Marketplace'
+  );
+  const regularReturn = hasTier(
+    returnResponse, pickupPincode, 'RTS'
+  );
+  const regularDelivery = hasTier(
+    deliveryResponse, deliveryPincode, 'Regular'
+  );
+
+  const surfacePickup = hasTier(
+    pickupResponse, pickupPincode, 'Surface_Mkt'
+  );
+  const surfaceReturn = hasTier(
+    returnResponse, pickupPincode, 'Surface_RTS'
+  );
+  const surfaceDelivery = hasTier(
+    deliveryResponse, deliveryPincode, 'Surface'
+  );
+
+  const availableModes = [];
+
+  if (regularPickup && regularReturn && regularDelivery) {
+    availableModes.push('REGULAR');
+  }
+
+  if (surfacePickup && surfaceReturn && surfaceDelivery) {
+    availableModes.push('SURFACE');
+  }
+
+  const pickupAvailable = regularPickup || surfacePickup;
+  const returnAvailable = regularReturn || surfaceReturn;
+  const deliveryAvailable = regularDelivery || surfaceDelivery;
+
+  courierResults.push({
+    courier: 'SHADOWFAX',
+    serviceable: availableModes.length > 0,
+    partiallyServiceable:
+      pickupAvailable || returnAvailable || deliveryAvailable,
+
+    pickup: {
+      available: pickupAvailable,
+      regular: regularPickup,
+      surface: surfacePickup,
+    },
+
+    sellerReturn: {
+      available: returnAvailable,
+      regular: regularReturn,
+      surface: surfaceReturn,
+    },
+
+    delivery: {
+      available: deliveryAvailable,
+      regular: regularDelivery,
+      surface: surfaceDelivery,
+    },
+
+    availableModes,
+    checkStatus: 'COMPLETED',
+  });
+
+} catch (error) {
+  console.error('Shadowfax serviceability error:', error.message);
+
+  courierResults.push({
+    courier: 'SHADOWFAX',
+    serviceable: false,
+    partiallyServiceable: false,
+    pickup: { available: false },
+    sellerReturn: { available: false },
+    delivery: { available: false },
+    availableModes: [],
+    checkStatus: 'UNAVAILABLE',
+  });
+}
+return res.json({
+  success: true,
+  pickupPincode,
+  deliveryPincode,
+  courierResults,
+  message: 'Courier PIN-code check completed.',
+});
   } catch (error) {
     console.error('Courier PIN-code check error:', error);
 
@@ -266,18 +364,15 @@ partiallyServiceableCouriers,
     });
   }
 });
-
-// PUBLIC: Calculate shipping charge after mode selection
+// PUBLIC: Calculate shipping charge for the selected courier
 router.post('/quote', async (req, res) => {
   try {
     const pickupPincode = String(req.body.pickupPincode || '').trim();
     const deliveryPincode = String(req.body.deliveryPincode || '').trim();
     const { weight, mode } = req.body;
+    const courier = String(req.body.courier || '').toUpperCase();
 
-    if (
-      !validPincode(pickupPincode) ||
-      !validPincode(deliveryPincode)
-    ) {
+    if (!validPincode(pickupPincode) || !validPincode(deliveryPincode)) {
       return res.status(400).json({
         success: false,
         message: 'Enter valid six-digit PIN codes.',
@@ -298,6 +393,15 @@ router.post('/quote', async (req, res) => {
       });
     }
 
+    const allowedCouriers = [...COURIERS, 'SHADOWFAX'];
+
+    if (!allowedCouriers.includes(courier)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Select a valid courier partner.',
+      });
+    }
+
     const locationRecords =
       await prisma.courierPincodeServiceability.findMany({
         where: {
@@ -306,46 +410,67 @@ router.post('/quote', async (req, res) => {
         },
       });
 
-   // Find one courier that can serve both locations.
-const selectedCourier = COURIERS.find((courier) => {
-  const pickup = locationRecords.find(
-    (item) =>
-      item.courier === courier &&
-      item.pincode === pickupPincode
-  );
+    let zonePickup;
+    let zoneDelivery;
 
-  const delivery = locationRecords.find(
-    (item) =>
-      item.courier === courier &&
-      item.pincode === deliveryPincode
-  );
+    if (courier === 'SHADOWFAX') {
+      // Use geographic PIN data only to determine the ShipNext zone.
+      // Shadowfax availability is checked separately through its live API.
+      const zoneCourier = COURIERS.find((name) => {
+        const pickup = locationRecords.find(
+          (item) =>
+            item.courier === name &&
+            item.pincode === pickupPincode
+        );
 
-  return (
-    isCourierPinUsable(pickup, courier) &&
-    isCourierPinUsable(delivery, courier)
-  );
-});
+        const delivery = locationRecords.find(
+          (item) =>
+            item.courier === name &&
+            item.pincode === deliveryPincode
+        );
 
-    if (!selectedCourier) {
-      return res.status(404).json({
-        success: false,
-        message: 'No courier covers both PIN codes.',
+        return pickup && delivery;
       });
+
+      if (!zoneCourier) {
+        return res.status(404).json({
+          success: false,
+          message: 'Unable to determine the shipping zone for this route.',
+        });
+      }
+
+      zonePickup = locationRecords.find(
+        item => item.courier === zoneCourier &&
+          item.pincode === pickupPincode
+      );
+
+      zoneDelivery = locationRecords.find(
+        item => item.courier === zoneCourier &&
+          item.pincode === deliveryPincode
+      );
+    } else {
+      zonePickup = locationRecords.find(
+        item => item.courier === courier &&
+          item.pincode === pickupPincode
+      );
+
+      zoneDelivery = locationRecords.find(
+        item => item.courier === courier &&
+          item.pincode === deliveryPincode
+      );
+
+      if (
+        !isCourierPinUsable(zonePickup, courier) ||
+        !isCourierPinUsable(zoneDelivery, courier)
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: `${courier} does not serve both PIN codes.`,
+        });
+      }
     }
 
-    const pickup = locationRecords.find(
-      (item) =>
-        item.courier === selectedCourier &&
-        item.pincode === pickupPincode
-    );
-
-    const delivery = locationRecords.find(
-      (item) =>
-        item.courier === selectedCourier &&
-        item.pincode === deliveryPincode
-    );
-
-    const zone = getShippingZone(pickup, delivery);
+    const zone = getShippingZone(zonePickup, zoneDelivery);
 
     const pricingMode = mode.endsWith('_AIR')
       ? 'AIR'
@@ -354,15 +479,16 @@ const selectedCourier = COURIERS.find((courier) => {
     const charge = calculateShippingCharge(
       zone,
       pricingMode,
-      weight
+      Number(weight)
     );
 
     return res.json({
       success: true,
+      courier,
       mode,
       ...charge,
+      pricingBasis: 'SHIPNEXT_TARIFF',
       message: 'Shipping charge calculated successfully.',
-      provisionalModeAvailability: true,
     });
   } catch (error) {
     console.error('Shipping quote error:', error);
@@ -373,144 +499,6 @@ const selectedCourier = COURIERS.find((courier) => {
     });
   }
 });
-
-// ADMIN: Compare all available courier partners and shipping modes
-router.post(
-  '/admin/rate-comparison',
-  authenticateToken,
-  authorizeRole('ADMIN'),
-  async (req, res) => {
-    try {
-      const pickupPincode = String(req.body.pickupPincode || '').trim();
-      const deliveryPincode = String(req.body.deliveryPincode || '').trim();
-      const weight = Number(req.body.weight);
-
-      if (
-        !validPincode(pickupPincode) ||
-        !validPincode(deliveryPincode)
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: 'Enter valid six-digit PIN codes.',
-        });
-      }
-
-      if (!Number.isFinite(weight) || weight < 0.5) {
-        return res.status(400).json({
-          success: false,
-          message: 'Minimum shipment weight is 500 grams.',
-        });
-      }
-
-      const blocked = await getBlockedPincodes([
-        pickupPincode,
-        deliveryPincode,
-      ]);
-
-      if (blocked.size > 0) {
-        return res.status(403).json({
-          success: false,
-          message: 'One or both PIN codes are blocked.',
-          blockedPincodes: Array.from(blocked.values()),
-        });
-      }
-
-      const records = await prisma.courierPincodeServiceability.findMany({
-        where: {
-          courier: { in: COURIERS },
-          pincode: { in: [pickupPincode, deliveryPincode] },
-        },
-      });
-
-      const results = [];
-
-      for (const courier of COURIERS) {
-        const pickup = records.find(
-          (r) => r.courier === courier && r.pincode === pickupPincode
-        );
-
-        const delivery = records.find(
-          (r) => r.courier === courier && r.pincode === deliveryPincode
-        );
-
-        if (
-          !isCourierPinUsable(pickup, courier) ||
-          !isCourierPinUsable(delivery, courier)
-        ) {
-          continue;
-        }
-
-        const zone = getShippingZone(pickup, delivery);
-
-        for (const mode of VALID_MODES) {
-          const pricingMode = mode.endsWith('_AIR') ? 'AIR' : 'SURFACE';
-
-          const charge = calculateShippingCharge(
-            zone,
-            pricingMode,
-            weight
-          );
-
-          results.push({
-            courier,
-            mode,
-            ...charge,
-          });
-        }
-      }
-
-      results.sort((a, b) => a.total - b.total);
-
-      return res.json({
-        success: true,
-        pickupPincode,
-        deliveryPincode,
-        weight,
-        results,
-        count: results.length,
-        message: results.length
-          ? 'Rate comparison completed.'
-          : 'No courier partner serves both PIN codes.',
-      });
-    } catch (error) {
-      console.error('Admin rate comparison error:', error);
-
-      return res.status(500).json({
-        success: false,
-        message: 'Unable to compare shipping rates.',
-      });
-    }
-  }
-);
-
-
-// ADMIN: View all configured routes
-router.get(
-  '/admin/routes',
-  authenticateToken,
-  authorizeRole('ADMIN'),
-  async (req, res) => {
-    try {
-      const routes = await prisma.serviceabilityMode.findMany({
-        orderBy: [
-          { pickupPincode: 'asc' },
-          { deliveryPincode: 'asc' },
-          { priority: 'asc' },
-        ],
-      });
-
-      return res.json({ success: true, routes });
-    } catch (error) {
-      console.error('Fetch serviceability routes error:', error);
-
-      return res.status(500).json({
-        success: false,
-        message: 'Unable to fetch serviceability routes.',
-      });
-    }
-  }
-);
-
 // ADMIN: Add one shipping mode to a PIN-to-PIN route
 router.post(
   '/admin/routes',
@@ -689,5 +677,8 @@ router.delete(
     }
   }
 );
+// Shadowfax live PIN serviceability check
+
+
 
 module.exports = router;

@@ -21,6 +21,9 @@ function ShippingCharges() {
   const [error, setError] = useState('');
 
   const [availableModes, setAvailableModes] = useState([]);
+  const [courierResults, setCourierResults] = useState([]);
+const [selectedCourier, setSelectedCourier] = useState('');
+const [courierCheckError, setCourierCheckError] = useState('');
   const [modeLoading, setModeLoading] = useState(false);
   const [modeError, setModeError] = useState('');
   const [selectedMode, setSelectedMode] = useState('');
@@ -136,9 +139,11 @@ function ShippingCharges() {
     if (!shipment) return;
 
     const checkModes = async () => {
+
       setModeLoading(true);
       setModeError('');
       setAvailableModes([]);
+      
       setSelectedMode('');
       setQuote(null);
       setQuoteError('');
@@ -171,6 +176,35 @@ function ShippingCharges() {
         );
 
         setAvailableModes(modes);
+        // Check live availability across all four courier partners
+try {
+  const courierResponse = await fetch(
+    `${API_URL}/api/serviceability/couriers/check`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pickupPincode: String(shipment.pickupPincode),
+        deliveryPincode: String(shipment.deliveryPincode),
+      }),
+    }
+  );
+
+  const courierData = await courierResponse.json();
+
+  if (!courierResponse.ok || !courierData.success) {
+    throw new Error(
+      courierData.message || 'Courier availability check failed.'
+    );
+  }
+
+  setCourierResults(courierData.courierResults || []);
+  console.log('Courier availability verified.');
+} catch (courierError) {
+  console.error('Courier availability check:', courierError.message);
+}
 
         if (modes.length === 0) {
           setModeError('No shipping modes are currently available for this route.');
@@ -185,9 +219,10 @@ function ShippingCharges() {
     checkModes();
   }, [shipment]);
 
+
   // CALCULATE SHIPPING CHARGE
   const calculateCharge = async () => {
-    if (!selectedMode || !shipment) return;
+   if (!selectedMode || !selectedCourier || !shipment) return;
 
     setQuoteLoading(true);
     setQuoteError('');
@@ -207,6 +242,7 @@ function ShippingCharges() {
             deliveryPincode: String(shipment.deliveryPincode),
             weight: Number(shipment.weightGrams) / 1000,
             mode: selectedMode,
+            courier: selectedCourier,
           }),
         }
       );
@@ -237,9 +273,17 @@ function ShippingCharges() {
 
   // CONFIRM BOOKING AND PAY USING WALLET
   const confirmBooking = async () => {
-    if (!shipment || !selectedMode || !quote || bookingLoading) {
-      return;
-    }
+   if (
+  !shipment ||
+  !selectedMode ||
+  !selectedCourier ||
+  !quote ||
+  bookingLoading
+) {
+  setBookingError('Please select a shipping mode and courier partner.');
+  return;
+}
+    
 
     if (walletBalance === null || walletLoading) {
       setBookingError('Please wait until your wallet balance is available.');
@@ -273,6 +317,7 @@ function ShippingCharges() {
           body: JSON.stringify({
             draftId: shipment.id,
             mode: selectedMode,
+            courier: selectedCourier,
           }),
         }
       );
@@ -548,13 +593,93 @@ function ShippingCharges() {
                 </span>
               </label>
             ))}
+            {/* COURIER PARTNER SELECTION */}
+<div className="courier-selection-section" style={{ marginTop: '28px' }}>
+  <h2>Select Courier Partner</h2>
+
+  <p style={{ color: '#64748b', marginBottom: '16px' }}>
+    Choose an available courier for your shipment.
+  </p>
+
+  {courierResults
+    .filter(courier => courier.serviceable)
+    .map(courier => (
+      <label
+        key={courier.courier}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          padding: '16px',
+          marginBottom: '12px',
+          border: selectedCourier === courier.courier
+            ? '2px solid #ff3b1f'
+            : '1px solid #e2e8f0',
+          borderRadius: '10px',
+          cursor: 'pointer',
+          background: selectedCourier === courier.courier
+            ? '#fff7f5'
+            : '#fff',
+        }}
+      >
+        <input
+          type="radio"
+          name="courierPartner"
+          checked={selectedCourier === courier.courier}
+          onChange={() => {
+            setSelectedCourier(courier.courier);
+            setQuote(null);
+            setQuoteError('');
+          }}
+        />
+
+        <div>
+          <strong>
+            {{
+              DELHIVERY: 'Delhivery',
+              SKYKING: 'Skyking',
+              BLUEDART: 'Blue Dart',
+              SHADOWFAX: 'Shadowfax',
+            }[courier.courier] || courier.courier}
+          </strong>
+
+          <p style={{ color: '#15803d', margin: '5px 0 0' }}>
+            Available for both PIN codes
+          </p>
+
+          {courier.courier === 'SHADOWFAX' && (
+            <small>
+              Services: {(courier.availableModes || []).join(' / ')}
+            </small>
+          )}
+        </div>
+      </label>
+    ))}
+
+  {courierResults.length === 0 && (
+    <p>Checking courier availability...</p>
+  )}
+
+  {courierResults.length > 0 &&
+    !courierResults.some(courier => courier.serviceable) && (
+      <p style={{ color: '#b91c1c' }}>
+        No courier is available for this route.
+      </p>
+    )}
+</div>
 
             {availableModes.length > 0 && (
+              
               <button
                 type="button"
                 className="booking-submit"
                 onClick={calculateCharge}
-                disabled={!selectedMode || quoteLoading || bookingLoading}
+                disabled={
+  !selectedMode ||
+  !selectedCourier ||
+  quoteLoading ||
+  bookingLoading
+}
               >
                 {quoteLoading ? 'Calculating...' : 'Calculate Shipping Charge'}
               </button>

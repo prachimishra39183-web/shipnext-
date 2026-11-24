@@ -34,21 +34,23 @@ const [refundForm, setRefundForm] = useState({
         const headers = {
           Authorization: `Bearer ${token}`,
         };
+       const [shipmentsResponse, draftsResponse, refundsResponse] =
+  await Promise.all([
+    fetch(`${API_URL}/api/shipments/my`, { headers }),
+    fetch(`${API_URL}/api/shipments/drafts/my`, { headers }),
+    fetch(`${API_URL}/api/refunds/my`, { headers }),
+  ]);
 
-        const [shipmentsResponse, draftsResponse] = await Promise.all([
-          fetch(`${API_URL}/api/shipments/my`, { headers }),
-          fetch(`${API_URL}/api/shipments/drafts/my`, { headers }),
-             fetch(`${API_URL}/api/refunds/my`, { headers }),
-        ]);
-
-        const shipmentsData = await shipmentsResponse.json();
-        const draftsData = await draftsResponse.json();
-           const refundsData = await refundsResponse.json();
+const shipmentsData = await shipmentsResponse.json();
+const draftsData = await draftsResponse.json();
+const refundsData = await refundsResponse.json();
 
 if (refundsResponse.ok) {
   setRefunds(refundsData.refunds || []);
 } else {
-  setRefundError(refundsData.message || 'Unable to load refund requests.');
+  setRefundError(
+    refundsData.message || 'Unable to load refund requests.'
+  );
 }
 
 setRefundLoading(false);

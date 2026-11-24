@@ -2,7 +2,11 @@
 const express = require('express');
 const crypto = require('crypto');
 const prisma = require('../prisma');
-
+const {
+  checkServiceability: checkShadowfaxServiceability,
+  getAvailableServices,
+  createShipment: createShadowfaxShipment,
+} = require('../integrations/shadowfax');
 const {
   authenticateToken,
   authorizeRole,
@@ -30,8 +34,34 @@ const COURIERS = [
   'DELHIVERY',
   'SKYKING',
   'BLUEDART',
-];
 
+];
+async function checkShadowfaxMode(pickupPincode, deliveryPincode, mode) {
+  const isAir = mode.endsWith('_AIR');
+
+  const checks = isAir
+    ? [
+        [pickupPincode, 'seller_pickup', 'Marketplace'],
+        [pickupPincode, 'seller_delivery', 'RTS'],
+        [deliveryPincode, 'customer_delivery', 'Regular'],
+      ]
+    : [
+        [pickupPincode, 'seller_pickup', 'Surface_Mkt'],
+        [pickupPincode, 'seller_delivery', 'Surface_RTS'],
+        [deliveryPincode, 'customer_delivery', 'Surface'],
+      ];
+
+  for (const [pincode, service, requiredTier] of checks) {
+    const response = await checkShadowfaxServiceability(pincode, service);
+    const result = getAvailableServices(response, pincode);
+
+    if (!result.services.includes(requiredTier)) {
+      return false;
+    }
+  }
+
+  return true;
+}
 function validPincode(pin) {
   return /^[0-9]{6}$/.test(String(pin || '').trim());
 }
@@ -189,7 +219,19 @@ if (normalizedPaymentMode === 'COD') {
       const customer = await prisma.user.findUnique({
   where: { id: req.user.userId },
   select: { name: true, email: true },
-});
+});  
+if (
+  !req.body.pickupCity?.trim() ||
+  !req.body.deliveryCity?.trim() ||
+  !Number.isFinite(Number(req.body.productValue)) ||
+  Number(req.body.productValue) <= 0 ||
+  !req.body.itemName?.trim()
+) {
+  return res.status(400).json({
+    success: false,
+    message: 'Pickup city, delivery city, product name and valid product value are required.',
+  });
+}
 
       const draft = await prisma.shipmentDraft.create({
         data: {
@@ -199,12 +241,13 @@ if (normalizedPaymentMode === 'COD') {
           pickupPhone: String(pickupPhone),
           pickupAddress: pickupAddress.trim(),
           pickupPincode: String(pickupPincode),
-
+         pickupCity: req.body.pickupCity.trim(),
           deliveryName: deliveryName.trim(),
           deliveryPhone: String(deliveryPhone),
           deliveryAddress: deliveryAddress.trim(),
           deliveryPincode: String(deliveryPincode),
-
+           deliveryCity: req.body.deliveryCity.trim(),
+productValue: Number(req.body.productValue),
           weightGrams: Math.round(weightKg * 1000),
           paymentMode: normalizedPaymentMode,
 codAmount: normalizedCodAmount,
@@ -216,9 +259,9 @@ codAmount: normalizedCodAmount,
             normalizedType === 'NON_DOCUMENT' ? itemCategory : null,
 
           itemName:
-            normalizedType === 'NON_DOCUMENT' && itemCategory === 'Other'
-              ? itemName.trim()
-              : null,
+  normalizedType === 'NON_DOCUMENT'
+    ? String(itemName || itemCategory).trim()
+    : 'Document',
 
           itemDescription:
             normalizedType === 'NON_DOCUMENT' && itemCategory === 'Other'
@@ -931,7 +974,20 @@ router.post(
   authorizeRole('CUSTOMER'),
   async (req, res) => {
     try {
-      const { draftId, mode } = req.body;
+      const { draftId, mode, courier } = req.body;
+const requestedCourier = String(courier || '').toUpperCase();
+
+const allowedCouriers = [
+  ...COURIERS,
+  'SHADOWFAX',
+];
+
+if (!allowedCouriers.includes(requestedCourier)) {
+  return res.status(400).json({
+    success: false,
+    message: 'Please select a valid courier partner.',
+  });
+}
       const customerId = req.user.userId;
      const customer = await prisma.user.findUnique({
   where: { id: customerId },
@@ -960,8 +1016,44 @@ router.post(
           message: 'Please select a valid shipping mode.',
         });
       }
+      // Verify the draft before making the live Shadowfax serviceability request.
+const preflightDraft = await prisma.shipmentDraft.findFirst({
+  where: {
+    id: draftId,
+    customerId,
+  },
+});
 
+if (!preflightDraft) {
+  return res.status(404).json({
+    success: false,
+    message: 'Shipment draft not found.',
+  });
+}
+
+if (requestedCourier === 'SHADOWFAX') {
+  if (Number(preflightDraft.productValue) >= 50000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Shadowfax bookings of ₹50,000 or more require an e-way bill. Please add e-way bill support before booking.',
+    });
+  }
+
+  const isServiceable = await checkShadowfaxMode(
+    preflightDraft.pickupPincode,
+    preflightDraft.deliveryPincode,
+    mode
+  );
+
+  if (!isServiceable) {
+    return res.status(404).json({
+      success: false,
+      message: 'Shadowfax does not support the selected shipping mode for these PIN codes.',
+    });
+  }
+}
       const result = await prisma.$transaction(
+        
         async (tx) => {
           // Verify that the draft belongs to this customer.
           const draft = await tx.shipmentDraft.findFirst({
@@ -1017,42 +1109,67 @@ router.post(
               },
             });
 
-          const selectedCourier = COURIERS.find((courier) => {
-            const hasPickup = locationRecords.some(
-              (item) =>
-                item.courier === courier &&
-                item.pincode === pickupPincode
-            );
+         let selectedCourier = requestedCourier;
+let zoneCourier = requestedCourier;
 
-            const hasDelivery = locationRecords.some(
-              (item) =>
-                item.courier === courier &&
-                item.pincode === deliveryPincode
-            );
+if (requestedCourier === 'SHADOWFAX') {
+  // Use existing courier PIN records only to determine the shipping zone.
+  zoneCourier = COURIERS.find((courier) => {
+    const hasPickup = locationRecords.some(
+      (item) =>
+        item.courier === courier &&
+        item.pincode === pickupPincode
+    );
 
-            return hasPickup && hasDelivery;
-          });
+    const hasDelivery = locationRecords.some(
+      (item) =>
+        item.courier === courier &&
+        item.pincode === deliveryPincode
+    );
 
-          if (!selectedCourier) {
-            const error = new Error(
-              'No courier currently covers both PIN codes.'
-            );
-            error.code = 'NOT_SERVICEABLE';
-            throw error;
-          }
+    return hasPickup && hasDelivery;
+  });
 
-          const pickup = locationRecords.find(
-            (item) =>
-              item.courier === selectedCourier &&
-              item.pincode === pickupPincode
-          );
+  if (!zoneCourier) {
+    const error = new Error(
+      'Unable to determine the shipping zone for these PIN codes.'
+    );
+    error.code = 'NOT_SERVICEABLE';
+    throw error;
+  }
+} else {
+  const hasPickup = locationRecords.some(
+    (item) =>
+      item.courier === requestedCourier &&
+      item.pincode === pickupPincode
+  );
 
-          const delivery = locationRecords.find(
-            (item) =>
-              item.courier === selectedCourier &&
-              item.pincode === deliveryPincode
-          );
+  const hasDelivery = locationRecords.some(
+    (item) =>
+      item.courier === requestedCourier &&
+      item.pincode === deliveryPincode
+  );
 
+  if (!hasPickup || !hasDelivery) {
+    const error = new Error(
+      `${requestedCourier} does not cover both PIN codes.`
+    );
+    error.code = 'NOT_SERVICEABLE';
+    throw error;
+  }
+}
+
+const pickup = locationRecords.find(
+  (item) =>
+    item.courier === zoneCourier &&
+    item.pincode === pickupPincode
+);
+
+const delivery = locationRecords.find(
+  (item) =>
+    item.courier === zoneCourier &&
+    item.pincode === deliveryPincode
+);
           // Recalculate price on the backend.
           const weightKg = draft.weightGrams / 1000;
 
@@ -1063,7 +1180,7 @@ router.post(
             error.code = 'INVALID_WEIGHT';
             throw error;
           }
-
+           
           const zone = getShippingZone(pickup, delivery);
 
           const pricingMode = mode.endsWith('_AIR')
@@ -1221,8 +1338,7 @@ const shipment = await tx.shipment.create({
               pickupName: draft.pickupName,
               pickupPhone: draft.pickupPhone,
               pickupAddress: draft.pickupAddress,
-              pickupPincode: draft.pickupPincode,
-
+pickupPincode: draft.pickupPincode,
               deliveryName: draft.deliveryName,
               deliveryPhone: draft.deliveryPhone,
               deliveryAddress: draft.deliveryAddress,
@@ -1305,7 +1421,96 @@ await tx.adminNotification.create({
           isolationLevel: 'Serializable',
         }
       );
+     // Create the live Shadowfax order only after the database transaction commits.
+if (requestedCourier === 'SHADOWFAX') {
+  const draft = await prisma.shipmentDraft.findUnique({
+    where: { id: draftId },
+  });
 
+  const isCod = draft.paymentMode === 'COD';
+
+  const shadowfaxPayload = {
+    customer_details: {
+      name: draft.deliveryName,
+      contact: draft.deliveryPhone,
+      address_line_1: draft.deliveryAddress,
+      city: draft.deliveryCity,
+      pincode: draft.deliveryPincode,
+    },
+
+    order_details: {
+      client_order_id: result.shipment.trackingId,
+      product_value: Number(draft.productValue),
+      payment_mode: isCod ? 'cod' : 'prepaid',
+      cod_amount: isCod ? Number(draft.codAmount) : 0,
+      order_service: 'Regular',
+      order_identifier: mode.startsWith('EXPRESS')
+        ? 'express'
+        : 'regular',
+      actual_weight: draft.weightGrams / 1000,
+    },
+
+    pickup_details: {
+      pickup_type: 'seller',
+      name: draft.pickupName,
+      contact: draft.pickupPhone,
+      address_line_1: draft.pickupAddress,
+      city: draft.pickupCity,
+      pincode: draft.pickupPincode,
+    },
+
+    return_details: {
+      return_type: 'seller',
+      name: draft.pickupName,
+      contact: draft.pickupPhone,
+      address_line_1: draft.pickupAddress,
+      city: draft.pickupCity,
+      pincode: draft.pickupPincode,
+    },
+
+    product_details: [
+      {
+        sku_name: draft.itemName || 'Shipment',
+        sku_id: draft.id,
+        price: Number(draft.productValue),
+        additional_details: {
+          quantity: 1,
+          mode: mode.endsWith('_AIR') ? 'air' : 'surface',
+        },
+      },
+    ],
+  };
+
+  try {
+    const shadowfaxResult = await createShadowfaxShipment(
+      shadowfaxPayload
+    );
+
+    result.shipment = await prisma.shipment.update({
+      where: { id: result.shipment.id },
+      data: {
+        courierAwb: shadowfaxResult.awb_number,
+        awbAssignedAt: new Date(),
+      },
+    });
+  } catch (shadowfaxError) {
+    console.error('Shadowfax live booking error:', shadowfaxError);
+
+    await prisma.shipment.update({
+      where: { id: result.shipment.id },
+      data: { status: 'PENDING' },
+    });
+
+    return res.status(502).json({
+      success: false,
+      paymentStatus: 'PAID',
+      message:
+        'Wallet payment was completed, but Shadowfax confirmation is pending. Do not book or pay again. Contact ShipNext support with tracking ID: ' +
+        result.shipment.trackingId,
+      trackingId: result.shipment.trackingId,
+    });
+  }
+}
       return res.status(201).json({
         success: true,
         message: 'Shipment booked and wallet payment successful.',
@@ -1313,7 +1518,7 @@ await tx.adminNotification.create({
         invoice: result.invoice,
         payment: {
           paymentMode: 'WALLET',
-          amount: result.charge.total,
+          amount: Number(result.shipment.shippingCharge),
           walletBalance: result.walletBalance,
           status: 'SUCCESS',
         },

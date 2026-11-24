@@ -68,6 +68,7 @@ enum CourierPartner {
   DELHIVERY
   SKYKING
   BLUEDART
+  SHADOWFAX
 }
 
 enum ShipmentType {
@@ -235,6 +236,7 @@ model Shipment {
   childAccountId String?
   childAccount   ChildAccount?   @relation(fields: [childAccountId], references: [id], onDelete: SetNull)
   refundRequests RefundRequest[]
+  productValue   Decimal?        @db.Decimal(12, 2)
 
   @@index([customerId])
   @@index([status])
@@ -261,15 +263,19 @@ model ShipmentDraft {
   pickupPhone   String
   pickupAddress String
   pickupPincode String
+  pickupCity    String?
+  deliveryCity  String?
+  productValue  Decimal? @db.Decimal(12, 2)
 
   deliveryName    String
   deliveryPhone   String
   deliveryAddress String
   deliveryPincode String
 
-  weightGrams     Int
-  paymentMode     String       @default("PREPAID")
-  codAmount       Decimal?     @db.Decimal(12, 2)
+  weightGrams Int
+  paymentMode String   @default("PREPAID")
+  codAmount   Decimal? @db.Decimal(12, 2)
+
   // Parcel details
   shipmentType    ShipmentType @default(DOCUMENT)
   itemCategory    String?
