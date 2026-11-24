@@ -204,6 +204,7 @@ model Shipment {
   weightGrams Int
 
   shippingCharge       Decimal  @db.Decimal(12, 2)
+  selectedRateOption   String?
   paymentMode          String   @default("WALLET") // ShipNext shipping-charge payment
   recipientPaymentMode String   @default("PREPAID") // Recipient payment type: PREPAID or COD
   // CASH ON DELIVERY TRACKING
@@ -272,16 +273,26 @@ model ShipmentDraft {
   deliveryAddress String
   deliveryPincode String
 
-  weightGrams Int
-  paymentMode String   @default("PREPAID")
-  codAmount   Decimal? @db.Decimal(12, 2)
+  weightGrams           Int
+  paymentMode           String   @default("PREPAID")
+  codAmount             Decimal? @db.Decimal(12, 2)
+  // Three internal shipping rate options
+  shipNextRate          Decimal? @db.Decimal(12, 2)
+  delhiveryExpressRate  Decimal? @db.Decimal(12, 2)
+  delhiveryStandardRate Decimal? @db.Decimal(12, 2)
 
+  // Admin rate approval
+  rateApprovalStatus     String       @default("PENDING")
+  selectedRateOption     String?
+  approvedShippingCharge Decimal?     @db.Decimal(12, 2)
+  rateApprovedById       String?
+  rateApprovedAt         DateTime?
   // Parcel details
-  shipmentType    ShipmentType @default(DOCUMENT)
-  itemCategory    String?
-  itemName        String?
-  itemDescription String?
-  shipment        Shipment?
+  shipmentType           ShipmentType @default(DOCUMENT)
+  itemCategory           String?
+  itemName               String?
+  itemDescription        String?
+  shipment               Shipment?
 
   customer User @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
@@ -397,6 +408,9 @@ model CourierPincodeServiceability {
 
   // Skyking-specific information
   serviceabilityStatus String?
+  // Skyking air serviceability
+  firstMile            Boolean @default(false)
+  lastMile             Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -637,4 +651,12 @@ model ShipmentInvoice {
   @@index([customerId])
   @@index([docketNumber])
   @@index([invoiceDate])
+}
+
+model PlayingWithNeon {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Float? @db.Real
+
+  @@map("playing_with_neon")
 }

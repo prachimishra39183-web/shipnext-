@@ -70,6 +70,232 @@ function generateTrackingId() {
   return `SN${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
+// SAVE SELECTED MODE AND CALCULATE INTERNAL SHIPNEXT RATE
+
+router.post(
+  '/drafts/:id/prepare-rates',
+  authenticateToken,
+  authorizeRole('CUSTOMER'),
+  async (req, res) => {
+    try {
+      const { mode, courier } = req.body;
+      const requestedCourier = String(courier || '').toUpperCase();
+      const customerId = req.user.userId;
+
+      if (!VALID_MODES.includes(mode)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid shipping mode.',
+        });
+      }
+
+      const isAirMode =
+        mode === 'EXPRESS_AIR' || mode === 'NORMAL_AIR';
+
+      if (isAirMode && requestedCourier !== 'SKYKING') {
+        return res.status(400).json({
+          success: false,
+          message: 'Air shipments are available only through Skyking.',
+        });
+      }
+
+      if (
+        !COURIERS.includes(requestedCourier) &&
+        requestedCourier !== 'SHADOWFAX'
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid delivery option.',
+        });
+      }
+
+      const draft = await prisma.shipmentDraft.findFirst({
+        where: {
+          id: req.params.id,
+          customerId,
+        },
+      });
+
+      if (!draft) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment draft not found.',
+        });
+      }
+
+      const pickupPincode = draft.pickupPincode;
+      const deliveryPincode = draft.deliveryPincode;
+
+      if (
+        !validPincode(pickupPincode) ||
+        !validPincode(deliveryPincode)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid shipment PIN codes.',
+        });
+      }
+
+      if (requestedCourier === 'SHADOWFAX') {
+        if (Number(draft.productValue) >= 50000) {
+          return res.status(400).json({
+            success: false,
+            message: 'Shadowfax bookings of ₹50,000 or more require an e-way bill.',
+          });
+        }
+
+        const serviceable = await checkShadowfaxMode(
+          pickupPincode,
+          deliveryPincode,
+          mode
+        );
+
+        if (!serviceable) {
+          return res.status(404).json({
+            success: false,
+            message: 'This delivery option is unavailable for the selected route.',
+          });
+        }
+      }
+
+      const locationRecords =
+        await prisma.courierPincodeServiceability.findMany({
+          where: {
+            courier: { in: COURIERS },
+            pincode: {
+              in: [pickupPincode, deliveryPincode],
+            },
+          },
+        });
+
+      let zoneCourier = requestedCourier;
+
+      if (requestedCourier === 'SHADOWFAX') {
+        zoneCourier = COURIERS.find((partner) => {
+          const hasPickup = locationRecords.some(
+            (item) =>
+              item.courier === partner &&
+              item.pincode === pickupPincode
+          );
+
+          const hasDelivery = locationRecords.some(
+            (item) =>
+              item.courier === partner &&
+              item.pincode === deliveryPincode
+          );
+
+          return hasPickup && hasDelivery;
+        });
+
+        if (!zoneCourier) {
+          return res.status(404).json({
+            success: false,
+            message: 'Unable to determine the shipping zone for this route.',
+          });
+        }
+      }
+
+      const pickup = locationRecords.find(
+        (item) =>
+          item.courier === zoneCourier &&
+          item.pincode === pickupPincode
+      );
+
+      const delivery = locationRecords.find(
+        (item) =>
+          item.courier === zoneCourier &&
+          item.pincode === deliveryPincode
+      );
+
+      if (!pickup || !delivery) {
+        return res.status(404).json({
+          success: false,
+          message: 'The selected delivery option does not cover both PIN codes.',
+        });
+      }
+
+      if (
+        isAirMode &&
+        (
+          pickup.firstMile !== true ||
+          delivery.lastMile !== true
+        )
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: 'Skyking Air requires First Mile at pickup and Last Mile at delivery.',
+        });
+      }
+
+      const weightKg = Number(draft.weightGrams) / 1000;
+
+      if (!Number.isFinite(weightKg) || weightKg < 0.5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum shipment weight is 500 grams.',
+        });
+      }
+
+      const zone = getShippingZone(pickup, delivery);
+
+      const pricingMode = mode.endsWith('_AIR')
+        ? 'AIR'
+        : 'SURFACE';
+
+      const charge = calculateShippingCharge(
+        zone,
+        pricingMode,
+        weightKg
+      );
+      console.log('SHIPNEXT RATE PREPARED:', {
+  draftId: draft.id,
+  pickupPincode,
+  deliveryPincode,
+  mode,
+  weightKg,
+  zone,
+  pricingMode,
+  total: charge.total,
+});
+
+      await prisma.shipmentDraft.update({
+        where: { id: draft.id },
+        data: {
+          shippingMode: mode,
+
+          // Internal rate: never return this amount to the customer.
+          shipNextRate: charge.total,
+
+          // Delhivery rates are cleared until correctly recalculated.
+          delhiveryExpressRate: null,
+          delhiveryStandardRate: null,
+
+          // Changing mode requires fresh admin approval.
+          rateApprovalStatus: 'PENDING',
+          selectedRateOption: null,
+          approvedShippingCharge: null,
+          rateApprovedById: null,
+          rateApprovedAt: null,
+        },
+      });
+
+      return res.json({
+        success: true,
+        message: 'Shipping mode saved. Your shipment is awaiting rate approval.',
+        rateApprovalStatus: 'PENDING',
+        shippingMode: mode,
+      });
+    } catch (error) {
+      console.error('Prepare shipment rates error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to prepare shipment rates.',
+      });
+    }
+  }
+);
+
 
 
 // SAVE SHIPMENT DETAILS AS A DRAFT
@@ -279,11 +505,19 @@ codAmount: normalizedCodAmount,
         },
       });
 
-      return res.status(201).json({
-        success: true,
-        message: 'Shipment details saved successfully.',
-        draft,
-      });
+     const {
+  shipNextRate,
+  delhiveryExpressRate,
+  delhiveryStandardRate,
+  rateApprovedById,
+  ...safeDraft
+} = draft;
+
+return res.status(201).json({
+  success: true,
+  message: 'Shipment details saved successfully.',
+  draft: safeDraft,
+});
     } catch (error) {
       console.error('Save shipment draft error:', error);
 
@@ -523,10 +757,18 @@ router.post(
               data,
             });
 
-            created.push({
-              ...draft,
-              rowNumber,
-            });
+          const {
+  shipNextRate,
+  delhiveryExpressRate,
+  delhiveryStandardRate,
+  rateApprovedById,
+  ...safeDraft
+} = draft;
+
+created.push({
+  ...safeDraft,
+  rowNumber,
+});
           }
 
           return created;
@@ -648,7 +890,25 @@ router.post(
             const draft = drafts.find(
               (entry) => entry.id === item.draftId
             );
+             const validRateOptions = [
+  'SHIPNEXT',
+  'DELHIVERY_EXPRESS',
+  'DELHIVERY_STANDARD',
+];
 
+if (
+  draft.rateApprovalStatus !== 'APPROVED' ||
+  !validRateOptions.includes(draft.selectedRateOption) ||
+  draft.approvedShippingCharge === null ||
+  draft.approvedShippingCharge === undefined ||
+  Number(draft.approvedShippingCharge) <= 0
+) {
+  throw new Error('RATE_NOT_APPROVED');
+}
+
+if (draft.shippingMode !== item.mode) {
+  throw new Error('RATE_MODE_MISMATCH');
+}
             if (
               !validPincode(draft.pickupPincode) ||
               !validPincode(draft.deliveryPincode)
@@ -661,27 +921,56 @@ router.post(
             if (weightKg < 0.5) {
               throw new Error('INVALID_WEIGHT');
             }
+           const isAirMode =
+  item.mode === 'EXPRESS_AIR' ||
+  item.mode === 'NORMAL_AIR';
 
-            const courier = COURIERS.find((name) => {
-              const hasPickup = serviceabilityRecords.some(
-                (record) =>
-                  record.courier === name &&
-                  record.pincode === draft.pickupPincode
-              );
+let courier;
 
-              const hasDelivery = serviceabilityRecords.some(
-                (record) =>
-                  record.courier === name &&
-                  record.pincode === draft.deliveryPincode
-              );
+if (isAirMode) {
+  // Air shipments: Skyking only.
+  const skykingPickup = serviceabilityRecords.find(
+    (record) =>
+      record.courier === 'SKYKING' &&
+      record.pincode === draft.pickupPincode
+  );
 
-              return hasPickup && hasDelivery;
-            });
+  const skykingDelivery = serviceabilityRecords.find(
+    (record) =>
+      record.courier === 'SKYKING' &&
+      record.pincode === draft.deliveryPincode
+  );
 
-            if (!courier) {
-              throw new Error('NOT_SERVICEABLE');
-            }
+  if (
+    skykingPickup?.firstMile !== true ||
+    skykingDelivery?.lastMile !== true
+  ) {
+    throw new Error('AIR_NOT_SERVICEABLE');
+  }
 
+  courier = 'SKYKING';
+} else {
+  // Surface shipments: retain existing allocation.
+  courier = COURIERS.find((name) => {
+    const hasPickup = serviceabilityRecords.some(
+      (record) =>
+        record.courier === name &&
+        record.pincode === draft.pickupPincode
+    );
+
+    const hasDelivery = serviceabilityRecords.some(
+      (record) =>
+        record.courier === name &&
+        record.pincode === draft.deliveryPincode
+    );
+
+    return hasPickup && hasDelivery;
+  });
+
+  if (!courier) {
+    throw new Error('NOT_SERVICEABLE');
+  }
+}
             const pickupRecord = serviceabilityRecords.find(
               (record) =>
                 record.courier === courier &&
@@ -694,24 +983,10 @@ router.post(
                 record.pincode === draft.deliveryPincode
             );
 
-            const zone = getShippingZone(
-              pickupRecord,
-              deliveryRecord
-            );
-
-            const pricingMode = item.mode.endsWith('_AIR')
-              ? 'AIR'
-              : 'SURFACE';
-
-            const charge = calculateShippingCharge(
-              zone,
-              pricingMode,
-              weightKg
-            );
-
-            const amount = Number(
-              Number(charge.total).toFixed(2)
-            );
+            // Use the exact rate approved by ShipNext admin.
+const amount = Number(
+  Number(draft.approvedShippingCharge).toFixed(2)
+);
 
             if (!Number.isFinite(amount) || amount <= 0) {
               throw new Error('INVALID_CHARGE');
@@ -805,7 +1080,7 @@ if (totalAmount > 0) {
 
                 weightGrams: draft.weightGrams,
                 shippingCharge: amount.toFixed(2),
-
+                selectedRateOption: draft.selectedRateOption,
                 paymentMode: draft.paymentMode === 'COD' ? 'COD' : 'WALLET',
 recipientPaymentMode: draft.paymentMode,
 
@@ -917,6 +1192,18 @@ return {
         NOT_SERVICEABLE: [404, 'One or more shipments are not serviceable.'],
         INVALID_CHARGE: [400, 'Unable to calculate a valid shipping charge.'],
         INSUFFICIENT_BALANCE: [400, 'Insufficient wallet balance for all shipments.'],
+        AIR_NOT_SERVICEABLE: [
+  404,
+  'Air shipment unavailable: Skyking requires First Mile service at pickup and Last Mile service at delivery.',
+],
+RATE_NOT_APPROVED: [
+  409,
+  'One or more shipments are awaiting admin rate approval.',
+],
+RATE_MODE_MISMATCH: [
+  409,
+  'A shipment mode has changed. Please request rate approval again.',
+],
       };
 
       if (errors[error.message]) {
@@ -943,11 +1230,10 @@ return {
   }
 );
 
-// GET ALL DRAFTS BELONGING TO THE LOGGED-IN CUSTOMER
+// GET CUSTOMER DRAFTS WITHOUT INTERNAL RATE AMOUNTS
 
 router.get(
   '/drafts/my',
-  
   authenticateToken,
   authorizeRole('CUSTOMER'),
   async (req, res) => {
@@ -958,6 +1244,41 @@ router.get(
         },
         orderBy: {
           createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          customerId: true,
+
+          pickupName: true,
+          pickupPhone: true,
+          pickupAddress: true,
+          pickupPincode: true,
+          pickupCity: true,
+
+          deliveryName: true,
+          deliveryPhone: true,
+          deliveryAddress: true,
+          deliveryPincode: true,
+          deliveryCity: true,
+
+          weightGrams: true,
+          productValue: true,
+          shipmentType: true,
+          itemCategory: true,
+          itemName: true,
+          itemDescription: true,
+
+          paymentMode: true,
+          codAmount: true,
+
+          shippingMode: true,
+
+          rateApprovalStatus: true,
+          approvedShippingCharge: true,
+          selectedRateOption: true,
+          rateApprovedAt: true,
+
+          createdAt: true,
         },
       });
 
@@ -976,6 +1297,7 @@ router.get(
   }
 );
 
+
 // GET A CUSTOMER'S OWN SHIPMENT DRAFT
 
 router.get(
@@ -988,6 +1310,42 @@ router.get(
         where: {
           id: req.params.id,
           customerId: req.user.userId,
+        },
+        select: {
+          id: true,
+          customerId: true,
+
+          pickupName: true,
+          pickupPhone: true,
+          pickupAddress: true,
+          pickupPincode: true,
+          pickupCity: true,
+
+          deliveryName: true,
+          deliveryPhone: true,
+          deliveryAddress: true,
+          deliveryPincode: true,
+          deliveryCity: true,
+
+          weightGrams: true,
+          productValue: true,
+          shipmentType: true,
+          itemCategory: true,
+          itemName: true,
+          itemDescription: true,
+
+          paymentMode: true,
+          codAmount: true,
+
+          shippingMode: true,
+
+          // Customer may see approval status and approved amount only.
+          rateApprovalStatus: true,
+          approvedShippingCharge: true,
+          selectedRateOption: true,
+          rateApprovedAt: true,
+
+          createdAt: true,
         },
       });
 
@@ -1012,6 +1370,7 @@ router.get(
     }
   }
 );
+
 
 // CONFIRM SHIPMENT AND PAY USING SHIPNEXT WALLET
 
@@ -1062,6 +1421,17 @@ if (!allowedCouriers.includes(requestedCourier)) {
           message: 'Please select a valid shipping mode.',
         });
       }
+      // Air modes are exclusively assigned to Skyking.
+const isAirMode =
+  mode === 'EXPRESS_AIR' ||
+  mode === 'NORMAL_AIR';
+
+if (isAirMode && requestedCourier !== 'SKYKING') {
+  return res.status(400).json({
+    success: false,
+    message: 'Air shipments are available only through Skyking.',
+  });
+}
       // Verify the draft before making the live Shadowfax serviceability request.
 const preflightDraft = await prisma.shipmentDraft.findFirst({
   where: {
@@ -1076,7 +1446,24 @@ if (!preflightDraft) {
     message: 'Shipment draft not found.',
   });
 }
+// Customer cannot book until an admin approves one of the three rates.
+const validRateOptions = [
+  'SHIPNEXT',
+  'DELHIVERY_EXPRESS',
+  'DELHIVERY_STANDARD',
+];
 
+if (
+  preflightDraft.rateApprovalStatus !== 'APPROVED' ||
+  !validRateOptions.includes(preflightDraft.selectedRateOption) ||
+  preflightDraft.approvedShippingCharge === null ||
+  Number(preflightDraft.approvedShippingCharge) <= 0
+) {
+  return res.status(409).json({
+    success: false,
+    message: 'Your shipment is awaiting admin shipping-rate approval. You can book after approval.',
+  });
+}
 if (requestedCourier === 'SHADOWFAX') {
   if (Number(preflightDraft.productValue) >= 50000) {
     return res.status(400).json({
@@ -1109,11 +1496,19 @@ if (requestedCourier === 'SHADOWFAX') {
             },
           });
 
-          if (!draft) {
-            const error = new Error('Shipment draft not found.');
-            error.code = 'DRAFT_NOT_FOUND';
-            throw error;
-          }
+          // Recheck approval inside the transaction to prevent bypasses.
+if (
+  draft.rateApprovalStatus !== 'APPROVED' ||
+  !validRateOptions.includes(draft.selectedRateOption) ||
+  draft.approvedShippingCharge === null ||
+  Number(draft.approvedShippingCharge) <= 0
+) {
+  const error = new Error(
+    'Your shipment is awaiting admin shipping-rate approval.'
+  );
+  error.code = 'RATE_NOT_APPROVED';
+  throw error;
+}
 
           // Prevent booking the same draft more than once.
           const existingShipment = await tx.shipment.findUnique({
@@ -1203,8 +1598,34 @@ if (requestedCourier === 'SHADOWFAX') {
     error.code = 'NOT_SERVICEABLE';
     throw error;
   }
-}
 
+  // Skyking Air requires First Mile at pickup
+  // and Last Mile at delivery.
+  if (isAirMode) {
+    const skykingPickup = locationRecords.find(
+      (item) =>
+        item.courier === 'SKYKING' &&
+        item.pincode === pickupPincode
+    );
+
+    const skykingDelivery = locationRecords.find(
+      (item) =>
+        item.courier === 'SKYKING' &&
+        item.pincode === deliveryPincode
+    );
+
+    if (
+      skykingPickup?.firstMile !== true ||
+      skykingDelivery?.lastMile !== true
+    ) {
+      const error = new Error(
+        'Skyking Air is unavailable. Pickup requires First Mile and delivery requires Last Mile serviceability.'
+      );
+      error.code = 'NOT_SERVICEABLE';
+      throw error;
+    }
+  }
+}
 const pickup = locationRecords.find(
   (item) =>
     item.courier === zoneCourier &&
@@ -1267,7 +1688,8 @@ const isIntraState =
   normalizedState === '24';
 
 // Calculate taxable value and GST.
-const grossCharge = Number(charge.total);
+// Admin-approved rate is authoritative for this booking.
+const grossCharge = Number(draft.approvedShippingCharge);
 const taxableAmount = taxInclusive
   ? Number((grossCharge / (1 + gstRate / 100)).toFixed(2))
   : grossCharge;
@@ -1392,6 +1814,7 @@ pickupPincode: draft.pickupPincode,
 
             weightGrams: draft.weightGrams,
 shippingCharge: amount,
+selectedRateOption: draft.selectedRateOption,
 
 // ShipNext shipping-charge payment
            paymentMode: isCod ? 'COD' : 'WALLET',
@@ -1613,6 +2036,11 @@ if (requestedCourier === 'SHADOWFAX') {
     success: false,
     message: error.message,
   });
+}     if (error.code === 'RATE_NOT_APPROVED') {
+  return res.status(409).json({
+    success: false,
+    message: error.message,
+  });
 }
       if (error.code === 'INSUFFICIENT_BALANCE') {
         return res.status(400).json({
@@ -1770,6 +2198,7 @@ async function validateChildAccount(req, res, next) {
     next();
 
   } catch (error) {
+    
     console.error('Child account validation error:', error);
 
     return res.status(500).json({

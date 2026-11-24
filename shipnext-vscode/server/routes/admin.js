@@ -7,7 +7,13 @@ const {
   authenticateToken,
   authorizeRole
 } = require('../middleware/auth');
+const {
+  calculateShippingCharge,
+  calculateDelhiveryExpress,
+  calculateDelhiveryStandard,
+} = require('../utils/shippingPricing');
 
+const { getShippingZone } = require('../utils/shippingZone');
 const router = express.Router();
 
 // GET ALL REGISTERED CUSTOMERS
@@ -966,5 +972,377 @@ router.patch(
     }
   }
 );
+
+// ==========================================
+// SHIPMENT RATE APPROVAL — ADMIN ONLY
+// ==========================================
+
+// GET SHIPMENTS AWAITING RATE APPROVAL
+router.get(
+  '/rate-approvals',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const drafts = await prisma.shipmentDraft.findMany({
+        where: {
+          rateApprovalStatus: 'PENDING',
+        },
+        select: {
+          id: true,
+          customerId: true,
+          pickupName: true,
+          pickupPincode: true,
+          deliveryName: true,
+          deliveryPincode: true,
+          pickupCity: true,
+          deliveryCity: true,
+          weightGrams: true,
+          paymentMode: true,
+          codAmount: true,
+          shippingMode: true,
+          productValue: true,
+
+          shipNextRate: true,
+          delhiveryExpressRate: true,
+          delhiveryStandardRate: true,
+         shippingMode: true,
+          rateApprovalStatus: true,
+          createdAt: true,
+
+          customer: {
+            select: {
+              name: true,
+              email: true,
+              phone: true,
+              companyName: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
+
+      return res.json({
+        success: true,
+        total: drafts.length,
+        drafts: drafts.map((draft) => ({
+          ...draft,
+          weightKg: Number(draft.weightGrams) / 1000,
+          shipNextRate: draft.shipNextRate?.toString() ?? null,
+          delhiveryExpressRate:
+            draft.delhiveryExpressRate?.toString() ?? null,
+          delhiveryStandardRate:
+            draft.delhiveryStandardRate?.toString() ?? null,
+          productValue: draft.productValue?.toString() ?? null,
+          codAmount: draft.codAmount?.toString() ?? null,
+        })),
+      });
+    } catch (error) {
+      console.error('Admin rate approval list error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to retrieve shipment rate approvals.',
+      });
+    }
+  }
+);
+// CALCULATE ALL THREE RATES FOR ADMIN
+router.post(
+  '/rate-approvals/:draftId/calculate',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const { expressZone, standardZone } = req.body;
+      const { draftId } = req.params;
+
+      const validExpressZones = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+      const validStandardZones = [
+        'A', 'B', 'C1', 'C2', 'D1', 'D2', 'E', 'F',
+      ];
+
+      if (!validExpressZones.includes(expressZone)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid Delhivery Express zone.',
+        });
+      }
+
+      if (!validStandardZones.includes(standardZone)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid Delhivery Standard zone.',
+        });
+      }
+
+      const draft = await prisma.shipmentDraft.findUnique({
+        where: { id: draftId },
+      });
+
+      if (!draft) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment draft not found.',
+        });
+      }
+
+      if (draft.rateApprovalStatus !== 'PENDING') {
+        return res.status(409).json({
+          success: false,
+          message: 'Only pending shipments can have rates calculated.',
+        });
+      }
+
+      // VALIDATE WEIGHT
+      const weightGrams = Number(draft.weightGrams);
+      const weightKg = weightGrams / 1000;
+
+      if (!Number.isFinite(weightKg) || weightKg < 0.5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum shipment weight is 500 grams.',
+        });
+      }
+
+      // FIND SERVICEABILITY RECORDS FOR SHIPNEXT ZONE
+      const isAirMode =
+        draft.shippingMode === 'EXPRESS_AIR' ||
+        draft.shippingMode === 'NORMAL_AIR';
+         if (!draft.shippingMode) {
+  return res.status(400).json({
+    success: false,
+    message: 'This shipment has no shipping mode. Please ask the customer to select a shipping mode and request rate approval again.',
+  });
+}
+      const locationRecords =
+        await prisma.courierPincodeServiceability.findMany({
+          where: {
+            pincode: {
+              in: [
+                draft.pickupPincode,
+                draft.deliveryPincode,
+              ],
+            },
+            ...(isAirMode ? { courier: 'SKYKING' } : {}),
+          },
+        });
+
+      let pickup;
+      let delivery;
+
+      if (isAirMode) {
+        pickup = locationRecords.find(
+          (item) =>
+            item.courier === 'SKYKING' &&
+            item.pincode === draft.pickupPincode
+        );
+
+        delivery = locationRecords.find(
+          (item) =>
+            item.courier === 'SKYKING' &&
+            item.pincode === draft.deliveryPincode
+        );
+
+        if (
+          pickup?.firstMile !== true ||
+          delivery?.lastMile !== true
+        ) {
+          return res.status(404).json({
+            success: false,
+            message:
+              'Skyking Air requires First Mile at pickup and Last Mile at delivery.',
+          });
+        }
+      } else {
+        const matchingCourier = locationRecords.find((item) =>
+          locationRecords.some(
+            (other) =>
+              other.courier === item.courier &&
+              other.pincode === draft.deliveryPincode
+          ) &&
+          item.pincode === draft.pickupPincode
+        );
+
+        if (!matchingCourier) {
+          return res.status(404).json({
+            success: false,
+            message:
+              'Unable to determine ShipNext serviceability for this route.',
+          });
+        }
+
+        pickup = matchingCourier;
+
+        delivery = locationRecords.find(
+          (item) =>
+            item.courier === matchingCourier.courier &&
+            item.pincode === draft.deliveryPincode
+        );
+      }
+
+      // SHIPNEXT STANDARD — EXISTING PRICING LOGIC
+      const shipNextZone = getShippingZone(pickup, delivery);
+
+      const pricingMode = String(draft.shippingMode).endsWith('_AIR')
+  ? 'AIR'
+  : 'SURFACE';
+
+      const shipNextCharge = calculateShippingCharge(
+        shipNextZone,
+        pricingMode,
+        weightKg
+      );
+
+      // DELHIVERY EXPRESS — EXCEL TARIFF
+      const expressRate = calculateDelhiveryExpress(
+        weightGrams,
+        expressZone
+      );
+
+      // DELHIVERY STANDARD — EXCEL TARIFF
+      const standardRate = calculateDelhiveryStandard(
+        weightGrams,
+        standardZone
+      );
+
+      // SAVE ALL THREE RATES
+      const updatedDraft = await prisma.shipmentDraft.update({
+        where: { id: draftId },
+        data: {
+          shipNextRate: shipNextCharge.total,
+          delhiveryExpressRate: expressRate,
+          delhiveryStandardRate: standardRate,
+          shippingMode: draft.shippingMode,
+        },
+        select: {
+          id: true,
+          shipNextRate: true,
+          delhiveryExpressRate: true,
+          delhiveryStandardRate: true,
+          rateApprovalStatus: true,
+        },
+      });
+
+      return res.json({
+        success: true,
+        message: 'All three shipping rates calculated successfully.',
+        rates: {
+          shipNext: updatedDraft.shipNextRate,
+          delhiveryExpress: updatedDraft.delhiveryExpressRate,
+          delhiveryStandard: updatedDraft.delhiveryStandardRate,
+        },
+      });
+    } catch (error) {
+      console.error('Admin rate calculation error:', error);
+
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Unable to calculate shipping rates.',
+      });
+    }
+  }
+);
+
+// APPROVE ONE OF THE THREE SHIPPING RATES
+router.patch(
+  '/rate-approvals/:draftId',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const { selectedRateOption } = req.body;
+      const { draftId } = req.params;
+
+      const rateFields = {
+        SHIPNEXT: 'shipNextRate',
+        DELHIVERY_EXPRESS: 'delhiveryExpressRate',
+        DELHIVERY_STANDARD: 'delhiveryStandardRate',
+      };
+
+      const rateField = rateFields[selectedRateOption];
+
+      if (!rateField) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid shipping rate option.',
+        });
+      }
+
+      const draft = await prisma.shipmentDraft.findUnique({
+        where: { id: draftId },
+      });
+
+      if (!draft) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment draft not found.',
+        });
+      }
+
+      if (draft.rateApprovalStatus !== 'PENDING') {
+        return res.status(409).json({
+          success: false,
+          message: 'This shipment rate has already been approved.',
+        });
+      }
+
+      const selectedRate = draft[rateField];
+
+      if (
+        selectedRate === null ||
+        selectedRate === undefined ||
+        !Number.isFinite(Number(selectedRate)) ||
+        Number(selectedRate) <= 0
+      ) {
+        return res.status(409).json({
+          success: false,
+          message: 'The selected rate has not been calculated yet. Please calculate all three rates first.',
+        });
+      }
+
+      const updatedDraft = await prisma.shipmentDraft.update({
+        where: { id: draftId },
+        data: {
+          rateApprovalStatus: 'APPROVED',
+          selectedRateOption,
+          approvedShippingCharge: selectedRate,
+          rateApprovedById: req.user.userId,
+          rateApprovedAt: new Date(),
+        },
+        select: {
+          id: true,
+          rateApprovalStatus: true,
+          selectedRateOption: true,
+          approvedShippingCharge: true,
+          rateApprovedById: true,
+          rateApprovedAt: true,
+        },
+      });
+
+      return res.json({
+        success: true,
+        message: 'Shipping rate approved successfully.',
+        approval: {
+          ...updatedDraft,
+          approvedShippingCharge:
+            updatedDraft.approvedShippingCharge.toString(),
+        },
+      });
+    } catch (error) {
+      console.error('Admin rate approval error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to approve shipping rate.',
+      });
+    }
+  }
+);
+
+
 
 module.exports = router;

@@ -35,6 +35,7 @@ import PlatformPage from './pages/PlatformPage.jsx';
 import AdminCodRemittance from './pages/AdminCodRemittance.jsx';
 import CustomerCodRemittance from './pages/CustomerCodRemittance.jsx';
 import AdminPincodeRates from './pages/AdminPincodeRates.jsx';
+import AdminRateApprovals from './pages/AdminRateApprovals.jsx';
 import CustomerSettings from './pages/CustomerSettings.jsx';
 import CustomerInvoices from './pages/CustomerInvoices.jsx';
 import AdminCustomerAnalytics from './pages/AdminCustomerAnalytics.jsx';
@@ -100,6 +101,10 @@ function App() {
     <Route path="/admin/customers" element={<AdminCustomers />} />
     <Route path="/admin/shipments" element={<AdminShipments />} />
     <Route path="/admin/bookings" element={<AdminBookings />} />
+    <Route
+  path="/admin/rate-approvals"
+  element={<AdminRateApprovals />}
+/>
     <Route path="/admin/wallet" element={<AdminWallet />} />
     <Route path="/admin/enquiries" element={<AdminEnquiries />} />
     <Route path="/admin/support" element={<AdminSupport />} />

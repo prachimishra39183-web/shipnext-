@@ -37,6 +37,7 @@ const navigation = [
     { label: 'Shipments', path: '/admin/shipments', icon: Package },
     { label: 'Bookings', path: '/admin/bookings', icon: ClipboardList },
     { label: 'PIN Rate Calculator', path: '/admin/pincode-rates', icon: Calculator },
+    { label: 'Rate Approvals', path: '/admin/rate-approvals', icon: IndianRupee },
   ]},
  {
   title: 'OPERATIONS',
@@ -395,6 +396,14 @@ function AdminDashboard() {
                   </span>
                   <ArrowUpRight size={17} />
                 </Link>
+                <Link to="/admin/rate-approvals">
+  <span className="quick-symbol">02</span>
+  <span className="quick-copy">
+    <strong>Rate Approvals</strong>
+    <small>Compare and approve shipment rates</small>
+  </span>
+  <ArrowUpRight size={17} />
+</Link>
 
                 <Link to="/admin/wallet">
                   <span className="quick-symbol">03</span>

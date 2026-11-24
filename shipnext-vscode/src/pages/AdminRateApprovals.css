@@ -1,0 +1,555 @@
+
+.rate-approvals-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 30px;
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.rate-approvals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.rate-approvals-header h1 {
+  margin: 0 0 8px;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.rate-approvals-header p {
+  margin: 0;
+  color: #b8b8b8;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.rate-refresh-btn,
+.calculate-rates-btn,
+.approve-rate-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 12px 19px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.rate-refresh-btn {
+  color: #ffffff;
+  background: #292929;
+  border: 1px solid #454545;
+}
+
+.rate-refresh-btn:hover {
+  background: #3a3a3a;
+}
+
+.rate-approval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rate-approval-card {
+  background: rgba(20, 20, 20, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 17px;
+  padding: 25px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.rate-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #333;
+}
+
+.rate-card-heading h2 {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.rate-card-heading p {
+  margin: 0 0 4px;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.rate-card-heading small {
+  color: #999;
+  font-size: 12px;
+}
+
+.rate-pending-badge {
+  background: rgba(255, 173, 51, 0.13);
+  color: #ffb84d;
+  border: 1px solid rgba(255, 173, 51, 0.3);
+  padding: 7px 12px;
+  border-radius: 30px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+.rate-shipment-details {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  padding: 22px 0;
+}
+
+.rate-shipment-details div {
+  background: #252525;
+  border: 1px solid #373737;
+  border-radius: 10px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.rate-shipment-details small,
+.rate-final-selection small {
+  display: block;
+  color: #a5a5a5;
+  font-size: 11px;
+  margin-bottom: 7px;
+}
+
+.rate-shipment-details strong {
+  display: block;
+  color: #ffffff;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.delhivery-zone-panel {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid #373737;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 23px;
+}
+
+.delhivery-zone-panel h3,
+.rate-comparison h3 {
+  margin: 0 0 7px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.delhivery-zone-panel > p {
+  margin: 0 0 18px;
+  color: #a7a7a7;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.rate-zone-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.rate-zone-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #dddddd;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rate-zone-grid select {
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 12px;
+  color: #ffffff;
+  background: #202020;
+  border: 1px solid #484848;
+  border-radius: 8px;
+  outline: none;
+  font-size: 13px;
+}
+
+.rate-zone-grid select:focus {
+  border-color: #ff3b1f;
+  box-shadow: 0 0 0 2px rgba(255, 59, 31, 0.15);
+}
+
+.calculate-rates-btn {
+  width: 100%;
+  color: #ffffff;
+  background: #ff3b1f;
+}
+
+.calculate-rates-btn:hover,
+.approve-rate-btn:hover {
+  background: #e92e14;
+  transform: translateY(-1px);
+}
+
+.calculate-rates-btn:disabled,
+.approve-rate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rate-comparison {
+  margin-top: 8px;
+}
+
+.rate-comparison h3 {
+  margin-bottom: 15px;
+}
+
+.rate-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.rate-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  min-width: 0;
+  padding: 19px;
+  background: #252525;
+  border: 1px solid #414141;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.rate-option:hover {
+  border-color: #ff3b1f;
+}
+
+.rate-option.selected {
+  background: rgba(255, 59, 31, 0.09);
+  border: 1px solid #ff3b1f;
+  box-shadow: 0 0 0 1px rgba(255, 59, 31, 0.12);
+}
+
+.rate-option.unavailable {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rate-option input {
+  position: absolute;
+  top: 17px;
+  right: 17px;
+  accent-color: #ff3b1f;
+  width: 17px;
+  height: 17px;
+}
+
+.rate-option-name {
+  padding-right: 25px;
+  color: #d2d2d2;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rate-option strong {
+  color: #ffffff;
+  font-size: 25px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.rate-option small {
+  color: #ffb84d;
+  font-size: 11px;
+}
+
+.rate-final-selection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-top: 23px;
+  padding: 19px;
+  background: #202020;
+  border: 1px solid #3c3c3c;
+  border-radius: 12px;
+}
+
+.rate-final-selection strong {
+  display: block;
+  color: #ff704f;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.approve-rate-btn {
+  color: #ffffff;
+  background: #ff3b1f;
+  min-width: 190px;
+}
+
+.rate-error,
+.rate-success {
+  padding: 12px 15px;
+  border-radius: 9px;
+  margin-top: 15px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rate-error {
+  color: #ff8d8d;
+  background: rgba(220, 45, 45, 0.12);
+  border: 1px solid rgba(220, 45, 45, 0.3);
+}
+
+.rate-success {
+  color: #83e6a2;
+  background: rgba(40, 180, 90, 0.1);
+  border: 1px solid rgba(40, 180, 90, 0.25);
+  margin-bottom: 20px;
+}
+
+.rate-empty {
+  padding: 55px 20px;
+  text-align: center;
+  background: rgba(20, 20, 20, 0.9);
+  border: 1px solid #333;
+  border-radius: 15px;
+}
+
+.rate-empty h3 {
+  margin: 0 0 9px;
+  font-size: 18px;
+}
+
+.rate-empty p {
+  margin: 0;
+  color: #aaa;
+  font-size: 13px;
+}
+
+/* TABLET */
+@media (max-width: 900px) {
+  .rate-shipment-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rate-options-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .rate-approvals-page {
+    padding: 16px;
+  }
+
+  .rate-approvals-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rate-approvals-header h1 {
+    font-size: 24px;
+  }
+
+  .rate-refresh-btn {
+    width: 100%;
+  }
+
+  .rate-approval-card {
+    padding: 16px;
+  }
+
+  .rate-card-heading {
+    flex-direction: column;
+  }
+
+  .rate-shipment-details {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .rate-shipment-details div {
+    padding: 11px;
+  }
+
+  .rate-zone-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rate-final-selection {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .approve-rate-btn {
+    width: 100%;
+  }
+}
+
+/* SHIPNEXT RATE APPROVAL MODAL */
+
+.approval-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  animation: approvalFadeIn 0.2s ease;
+}
+
+.approval-modal {
+  width: 100%;
+  max-width: 440px;
+  padding: 32px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: approvalSlideIn 0.25s ease;
+}
+
+.approval-modal-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff0ec;
+  color: #ff3b1f;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.approval-modal h2 {
+  margin: 0 0 10px;
+  color: #172033;
+  font-size: 23px;
+  font-weight: 750;
+}
+
+.approval-modal-description {
+  margin: 0 0 24px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.approval-modal-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 13px;
+  padding: 18px;
+  margin-bottom: 25px;
+  border: 1px solid #e9edf3;
+  border-radius: 13px;
+  background: #f8fafc;
+  text-align: left;
+}
+
+.approval-modal-summary span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.approval-modal-summary strong {
+  color: #172033;
+  font-size: 14px;
+  text-align: right;
+}
+
+.approval-modal-summary .approval-modal-amount {
+  color: #ff3b1f;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.approval-modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.approval-modal-actions button {
+  flex: 1;
+  min-height: 46px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.approval-modal-cancel {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.approval-modal-cancel:hover {
+  background: #e2e8f0;
+}
+
+.approval-modal-confirm {
+  background: #ff3b1f;
+  color: #ffffff;
+}
+
+.approval-modal-confirm:hover {
+  background: #e92d13;
+  transform: translateY(-1px);
+}
+
+.approval-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes approvalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes approvalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .approval-modal {
+    padding: 24px 20px;
+  }
+
+  .approval-modal-actions {
+    flex-direction: column-reverse;
+  }
+}

@@ -242,66 +242,55 @@ const [assignedMode, setAssignedMode] = useState('');
 // HOMEPAGE SHIPPING RATE CALCULATOR
 
 const [rateZone, setRateZone] = useState('METRO');
-const [rateMode, setRateMode] = useState('AIR');
+const [rateMode, setRateMode] = useState('EXPRESS_AIR');
 const [shipmentWeight, setShipmentWeight] = useState('0.5');
 const [rateResult, setRateResult] = useState(null);
 const [rateError, setRateError] = useState('');
 
-const shippingRates = {
-  METRO: {
-    standard: 35,
-    AIR: { base: 80, perKg: 120 },
-    SURFACE: { base: 50, perKg: 70 }
-  },
-  ROI: {
-    standard: 40,
-    AIR: { base: 90, perKg: 130 },
-    SURFACE: { base: 60, perKg: 90 }
-  },
-  NE: {
-    standard: 60,
-    AIR: { base: 120, perKg: 180 },
-    SURFACE: { base: 90, perKg: 120 }
+
+const calculateRate = async () => {
+  try {
+    setRateError('');
+    setRateResult(null);
+
+    const response = await fetch(
+      `${API_URL}/api/serviceability/quote`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pickupPincode: pickupPincode.trim(),
+          deliveryPincode: deliveryPincode.trim(),
+          weight: Number(shipmentWeight),
+          mode: rateMode,
+          courier: rateMode === 'EXPRESS_AIR' || rateMode === 'NORMAL_AIR'
+            ? 'SKYKING'
+            : undefined,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message || 'Unable to calculate shipping charges.'
+      );
+    }
+
+    setRateResult(data);
+  } catch (error) {
+    setRateError(
+      error.message || 'Unable to calculate shipping charges.'
+    );
   }
 };
 
 const handleRateCalculation = (e) => {
   e.preventDefault();
-
-  const weight = Number(shipmentWeight);
-
-  if (!Number.isFinite(weight) || weight <= 0) {
-    setRateError('Please enter a valid shipment weight.');
-    setRateResult(null);
-    return;
-  }
-
-  if (weight < 0.5) {
-    setRateError('Minimum shipment weight is 500 grams.');
-    setRateResult(null);
-    return;
-  }
-
-  const rates = shippingRates[rateZone][rateMode];
-
-  // First 500g + additional 500g slabs
-  const additionalSlabs = Math.ceil((weight - 0.5) / 0.5);
-
-  const additionalCharge =
-    additionalSlabs * (rates.perKg / 2);
-
-  const total = rates.base + additionalCharge;
-
-  setRateError('');
-
-  setRateResult({
-    zone: rateZone,
-    mode: rateMode,
-    weight,
-    base: rates.base,
-    additionalCharge,
-    total
-  });
+  calculateRate();
 };
 
 

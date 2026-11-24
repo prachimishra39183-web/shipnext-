@@ -40,7 +40,17 @@ function ShippingCharges() {
   const [bookingError, setBookingError] = useState('');
   const [bookingResult, setBookingResult] = useState(null);
   const isCod = shipment?.paymentMode === 'COD';
+const getCourierForMode = (mode) => {
+  if (mode === 'EXPRESS_AIR' || mode === 'NORMAL_AIR') {
+    const airModeAvailable = availableModes.some(
+      (item) => item.mode === mode
+    );
 
+    return airModeAvailable ? 'SKYKING' : '';
+  }
+
+  return selectedCourier;
+};
   // LOAD SAVED SHIPMENT
   useEffect(() => {
     const fetchDraft = async () => {
@@ -89,6 +99,36 @@ function ShippingCharges() {
 
     fetchDraft();
   }, [urlDraftId, location.state, navigate]);
+
+// REFRESH LATEST ADMIN RATE APPROVAL
+const refreshApprovalStatus = async () => {
+  const token = sessionStorage.getItem('shipnextToken');
+
+  if (!token || !shipment?.id) return;
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/shipments/drafts/${shipment.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Unable to refresh approval status.');
+    }
+
+    setShipment(data.draft);
+    setBookingError('');
+
+  } catch (err) {
+    setBookingError(err.message || 'Unable to refresh approval status.');
+  }
+};
 
   // LOAD CUSTOMER WALLET BALANCE
   useEffect(() => {
@@ -152,7 +192,7 @@ if (shipment.paymentMode === 'COD') {
       setModeError('');
       setAvailableModes([]);
       
-      setSelectedMode('');
+      setSelectedMode(shipment.shippingMode || '');
       setQuote(null);
       setQuoteError('');
 
@@ -261,130 +301,144 @@ try {
   }, [shipment]);
 
 
-  // CALCULATE SHIPPING CHARGE
-  const calculateCharge = async () => {
-   if (!selectedMode || !selectedCourier || !shipment) return;
+// PREPARE SHIPPING RATE FOR ADMIN APPROVAL
+const calculateCharge = async () => {
+  const courierForMode = getCourierForMode(selectedMode);
 
-    setQuoteLoading(true);
-    setQuoteError('');
-    setQuote(null);
-    setBookingError('');
+  if (!selectedMode || !courierForMode || !shipment) return;
 
-    try {
-      const response = await fetch(
-        `${API_URL}/api/serviceability/quote`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            pickupPincode: String(shipment.pickupPincode),
-            deliveryPincode: String(shipment.deliveryPincode),
-            weight: Number(shipment.weightGrams) / 1000,
-            mode: selectedMode,
-            courier: selectedCourier,
-          }),
-        }
-      );
+  setQuoteLoading(true);
+  setQuoteError('');
+  setQuote(null);
+  setBookingError('');
 
-      const data = await response.json();
-
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || 'Unable to calculate shipping charge.');
+  try {
+    const response = await fetch(
+      `${API_URL}/api/shipments/drafts/${shipment.id}/prepare-rates`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionStorage.getItem('shipnextToken')}`,
+        },
+        body: JSON.stringify({
+          mode: selectedMode,
+          courier: courierForMode,
+        }),
       }
+    );
 
-      const result = data.quote || data.calculation || data;
-      const total = Number(result.total ?? result.amount ?? data.total);
+    const data = await response.json();
 
-      if (!Number.isFinite(total)) {
-        throw new Error('The backend did not return a valid shipping charge.');
-      }
-
-      setQuote({
-        ...result,
-        total,
-      });
-    } catch (err) {
-      setQuoteError(err.message || 'Unable to calculate shipping charge.');
-    } finally {
-      setQuoteLoading(false);
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Unable to prepare shipping rates.');
     }
-  };
 
-  // CONFIRM BOOKING AND PAY USING WALLET
-  const confirmBooking = async () => {
-   if (
-  !shipment ||
-  !selectedMode ||
-  !selectedCourier ||
-  !quote ||
-  bookingLoading
-) {
-setBookingError('Please select an available shipping mode.');
-  return;
-}
-    
+    // Do not display internal rate amounts to the customer.
+    setQuote(null);
+    setShipment((prev) => ({
+  ...prev,
+  shippingMode: selectedMode,
+  rateApprovalStatus: 'PENDING',
+  selectedRateOption: null,
+  approvedShippingCharge: null,
+}));
 
-    if (!isCod) {
-  if (walletBalance === null || walletLoading) {
-    setBookingError('Please wait until your wallet balance is available.');
+    setBookingError(
+      'Your shipping rate request has been sent to ShipNext admin. Booking will be available after rate approval.'
+    );
+  } catch (err) {
+    setQuoteError(err.message || 'Unable to prepare shipping rates.');
+  } finally {
+    setQuoteLoading(false);
+  }
+};
+
+
+ 
+// CONFIRM BOOKING AFTER ADMIN RATE APPROVAL
+const confirmBooking = async () => {
+  const courierForMode = getCourierForMode(selectedMode);
+  const token = sessionStorage.getItem('shipnextToken');
+
+  if (!token) {
+    navigate('/login');
     return;
   }
 
-  if (walletBalance < quote.total) {
-    setBookingError('Insufficient wallet balance. Please recharge your wallet.');
+  if (!shipment || !selectedMode || !courierForMode) {
+    setBookingError('Please select an available shipping mode.');
     return;
   }
-}
 
-    const token = sessionStorage.getItem('shipnextToken');
+  if (
+    shipment.rateApprovalStatus !== 'APPROVED' ||
+    !shipment.approvedShippingCharge ||
+    Number(shipment.approvedShippingCharge) <= 0
+  ) {
+    setBookingError(
+      'Your shipping rate is awaiting admin approval. You can book after approval.'
+    );
+    return;
+  }
 
-    if (!token) {
-      navigate('/login');
+  const approvedCharge = Number(shipment.approvedShippingCharge);
+
+  if (!isCod) {
+    if (walletBalance === null || walletLoading) {
+      setBookingError('Please wait until your wallet balance is available.');
       return;
     }
 
-    setBookingLoading(true);
-    setBookingError('');
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/shipments/confirm`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            draftId: shipment.id,
-            mode: selectedMode,
-            courier: selectedCourier,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Unable to confirm shipment.');
-      }
-
-     setBookingResult(data);
-
-if (data.payment.walletBalance !== null &&
-    data.payment.walletBalance !== undefined) {
-  setWalletBalance(Number(data.payment.walletBalance));
-}
-
-      sessionStorage.removeItem('shipnextDraftId');
-    } catch (err) {
-      setBookingError(err.message || 'Shipment booking failed.');
-    } finally {
-      setBookingLoading(false);
+    if (walletBalance < approvedCharge) {
+      setBookingError('Your wallet balance may be insufficient. Please recharge your wallet.');
+      return;
     }
-  };
+  }
+
+  setBookingLoading(true);
+  setBookingError('');
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/shipments/confirm`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          draftId: shipment.id,
+          mode: selectedMode,
+          courier: courierForMode,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Unable to confirm shipment.');
+    }
+
+    setBookingResult(data);
+
+    if (
+      data.payment?.walletBalance !== null &&
+      data.payment?.walletBalance !== undefined
+    ) {
+      setWalletBalance(Number(data.payment.walletBalance));
+    }
+
+    sessionStorage.removeItem('shipnextDraftId');
+  } catch (err) {
+    setBookingError(err.message || 'Shipment booking failed.');
+  } finally {
+    setBookingLoading(false);
+  }
+};
+
 
   if (loading) {
     return (
@@ -679,7 +733,7 @@ if (data.payment.walletBalance !== null &&
                 onClick={calculateCharge}
                 disabled={
   !selectedMode ||
-  !selectedCourier ||
+  !getCourierForMode(selectedMode) ||
   quoteLoading ||
   bookingLoading
 }
@@ -700,162 +754,119 @@ if (data.payment.walletBalance !== null &&
               </div>
             )}
 
-            {quote && (
-              <div style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '10px',
-                padding: '20px',
-                marginTop: '20px',
-              }}>
-                <h2>Shipping Charge Summary</h2>
-
-                <div className="charge-row">
-                  <span>Selected Mode</span>
-                  <strong>{MODE_LABELS[selectedMode]}</strong>
-                </div>
-
-                <div className="charge-row">
-                  <span>Parcel Weight</span>
-                  <strong>{weightKg} kg</strong>
-                </div>
-
-                <div className="charge-row">
-                  <span>Base Charge</span>
-                  <strong>₹{Number(quote.base || 0).toFixed(2)}</strong>
-                </div>
-
-                <div className="charge-row">
-                  <span>Additional Weight Charge</span>
-                  <strong>₹{Number(quote.additionalCharge || 0).toFixed(2)}</strong>
-                </div>
-
-                <div className="charge-row" style={{
-                  borderTop: '1px solid #e2e8f0',
-                  paddingTop: '14px',
-                  marginTop: '14px',
-                }}>
-                  <strong>Total Shipping Charge</strong>
-
-                  <strong style={{ color: '#ff3b1f', fontSize: '22px' }}>
-                    ₹{quote.total.toFixed(2)}
-                  </strong>
-                </div>
-
-                <p style={{ color: '#64748b', fontSize: '12px' }}>
-                  Final payment amount will be recalculated by the ShipNext
-                  backend during booking.
-                </p>
-              </div>
-            )}
+           
           </div>
 
-        {/* WALLET PAYMENT - PREPAID ONLY */}
-{quote && !isCod && (
-            <div style={{
-              marginTop: '24px',
-              padding: '20px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              background: '#f8fafc',
-            }}>
-              <h2>Pay Using ShipNext Wallet</h2>
+ 
+            
+{/* ADMIN RATE APPROVAL AND PAYMENT */}
+<div style={{
+  marginTop: '24px',
+  padding: '20px',
+  border: '1px solid #e2e8f0',
+  borderRadius: '12px',
+  background: '#f8fafc',
+}}>
+  {shipment.rateApprovalStatus !== 'APPROVED' ? (
+    <>
+      <h2>Shipping Rate Approval Pending</h2>
+      <p style={{ color: '#64748b' }}>
+        Your shipment details have been submitted to ShipNext admin.
+        Your shipping charge will be displayed after approval.
+      </p>
 
-              {walletLoading && <p>Loading wallet balance...</p>}
+      <button
+        type="button"
+        className="booking-submit"
+        onClick={refreshApprovalStatus}
+        style={{ marginTop: '14px' }}
+      >
+        Refresh Approval Status
+      </button>
+    </>
+  ) : (
+    <>
+      <h2>Approved Shipping Charge</h2>
 
-              {walletError && (
-                <p style={{ color: '#b91c1c' }}>{walletError}</p>
-              )}
+      <div className="charge-row">
+        <span>Shipping Mode</span>
+        <strong>{MODE_LABELS[selectedMode]}</strong>
+      </div>
 
-              {!walletLoading && walletBalance !== null && (
-                <>
-                  <div className="charge-row">
-                    <span>Available Wallet Balance</span>
-                    <strong style={{ fontSize: '20px' }}>
-                      ₹{walletBalance.toFixed(2)}
-                    </strong>
-                  </div>
+      <div className="charge-row">
+        <span>Approved Shipping Charge</span>
+        <strong style={{ color: '#ff3b1f', fontSize: '22px' }}>
+          ₹{Number(shipment.approvedShippingCharge).toFixed(2)}
+        </strong>
+      </div>
 
-                  <div className="charge-row">
-                    <span>Booking Amount</span>
-                    <strong>₹{quote.total.toFixed(2)}</strong>
-                  </div>
+      {!isCod ? (
+        <>
+          <h3 style={{ marginTop: '20px' }}>Pay Using ShipNext Wallet</h3>
 
-                  {walletBalance < quote.total && (
-                    <p style={{ color: '#b91c1c', marginTop: '12px' }}>
-                      Insufficient wallet balance. Please recharge your wallet
-                      before booking.
-                    </p>
-                  )}
+          {walletLoading ? (
+            <p>Loading wallet balance...</p>
+          ) : (
+            <>
+              <div className="charge-row">
+                <span>Available Wallet Balance</span>
+                <strong>
+                  {walletBalance === null
+                    ? 'Unavailable'
+                    : `₹${walletBalance.toFixed(2)}`}
+                </strong>
+              </div>
 
-                  <Link
-                    to="/wallet"
-                    className="charges-edit"
-                    style={{ display: 'inline-block', marginTop: '12px' }}
-                  >
-                    Recharge Wallet
-                  </Link>
+              <Link
+                to="/wallet"
+                className="charges-edit"
+                style={{ display: 'inline-block', marginTop: '12px' }}
+              >
+                Recharge Wallet
+              </Link>
 
-                  <button
-                    type="button"
-                    className="booking-submit"
-                    onClick={confirmBooking}
-                    disabled={
-                      bookingLoading ||
-                      walletLoading ||
-                      walletBalance < quote.total
-                    }
-                    style={{
-                      width: '100%',
-                      marginTop: '18px',
-                      opacity:
-                        bookingLoading || walletBalance < quote.total
-                          ? 0.6
-                          : 1,
-                    }}
-                  >
-                    {bookingLoading
-                      ? 'Processing Payment...'
-                      : `Confirm & Pay ₹${quote.total.toFixed(2)}`}
-                  </button>
-                </>
-              )}
-            </div>
+              <button
+                type="button"
+                className="booking-submit"
+                onClick={confirmBooking}
+                disabled={bookingLoading || walletBalance === null}
+                style={{ width: '100%', marginTop: '18px' }}
+              >
+                {bookingLoading ? 'Processing Payment...' : 'Confirm & Pay'}
+              </button>
+            </>
           )}
-             {/* COD BOOKING - NO WALLET DEDUCTION */}
-{quote && isCod && (
-  <div style={{
-    marginTop: '24px',
-    padding: '20px',
-    border: '1px solid #bbf7d0',
-    borderRadius: '12px',
-    background: '#f0fdf4',
-  }}>
-    <h2>Cash on Delivery (COD)</h2>
+        </>
+      ) : (
+        <>
+          <h3 style={{ marginTop: '20px' }}>Cash on Delivery (COD)</h3>
 
-    <p style={{ color: '#166534' }}>
-      The recipient will pay the COD amount to the courier.
-      No money will be deducted from your ShipNext wallet.
-    </p>
+          <p style={{ color: '#166534' }}>
+            The recipient will pay the COD amount to the courier.
+            No shipping charge or COD amount will be deducted from
+            your ShipNext wallet.
+          </p>
 
-    <div className="charge-row">
-      <span>Wallet Deduction</span>
-      <strong>₹0.00</strong>
-    </div>
+          <div className="charge-row">
+            <span>Wallet Deduction</span>
+            <strong>₹0.00</strong>
+          </div>
 
-    <button
-      type="button"
-      className="booking-submit"
-      onClick={confirmBooking}
-      disabled={bookingLoading}
-      style={{
-        width: '100%',
-        marginTop: '18px',
-      }}
-    >
-      {bookingLoading ? 'Booking Shipment...' : 'Confirm COD Booking'}
-    </button>
-  </div>
-)}
+          <button
+            type="button"
+            className="booking-submit"
+            onClick={confirmBooking}
+            disabled={bookingLoading}
+            style={{ width: '100%', marginTop: '18px' }}
+          >
+            {bookingLoading ? 'Booking Shipment...' : 'Confirm COD Booking'}
+          </button>
+        </>
+      )}
+    </>
+  )}
+</div>
+
           {bookingError && (
             <div style={{
               padding: '14px',
