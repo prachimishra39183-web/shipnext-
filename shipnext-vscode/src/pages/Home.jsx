@@ -584,6 +584,108 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
               </strong>
             </div>
           ))}
+
+{/* SHIPPING RATE CALCULATOR — INSIDE SERVICEABILITY */}
+
+<div className="integrated-rate-calculator" id="rate-calculator">
+
+  <div className="integrated-rate-heading">
+    <h3>Calculate Shipping Charges</h3>
+    <p>
+      Get your estimated ShipNext shipping charges by selecting
+      your shipping mode and parcel weight.
+    </p>
+  </div>
+
+  <form
+    className="rate-calculator-form"
+    onSubmit={handleRateCalculation}
+  >
+    <div className="rate-calculator-field">
+      <label>Shipping Mode</label>
+
+      <select
+        value={rateMode}
+        onChange={(e) => {
+          setRateMode(e.target.value);
+          setRateResult(null);
+        }}
+        required
+      >
+        <option value="EXPRESS_AIR">Express Air</option>
+        <option value="NORMAL_AIR">Normal Air</option>
+        <option value="EXPRESS_SURFACE">Express Surface</option>
+        <option value="NORMAL_SURFACE">Normal Surface</option>
+      </select>
+    </div>
+
+    <div className="rate-calculator-field">
+      <label>Shipment Weight (kg)</label>
+
+      <input
+        type="number"
+        min="0.5"
+        step="0.01"
+        placeholder="Example: 1.5"
+        value={shipmentWeight}
+        onChange={(e) => {
+          setShipmentWeight(e.target.value);
+          setRateResult(null);
+        }}
+        required
+      />
+    </div>
+
+    <button
+      type="submit"
+      className="rate-calculator-button"
+    >
+      Calculate Shipping Charges →
+    </button>
+  </form>
+
+  {rateError && (
+    <p className="rate-error">{rateError}</p>
+  )}
+
+  {rateResult && (
+    <div className="rate-result">
+      <div className="rate-result-header">
+        <span>YOUR ESTIMATED SHIPPING CHARGE</span>
+        <h2>₹{rateResult.total.toFixed(2)}</h2>
+      </div>
+
+      <div className="rate-result-details">
+        <div>
+          <span>Shipping Mode</span>
+          <strong>{rateResult.mode}</strong>
+        </div>
+
+        <div>
+          <span>Chargeable Weight</span>
+          <strong>{rateResult.weight} kg</strong>
+        </div>
+
+        <div>
+          <span>First 500g</span>
+          <strong>₹{rateResult.base.toFixed(2)}</strong>
+        </div>
+
+        <div>
+          <span>Additional Weight Charges</span>
+          <strong>₹{rateResult.additionalCharge.toFixed(2)}</strong>
+        </div>
+      </div>
+
+      <p className="rate-result-note">
+        Estimated tariff only. Final charges are subject to
+        shipment verification and applicable taxes or fees.
+      </p>
+    </div>
+  )}
+
+</div>
+
         <div className="available-shipping-modes">
   <h4>Available Shipping Modes</h4>
 
@@ -638,125 +740,12 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
     </div>
     
   </div>
-  
-
-{/* SHIPNEXT SHIPPING RATE CALCULATOR */}
-
-<div className="rate-calculator-card" id="rate-calculator">
-
-  <div className="rate-calculator-heading">
-    <span className="network-eyebrow">
-      // TRANSPARENT SHIPPING PRICES
-    </span>
-
-    <h2>Shipping Rate Calculator</h2>
-
-    <p>
-      Calculate your estimated shipping charges using
-      ShipNext's shipping tariff.
-    </p>
-  </div>
-
-  <form
-    className="rate-calculator-form"
-    onSubmit={handleRateCalculation}
-  >
-
-   
-
-    <div className="rate-calculator-field">
-      <label>Shipping Mode</label>
-
-      <select
-        value={rateMode}
-        onChange={(e) => {
-          setRateMode(e.target.value);
-          setRateResult(null);
-        }}
-      >
-        <option value="AIR">Air</option>
-        <option value="SURFACE">Surface</option>
-      </select>
-    </div>
-
-    <div className="rate-calculator-field">
-      <label>Shipment Weight (kg)</label>
-
-      <input
-        type="number"
-        min="0.5"
-        step="0.01"
-        placeholder="Example: 1.5"
-        value={shipmentWeight}
-        onChange={(e) => {
-          setShipmentWeight(e.target.value);
-          setRateResult(null);
-        }}
-        required
-      />
-    </div>
-
-    <button
-      type="submit"
-      className="rate-calculator-button"
-    >
-      Calculate Shipping Charges →
-    </button>
-
-  </form>
-
-  {rateError && (
-    <p style={{ color: '#dc2626', marginTop: '15px' }}>
-      {rateError}
-    </p>
-  )}
-
-  {rateResult && (
-    <div className="rate-result">
-
-      <div className="rate-result-header">
-        <span>YOUR ESTIMATED SHIPPING CHARGE</span>
-        <h2>
-          ₹{rateResult.total.toFixed(2)}
-        </h2>
-      </div>
-
-      <div className="rate-result-details">
-        
-        <div>
-          <span>Shipping Mode</span>
-          <strong>{rateResult.mode}</strong>
-        </div>
-
-        <div>
-          <span>Chargeable Weight</span>
-          <strong>{rateResult.weight} kg</strong>
-        </div>
-
-        <div>
-          <span>First 500g</span>
-          <strong>₹{rateResult.base.toFixed(2)}</strong>
-        </div>
-
-        <div>
-          <span>Additional Weight Charges</span>
-          <strong>
-            ₹{rateResult.additionalCharge.toFixed(2)}
-          </strong>
-        </div>
-      </div>
-
-      <p className="rate-result-note">
-        Estimated tariff only. Final charges are subject
-        to shipment verification and applicable taxes or fees.
-      </p>
-
-    </div>
-  )}
+ 
 
 
 
-</div>
+
+
 </section>
 {/* PREMIUM ABOUT SHIPNEXT SECTION */}
 <section className="shipnext-about">
