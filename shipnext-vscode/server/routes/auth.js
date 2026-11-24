@@ -230,18 +230,29 @@ router.post('/login', async (req, res) => {
       where: { email: normalizedEmail }
     });
 
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.'
-      });
-    }
+    if (!user) {
+  console.log('LOGIN CHECK: User not found:', normalizedEmail);
 
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid email or password.'
+  });
+}
+
+if (!user.isActive) {
+  console.log('LOGIN CHECK: Account inactive:', normalizedEmail);
+
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid email or password.'
+  });
+}
     const passwordMatches = await bcrypt.compare(
       password,
       user.passwordHash
     );
-
+        console.log('LOGIN CHECK: User found, active:', user.isActive);
+console.log('LOGIN CHECK: Password matches:', passwordMatches);
     if (!passwordMatches) {
       return res.status(401).json({
         success: false,
