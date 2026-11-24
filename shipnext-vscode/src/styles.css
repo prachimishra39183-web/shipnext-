@@ -16691,3 +16691,55 @@ body [class*="Icon-"] {
   height: 62px;
   object-fit: contain;
 }
+
+/* SHIPNEXT WHITE-LABEL COURIER ALLOCATION */
+
+.shipnext-allocation-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 25px;
+  padding: 20px;
+  border: 1px solid #e3e9f4;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #f5f7ff, #fff9f3);
+}
+
+.shipnext-allocation-icon {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #fff0e7;
+  font-size: 25px;
+}
+
+.shipnext-allocation-content h3 {
+  margin: 0 0 6px;
+  color: #101c3d;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.shipnext-allocation-content p {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.shipnext-allocation-content span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.allocation-success {
+  color: #15803d;
+}
+
+.allocation-error {
+  color: #dc2626;
+}

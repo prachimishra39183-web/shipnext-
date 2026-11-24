@@ -20,10 +20,10 @@ function ShippingCharges() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [availableModes, setAvailableModes] = useState([]);
+    const [availableModes, setAvailableModes] = useState([]);
   const [courierResults, setCourierResults] = useState([]);
-const [selectedCourier, setSelectedCourier] = useState('');
-const [courierCheckError, setCourierCheckError] = useState('');
+  const [selectedCourier, setSelectedCourier] = useState('');
+  const [courierCheckError, setCourierCheckError] = useState('');
   const [modeLoading, setModeLoading] = useState(false);
   const [modeError, setModeError] = useState('');
   const [selectedMode, setSelectedMode] = useState('');
@@ -176,7 +176,7 @@ const [courierCheckError, setCourierCheckError] = useState('');
         );
 
         setAvailableModes(modes);
-        // Check live availability across all four courier partners
+      // Check live availability across all four courier partners
 try {
   const courierResponse = await fetch(
     `${API_URL}/api/serviceability/couriers/check`,
@@ -200,10 +200,43 @@ try {
     );
   }
 
-  setCourierResults(courierData.courierResults || []);
-  console.log('Courier availability verified.');
+  const results = courierData.courierResults || [];
+
+  setCourierResults(results);
+
+  // Internal courier priority. Never display these names to customers.
+  const courierPriority = [
+    'DELHIVERY',
+    'SKYKING',
+    'BLUEDART',
+    'SHADOWFAX',
+  ];
+
+  const assignedCourier = courierPriority.find((name) =>
+    results.some(
+      (courier) =>
+        String(courier.courier || '').toUpperCase() === name &&
+        courier.serviceable === true
+    )
+  );
+
+  setSelectedCourier(assignedCourier || '');
+
+  setCourierCheckError(
+    assignedCourier
+      ? ''
+      : 'No delivery option is currently available for this route.'
+  );
+
 } catch (courierError) {
-  console.error('Courier availability check:', courierError.message);
+  console.error('Courier availability check:', courierError);
+
+  setCourierResults([]);
+  setSelectedCourier('');
+
+  setCourierCheckError(
+    'Unable to verify delivery availability. Please try again.'
+  );
 }
 
         if (modes.length === 0) {
@@ -280,7 +313,7 @@ try {
   !quote ||
   bookingLoading
 ) {
-  setBookingError('Please select a shipping mode and courier partner.');
+setBookingError('Please select an available shipping mode.');
   return;
 }
     
@@ -593,81 +626,26 @@ try {
                 </span>
               </label>
             ))}
-            {/* COURIER PARTNER SELECTION */}
-<div className="courier-selection-section" style={{ marginTop: '28px' }}>
-  <h2>Select Courier Partner</h2>
+           {/* SHIPNEXT AUTOMATIC COURIER ALLOCATION */}
+<div className="shipnext-allocation-card">
+  <div className="shipnext-allocation-icon">🚚</div>
 
-  <p style={{ color: '#64748b', marginBottom: '16px' }}>
-    Choose an available courier for your shipment.
-  </p>
-
-  {courierResults
-    .filter(courier => courier.serviceable)
-    .map(courier => (
-      <label
-        key={courier.courier}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px',
-          padding: '16px',
-          marginBottom: '12px',
-          border: selectedCourier === courier.courier
-            ? '2px solid #ff3b1f'
-            : '1px solid #e2e8f0',
-          borderRadius: '10px',
-          cursor: 'pointer',
-          background: selectedCourier === courier.courier
-            ? '#fff7f5'
-            : '#fff',
-        }}
-      >
-        <input
-          type="radio"
-          name="courierPartner"
-          checked={selectedCourier === courier.courier}
-          onChange={() => {
-            setSelectedCourier(courier.courier);
-            setQuote(null);
-            setQuoteError('');
-          }}
-        />
-
-        <div>
-          <strong>
-            {{
-              DELHIVERY: 'Delhivery',
-              SKYKING: 'Skyking',
-              BLUEDART: 'Blue Dart',
-              SHADOWFAX: 'Shadowfax',
-            }[courier.courier] || courier.courier}
-          </strong>
-
-          <p style={{ color: '#15803d', margin: '5px 0 0' }}>
-            Available for both PIN codes
-          </p>
-
-          {courier.courier === 'SHADOWFAX' && (
-            <small>
-              Services: {(courier.availableModes || []).join(' / ')}
-            </small>
-          )}
-        </div>
-      </label>
-    ))}
-
-  {courierResults.length === 0 && (
-    <p>Checking courier availability...</p>
-  )}
-
-  {courierResults.length > 0 &&
-    !courierResults.some(courier => courier.serviceable) && (
-      <p style={{ color: '#b91c1c' }}>
-        No courier is available for this route.
-      </p>
+  <div className="shipnext-allocation-content">
+    <h3>ShipNext Delivery Network</h3>
+    
+    {courierResults.length === 0 ? (
+      <span>Checking delivery availability...</span>
+    ) : selectedCourier ? (
+      <span className="allocation-success">
+        ✓ Delivery network available for your route
+      </span>
+    ) : (
+      <span className="allocation-error">
+        No delivery option is currently available for this route.
+      </span>
     )}
+  </div>
 </div>
-
             {availableModes.length > 0 && (
               
               <button

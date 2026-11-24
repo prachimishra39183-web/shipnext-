@@ -70,7 +70,9 @@ function App() {
               <Route path="/dashboard" element={<CustomerDashboard />} />
               <Route path="/book-shipment" element={<BookShipment />} />
               <Route path="/bulk-booking" element={<BulkBooking />} />
-             <Route path="/shipping-charges/:draftId" element={<ShippingCharges />} />
+             <Route path="/shipping-charges" element={<ShippingCharges />} />
+
+<Route path="/shipping-charges/:draftId" element={<ShippingCharges />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/shipments" element={<MyShipments />} />
               <Route path="/profile" element={<MyProfile />} />
