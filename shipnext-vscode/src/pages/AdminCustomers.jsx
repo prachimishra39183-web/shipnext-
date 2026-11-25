@@ -258,18 +258,36 @@ function AdminCustomers() {
                   <tbody>
                     {filteredCustomers.map((customer) => (
                       <tr key={customer.id}>
-                        <td>
-                          <div className="sn-customer-identity">
-                            <div className="sn-customer-avatar">
-                              {(customer.name || 'C').trim().charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <strong>{customer.name || 'Unnamed customer'}</strong>
-                              <span>Customer account</span>
-                            </div>
-                          </div>
-                        </td>
+                       <td>
+  <div className="sn-customer-identity">
+    <div className="sn-customer-insight-actions">
+      <Link
+        to={`/admin/customer-analytics?customerId=${encodeURIComponent(customer.id)}`}
+        className="sn-customer-icon-btn"
+        title="Customer Analytics"
+      >
+        <span>▥</span>
+      </Link>
 
+      <Link
+        to={`/admin/customer-history?customerId=${encodeURIComponent(customer.id)}`}
+        className="sn-customer-icon-btn"
+        title="Customer Delivery History"
+      >
+        <span>↗</span>
+      </Link>
+    </div>
+
+    <div className="sn-customer-avatar">
+      {(customer.name || 'C').trim().charAt(0).toUpperCase()}
+    </div>
+
+    <div>
+      <strong>{customer.name || 'Unnamed customer'}</strong>
+      <span>Customer account</span>
+    </div>
+  </div>
+</td>
                         <td>
                           <div className="sn-customer-contact">
                             <strong>{customer.email || 'No email'}</strong>

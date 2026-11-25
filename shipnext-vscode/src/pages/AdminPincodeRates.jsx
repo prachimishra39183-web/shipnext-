@@ -65,7 +65,11 @@ export default function AdminPincodeRates() {
         }
       );
 
-      const data = await response.json();
+      const responseText = await response.text();
+console.log('API STATUS:', response.status);
+console.log('API RESPONSE:', responseText);
+
+const data = JSON.parse(responseText);
 
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Unable to compare rates.');

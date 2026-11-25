@@ -241,8 +241,9 @@ const [assignedMode, setAssignedMode] = useState('');
 
 // HOMEPAGE SHIPPING RATE CALCULATOR
 
-const [rateZone, setRateZone] = useState('METRO');
+
 const [rateMode, setRateMode] = useState('EXPRESS_AIR');
+const [selectedCourier, setSelectedCourier] = useState('SKYKING');
 const [shipmentWeight, setShipmentWeight] = useState('0.5');
 const [rateResult, setRateResult] = useState(null);
 const [rateError, setRateError] = useState('');
@@ -260,15 +261,16 @@ const calculateRate = async () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          pickupPincode: pickupPincode.trim(),
-          deliveryPincode: deliveryPincode.trim(),
-          weight: Number(shipmentWeight),
-          mode: rateMode,
-          courier: rateMode === 'EXPRESS_AIR' || rateMode === 'NORMAL_AIR'
-            ? 'SKYKING'
-            : undefined,
-        }),
+       body: JSON.stringify({
+  pickupPincode: pickupPincode.trim(),
+  deliveryPincode: deliveryPincode.trim(),
+  weight: Number(shipmentWeight),
+  mode: rateMode,
+  courier:
+    rateMode === 'EXPRESS_AIR' || rateMode === 'NORMAL_AIR'
+      ? 'SKYKING'
+      : selectedCourier,
+}),
       }
     );
 
@@ -294,17 +296,44 @@ const handleRateCalculation = (e) => {
 };
 
 
-  const handleServiceabilityCheck = async (e) => {
-    e.preventDefault();
+const handleServiceabilityCheck = async (e) => {
+  e.preventDefault();
 
-    setCheckingServiceability(true);
-    setServiceabilityError('');
-    setCourierResults([]);
-   setAvailableModes([]);
-setAssignedMode('');
+  setCheckingServiceability(true);
+  setServiceabilityError('');
+  setCourierResults([]);
+  setAvailableModes([]);
+  setAssignedMode('');
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/serviceability/couriers/check`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pickupPincode: pickupPincode.trim(),
+          deliveryPincode: deliveryPincode.trim(),
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Unable to check PIN-code serviceability.'
+      );
+    }
+
+    setCourierResults(data.courierResults || []);
+
+    // Check available shipping modes
     try {
-      const response = await fetch(
-        `${API_URL}/api/serviceability/couriers/check`,
+      const modeResponse = await fetch(
+        `${API_URL}/api/serviceability/check`,
         {
           method: 'POST',
           headers: {
@@ -317,59 +346,60 @@ setAssignedMode('');
         }
       );
 
-      const data = await response.json();
+      const modeData = await modeResponse.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || 'Unable to check PIN-code serviceability.'
+      console.log('RATE CALCULATOR MODES:', modeData);
+
+      if (modeResponse.ok && modeData.success) {
+        setAvailableModes(
+          Array.isArray(modeData.availableModes)
+            ? modeData.availableModes
+            : []
         );
+
+        setAssignedMode(modeData.assignedMode || '');
+      } else {
+        setAvailableModes([]);
+        setAssignedMode('');
       }
-
-      setCourierResults(data.courierResults || []);
-
-// Check available shipping modes for the same PIN pair
-try {
-  const modeResponse = await fetch(
-    `${API_URL}/api/serviceability/check`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pickupPincode: pickupPincode.trim(),
-        deliveryPincode: deliveryPincode.trim(),
-      }),
+    } catch (error) {
+      console.error('Mode check failed:', error);
+      setAvailableModes([]);
+      setAssignedMode('');
     }
+  } catch (error) {
+    console.error('Serviceability check failed:', error);
+    setServiceabilityError(
+      error.message || 'Unable to check serviceability.'
+    );
+  } finally {
+    setCheckingServiceability(false);
+  }
+};
+
+const courierNames = {
+  DELHIVERY: 'Delhivery',
+  SKYKING: 'Skyking',
+  BLUEDART: 'Blue Dart',
+  SHADOWFAX: 'Shadowfax',
+};
+
+const serviceableSurfaceCouriers = courierResults
+  .filter((item) => item.serviceable)
+  .map((item) => item.courier)
+  .filter((courier) =>
+    ['DELHIVERY', 'SKYKING', 'BLUEDART', 'SHADOWFAX'].includes(courier)
   );
 
-  const modeData = await modeResponse.json();
-
-  if (modeResponse.ok && modeData.serviceable) {
-    setAvailableModes(modeData.availableModes || []);
-    setAssignedMode(modeData.assignedMode || '');
-  } else {
-    setAvailableModes([]);
-    setAssignedMode('');
+useEffect(() => {
+  if (
+    serviceableSurfaceCouriers.length > 0 &&
+    !serviceableSurfaceCouriers.includes(selectedCourier)
+  ) {
+    setSelectedCourier(serviceableSurfaceCouriers[0]);
   }
-} catch (error) {
-  setAvailableModes([]);
-  setAssignedMode('');
-}
-    } catch (error) {
-      setServiceabilityError(
-        error.message || 'Something went wrong. Please try again.'
-      );
-    } finally {
-      setCheckingServiceability(false);
-    }
-  };
+}, [courierResults, selectedCourier]);
 
-  const courierNames = {
-    DELHIVERY: 'Delhivery',
-    SKYKING: 'Skyking',
-    BLUEDART: 'Blue Dart',
-  };
   const movingServices1 = [
   "Air Cargo",
   "Surface Express",
@@ -574,74 +604,115 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
             </div>
           ))}
 
-{/* SHIPPING RATE CALCULATOR — INSIDE SERVICEABILITY */}
+          
+{/* SHIPPING RATE CALCULATOR */}
 
-<div className="integrated-rate-calculator" id="rate-calculator">
+<div className="integrated-rate-calculator">
 
   <div className="integrated-rate-heading">
     <h3>Calculate Shipping Charges</h3>
-    <p>
-      Get your estimated ShipNext shipping charges by selecting
-      your shipping mode and parcel weight.
-    </p>
+    <p>Choose your shipping mode, courier and parcel weight.</p>
   </div>
 
-  <form
-    className="rate-calculator-form"
-    onSubmit={handleRateCalculation}
-  >
-    <div className="rate-calculator-field">
-      <label>Shipping Mode</label>
+  <form className="rate-calculator-form" onSubmit={handleRateCalculation}>
 
-      <select
-        value={rateMode}
-        onChange={(e) => {
-          setRateMode(e.target.value);
-          setRateResult(null);
-        }}
-        required
-      >
-        <option value="EXPRESS_AIR">Express Air</option>
-        <option value="NORMAL_AIR">Normal Air</option>
-        <option value="EXPRESS_SURFACE">Express Surface</option>
-        <option value="NORMAL_SURFACE">Normal Surface</option>
-      </select>
-    </div>
+    <div className="rate-calculator-grid">
 
-    <div className="rate-calculator-field">
-      <label>Shipment Weight (kg)</label>
+      <div className="rate-calculator-field">
+        <label>Shipping Mode</label>
+        <select
+          value={rateMode}
+          onChange={(e) => {
+            const newMode = e.target.value;
+            setRateMode(newMode);
 
-      <input
-        type="number"
-        min="0.5"
-        step="0.01"
-        placeholder="Example: 1.5"
-        value={shipmentWeight}
-        onChange={(e) => {
-          setShipmentWeight(e.target.value);
-          setRateResult(null);
-        }}
-        required
-      />
+            if (newMode === 'EXPRESS_AIR' || newMode === 'NORMAL_AIR') {
+              setSelectedCourier('SKYKING');
+            }
+
+            setRateResult(null);
+            setRateError('');
+          }}
+          required
+        >
+          <option value="EXPRESS_AIR">Express Air</option>
+          <option value="NORMAL_AIR">Normal Air</option>
+          <option value="EXPRESS_SURFACE">Express Surface</option>
+          <option value="NORMAL_SURFACE">Normal Surface</option>
+        </select>
+      </div>
+
+      <div className="rate-calculator-field">
+        <label>Courier Partner</label>
+
+        {rateMode === 'EXPRESS_AIR' || rateMode === 'NORMAL_AIR' ? (
+          <div className="selected-courier-display">
+            <strong>Skyking</strong>
+            <span>Automatically assigned for Air</span>
+          </div>
+        ) : serviceableSurfaceCouriers.length > 0 ? (
+          <select
+            value={selectedCourier}
+            onChange={(e) => {
+              setSelectedCourier(e.target.value);
+              setRateResult(null);
+              setRateError('');
+            }}
+            required
+          >
+            {serviceableSurfaceCouriers.map((courier) => (
+              <option key={courier} value={courier}>
+                {courierNames[courier]}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="no-courier-message">
+            No surface courier available for these PIN codes.
+          </div>
+        )}
+      </div>
+
+      <div className="rate-calculator-field">
+        <label>Shipment Weight (kg)</label>
+        <input
+          type="number"
+          min="0.5"
+          step="0.01"
+          placeholder="Example: 1.5"
+          value={shipmentWeight}
+          onChange={(e) => {
+            setShipmentWeight(e.target.value);
+            setRateResult(null);
+          }}
+          required
+        />
+      </div>
+
     </div>
 
     <button
       type="submit"
       className="rate-calculator-button"
+      disabled={
+        checkingServiceability ||
+        (rateMode !== 'EXPRESS_AIR' &&
+         rateMode !== 'NORMAL_AIR' &&
+         serviceableSurfaceCouriers.length === 0)
+      }
     >
       Calculate Shipping Charges →
     </button>
+
   </form>
 
-  {rateError && (
-    <p className="rate-error">{rateError}</p>
-  )}
+  {rateError && <p className="rate-error">{rateError}</p>}
 
   {rateResult && (
     <div className="rate-result">
       <div className="rate-result-header">
         <span>YOUR ESTIMATED SHIPPING CHARGE</span>
-        <h2>₹{rateResult.total.toFixed(2)}</h2>
+        <h2>₹{Number(rateResult.total).toFixed(2)}</h2>
       </div>
 
       <div className="rate-result-details">
@@ -649,38 +720,36 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
           <span>Shipping Mode</span>
           <strong>{rateResult.mode}</strong>
         </div>
-
         <div>
           <span>Chargeable Weight</span>
           <strong>{rateResult.weight} kg</strong>
         </div>
-
         <div>
           <span>First 500g</span>
-          <strong>₹{rateResult.base.toFixed(2)}</strong>
+          <strong>₹{Number(rateResult.base).toFixed(2)}</strong>
         </div>
-
         <div>
           <span>Additional Weight Charges</span>
-          <strong>₹{rateResult.additionalCharge.toFixed(2)}</strong>
+          <strong>₹{Number(rateResult.additionalCharge).toFixed(2)}</strong>
         </div>
       </div>
 
       <p className="rate-result-note">
-        Estimated tariff only. Final charges are subject to
-        shipment verification and applicable taxes or fees.
+        Estimated tariff only. Final charges are subject to shipment
+        verification and applicable taxes or fees.
       </p>
     </div>
   )}
 
 </div>
 
-        <div className="available-shipping-modes">
+         
+<div className="available-shipping-modes">
   <h4>Available Shipping Modes</h4>
 
   {availableModes.length > 0 ? (
     <div className="shipping-mode-list">
-      {availableModes.map((item) => {
+      {availableModes.map((mode) => {
         const modeNames = {
           EXPRESS_AIR: 'Express Air',
           NORMAL_AIR: 'Normal Air',
@@ -689,13 +758,13 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
         };
 
         return (
-          <div className="shipping-mode-item" key={item.mode}>
+          <div className="shipping-mode-item" key={mode}>
             <span>
               <span className="mode-check">✓</span>
-              {modeNames[item.mode] || item.mode}
+              {modeNames[mode] || mode}
             </span>
 
-            {assignedMode === item.mode && (
+            {assignedMode === mode && (
               <span className="recommended-mode">
                 Recommended
               </span>
@@ -710,6 +779,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
     </p>
   )}
 </div>
+
           <p
             style={{
               fontSize: '12px',

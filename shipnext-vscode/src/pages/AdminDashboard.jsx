@@ -32,11 +32,7 @@ const navigation = [
   { title: 'OVERVIEW', items: [
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard, active: true },
     { label: 'Customers', path: '/admin/customers', icon: Users },
-      { label: 'Customer Analytics', path: '/admin/customer-analytics', icon: ChartNoAxesCombined },
-      { label: 'Customer Delivery History', path: '/admin/customer-history', icon: History },
     { label: 'Shipments', path: '/admin/shipments', icon: Package },
-    { label: 'Bookings', path: '/admin/bookings', icon: ClipboardList },
-    { label: 'PIN Rate Calculator', path: '/admin/pincode-rates', icon: Calculator },
     { label: 'Rate Approvals', path: '/admin/rate-approvals', icon: IndianRupee },
   ]},
  {

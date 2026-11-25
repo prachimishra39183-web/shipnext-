@@ -192,10 +192,10 @@ const [recentTransactions, setRecentTransactions] = useState([]);
   <Link to="/track">Track Shipment</Link>
   <Link to="/wallet">My Wallet</Link>
   <Link to="/cod-remittance">COD Remittance</Link>
-  <a href="#transactions">↔ Transactions</a>
+    <Link to="/support">Support Tickets</Link>
   <Link to="/profile">My Profile</Link>
   <Link to="/settings">Settings</Link>
-  <Link to="/support">Support Tickets</Link>
+
 </nav>
 
         <div className="sidebar-bottom">

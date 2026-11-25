@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import API_URL from '../config/api';
 import './AdminRateApprovals.css';
-
+import { Link } from 'react-router-dom';
 const RATE_OPTIONS = [
   {
     key: 'SHIPNEXT',
@@ -323,7 +323,9 @@ const [approvalConfirmation, setApprovalConfirmation] = useState(null);
             the customer's final shipping charge.
           </p>
         </div>
-
+             <Link to="/dashboard" className="sn-track-back">
+          Back to Dashboard
+        </Link>
         <button
           type="button"
           className="rate-refresh-btn"

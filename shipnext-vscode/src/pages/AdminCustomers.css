@@ -406,7 +406,7 @@
 }
 
 .sn-customer-search input::placeholder {
-  color: #71839b;
+  color: #f1f4f8;
 }
 
 .sn-customer-search input:focus {
@@ -449,7 +449,7 @@
 
 .sn-customer-table th {
   padding: 16px 15px;
-  color: #a9bad0;
+  color: #0a0b0d;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.65px;
@@ -619,7 +619,7 @@
 }
 
 .sn-kyc-button.is-uploaded {
-  color: #a8e9ce;
+  color: #e3e7e5;
   cursor: pointer;
   background: linear-gradient(100deg, rgba(36,177,126,0.14), rgba(36,177,126,0.045));
   border: 1px solid rgba(53,214,154,0.2);
@@ -633,7 +633,7 @@
 }
 
 .sn-kyc-button.is-missing {
-  color: #8190a5;
+  color: #fbf9f9;
   cursor: not-allowed;
   background: rgba(255,255,255,0.025);
   border: 1px solid rgba(255,255,255,0.06);
@@ -938,4 +938,63 @@
   .sn-document-modal {
     height: 90vh;
   }
+}
+
+/* CUSTOMER ANALYTICS & DELIVERY HISTORY */
+
+.sn-customers-page .sn-customer-table .sn-customer-identity {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 250px;
+  overflow: visible !important;
+}
+
+.sn-customers-page .sn-customer-insight-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 7px !important;
+  flex-shrink: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 5;
+}
+
+.sn-customers-page .sn-customer-icon-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 35px !important;
+  height: 35px !important;
+  min-width: 35px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  text-decoration: none !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  background: #172c43 !important;
+}
+
+.sn-customers-page .sn-customer-icon-btn:first-child {
+  color: #60a5fa !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+.sn-customers-page .sn-customer-icon-btn:last-child {
+  color: #34d399 !important;
+  border: 1px solid #10b981 !important;
+}
+
+.sn-customers-page .sn-customer-icon-btn:hover {
+  background: #263e59 !important;
+  transform: scale(1.08);
+}
+
+.sn-customers-page .sn-customer-table td:first-child {
+  overflow: visible !important;
 }

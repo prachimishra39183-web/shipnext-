@@ -230,7 +230,7 @@ function AdminReports() {
             <h2>Business Intelligence Hub</h2>
             <p>Choose a reporting period and select the data you want to analyse.</p>
           </div>
-          <div className="sn-reports-overview-mark">SN</div>
+         
         </section>
 
         <section className="sn-reports-panel">
@@ -348,7 +348,7 @@ function AdminReports() {
           )}
 
           {!loading && reportData && (
-            <div className="sn-report-results">
+            <div className="sn-report-results sn-print-content">
               {selectedReport === 'ndr' && (
                 <div className="sn-ndr-summary-grid">
                   {[

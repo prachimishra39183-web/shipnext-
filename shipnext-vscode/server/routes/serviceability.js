@@ -273,7 +273,8 @@ return res.json({
     });
   }
 });
-// PUBLIC: Check serviceability and available shipping modes
+
+// PUBLIC: Check serviceability and available modes for all couriers
 router.post('/check', async (req, res) => {
   try {
     const pickupPincode = String(req.body.pickupPincode || '').trim();
@@ -289,6 +290,24 @@ router.post('/check', async (req, res) => {
       });
     }
 
+    const blockedPincodes = await getBlockedPincodes([
+      pickupPincode,
+      deliveryPincode,
+    ]);
+
+    if (blockedPincodes.size > 0) {
+      return res.json({
+        success: true,
+        blocked: true,
+        serviceable: false,
+        pickupPincode,
+        deliveryPincode,
+        blockedPincodes: Array.from(blockedPincodes.values()),
+        courierResults: [],
+        message: 'Service is unavailable for one or more entered PIN codes.',
+      });
+    }
+
     const records = await prisma.courierPincodeServiceability.findMany({
       where: {
         courier: { in: COURIERS },
@@ -296,106 +315,137 @@ router.post('/check', async (req, res) => {
       },
     });
 
-    // Existing courier coverage logic for Surface modes
-    const serviceableCouriers = COURIERS.filter((courier) => {
+    const courierResults = COURIERS.map((courier) => {
       const pickup = records.find(
-        (record) =>
-          record.courier === courier &&
-          record.pincode === pickupPincode
+        item => item.courier === courier && item.pincode === pickupPincode
       );
 
       const delivery = records.find(
-        (record) =>
-          record.courier === courier &&
-          record.pincode === deliveryPincode
+        item => item.courier === courier && item.pincode === deliveryPincode
       );
 
-      return (
-        isCourierPinUsable(pickup, courier) &&
-        isCourierPinUsable(delivery, courier)
-      );
+      const pickupAvailable = isCourierPinUsable(pickup, courier);
+      const deliveryAvailable = isCourierPinUsable(delivery, courier);
+
+      const surfaceServiceable = pickupAvailable && deliveryAvailable;
+
+      const airServiceable =
+        surfaceServiceable &&
+        (
+          courier !== 'SKYKING' ||
+          (
+            pickup?.firstMile === true &&
+            delivery?.lastMile === true
+          )
+        );
+
+      const availableModes = [];
+
+      if (airServiceable) {
+        availableModes.push('EXPRESS_AIR', 'NORMAL_AIR');
+      }
+
+      if (surfaceServiceable) {
+        availableModes.push('EXPRESS_SURFACE', 'NORMAL_SURFACE');
+      }
+
+      return {
+        courier,
+        serviceable: availableModes.length > 0,
+        availableModes,
+        pickup: {
+          available: pickupAvailable,
+          firstMile: pickup?.firstMile ?? null,
+        },
+        delivery: {
+          available: deliveryAvailable,
+          lastMile: delivery?.lastMile ?? null,
+        },
+      };
     });
 
-    const partiallyServiceableCouriers =
-      serviceableCouriers.filter((courier) => {
-        const pickup = records.find(
-          (record) =>
-            record.courier === courier &&
-            record.pincode === pickupPincode
+    // Check Shadowfax live serviceability
+    try {
+      const [pickupResponse, returnResponse, deliveryResponse] =
+        await Promise.all([
+          checkShadowfaxServiceability(pickupPincode, 'seller_pickup'),
+          checkShadowfaxServiceability(pickupPincode, 'seller_delivery'),
+          checkShadowfaxServiceability(deliveryPincode, 'customer_delivery'),
+        ]);
+
+      const hasTier = (response, pin, tier) => {
+        if (!Array.isArray(response)) return false;
+
+        const result = response.find(
+          item => String(item.code) === String(pin)
         );
 
-        const delivery = records.find(
-          (record) =>
-            record.courier === courier &&
-            record.pincode === deliveryPincode
-        );
+        return result?.services?.includes(tier) || false;
+      };
 
-        return (
-          isPartiallyServiceable(pickup, courier) ||
-          isPartiallyServiceable(delivery, courier)
-        );
+      const regularAvailable =
+        hasTier(pickupResponse, pickupPincode, 'Marketplace') &&
+        hasTier(returnResponse, pickupPincode, 'RTS') &&
+        hasTier(deliveryResponse, deliveryPincode, 'Regular');
+
+      const surfaceAvailable =
+        hasTier(pickupResponse, pickupPincode, 'Surface_Mkt') &&
+        hasTier(returnResponse, pickupPincode, 'Surface_RTS') &&
+        hasTier(deliveryResponse, deliveryPincode, 'Surface');
+
+      // Shadowfax API exposes Regular and Surface tiers.
+      // Do not label these as Air modes without carrier confirmation.
+      const shadowfaxModes = [];
+
+      if (regularAvailable) {
+        shadowfaxModes.push('NORMAL_SURFACE');
+      }
+
+      if (surfaceAvailable) {
+        shadowfaxModes.push('EXPRESS_SURFACE');
+      }
+
+      courierResults.push({
+        courier: 'SHADOWFAX',
+        serviceable: shadowfaxModes.length > 0,
+        availableModes: shadowfaxModes,
+        pickup: {
+          available: regularAvailable || surfaceAvailable,
+        },
+        delivery: {
+          available: regularAvailable || surfaceAvailable,
+        },
+        checkStatus: 'COMPLETED',
       });
+    } catch (error) {
+      console.error('Shadowfax serviceability error:', error.message);
 
-    // SKYKING ONLY for Air modes
-    const skykingPickup = records.find(
-      (record) =>
-        record.courier === 'SKYKING' &&
-        record.pincode === pickupPincode
+      courierResults.push({
+        courier: 'SHADOWFAX',
+        serviceable: false,
+        availableModes: [],
+        pickup: { available: false },
+        delivery: { available: false },
+        checkStatus: 'UNAVAILABLE',
+      });
+    }
+
+    const serviceableCouriers = courierResults.filter(
+      item => item.serviceable
     );
 
-    const skykingDelivery = records.find(
-      (record) =>
-        record.courier === 'SKYKING' &&
-        record.pincode === deliveryPincode
-    );
-
-    // Pickup requires First Mile; delivery requires Last Mile
-    const skykingAirServiceable =
-      skykingPickup?.firstMile === true &&
-      skykingDelivery?.lastMile === true;
-
-    // Air modes require Skyking FM + LM.
-    // Surface modes retain existing allocation behavior.
-    const availableModes = VALID_MODES
-      .map((mode, index) => ({
-        mode,
-        priority: index + 1,
-      }))
-      .filter(({ mode }) => {
-        if (
-          mode === 'EXPRESS_AIR' ||
-          mode === 'NORMAL_AIR'
-        ) {
-          return skykingAirServiceable;
-        }
-
-        return true;
-      });
-
-    const airUnavailable = !skykingAirServiceable;
+    const availableModes = [
+      ...new Set(courierResults.flatMap(item => item.availableModes)),
+    ];
 
     return res.json({
       success: true,
-      serviceable: availableModes.length > 0,
-      assignedMode: availableModes[0]?.mode || null,
+      serviceable: serviceableCouriers.length > 0,
+      pickupPincode,
+      deliveryPincode,
       availableModes,
-
-      message: airUnavailable
-        ? 'Air service is unavailable for this PIN combination. Surface options are available.'
-        : 'Shipping options retrieved successfully.',
-
-      availabilityBasis: 'COURIER_PIN_COVERAGE',
-      provisionalModes: true,
-
-      serviceableCouriers,
-      partiallyServiceableCouriers,
-
-      skykingAirServiceable,
-      airServiceability: {
-        courier: 'SKYKING',
-        pickupFirstMile: skykingPickup?.firstMile === true,
-        deliveryLastMile: skykingDelivery?.lastMile === true,
-      },
+      courierResults,
+      message: 'Courier serviceability check completed.',
     });
   } catch (error) {
     console.error('Serviceability check error:', error);
@@ -406,6 +456,7 @@ router.post('/check', async (req, res) => {
     });
   }
 });
+
 // PUBLIC: Calculate shipping charge for the selected courier
 router.post('/quote', async (req, res) => {
   try {
@@ -413,6 +464,8 @@ router.post('/quote', async (req, res) => {
     const deliveryPincode = String(req.body.deliveryPincode || '').trim();
     const { weight, mode } = req.body;
     const courier = String(req.body.courier || '').toUpperCase();
+
+    const allowedCouriers = [...COURIERS, 'SHADOWFAX'];
 
     if (!validPincode(pickupPincode) || !validPincode(deliveryPincode)) {
       return res.status(400).json({
@@ -428,26 +481,6 @@ router.post('/quote', async (req, res) => {
       });
     }
 
-    if (!Number.isFinite(Number(weight)) || Number(weight) < 0.5) {
-      return res.status(400).json({
-        success: false,
-        message: 'Minimum shipment weight is 500 grams.',
-      });
-    }
-
-    const isAirMode =
-      mode === 'EXPRESS_AIR' || mode === 'NORMAL_AIR';
-
-    // Air modes: Skyking ONLY. No courier fallback.
-    if (isAirMode && courier !== 'SKYKING') {
-      return res.status(400).json({
-        success: false,
-        message: 'Air shipments are available only through Skyking.',
-      });
-    }
-
-    const allowedCouriers = [...COURIERS, 'SHADOWFAX'];
-
     if (!allowedCouriers.includes(courier)) {
       return res.status(400).json({
         success: false,
@@ -455,59 +488,97 @@ router.post('/quote', async (req, res) => {
       });
     }
 
-    const locationRecords =
-      await prisma.courierPincodeServiceability.findMany({
-        where: {
-          courier: { in: COURIERS },
-          pincode: { in: [pickupPincode, deliveryPincode] },
-        },
+    if (!Number.isFinite(Number(weight)) || Number(weight) < 0.5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Minimum shipment weight is 500 grams.',
       });
+    }
+
+    const blockedPincodes = await getBlockedPincodes([
+      pickupPincode,
+      deliveryPincode,
+    ]);
+
+    if (blockedPincodes.size > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Service is blocked for one or both PIN codes.',
+        blockedPincodes: Array.from(blockedPincodes.values()),
+      });
+    }
+
+    const isAirMode = mode.endsWith('_AIR');
+
+    if (courier === 'SHADOWFAX' && isAirMode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Air service is not currently confirmed for Shadowfax.',
+      });
+    }
+
+    const locationRecords = await prisma.courierPincodeServiceability.findMany({
+      where: {
+        courier: { in: COURIERS },
+        pincode: { in: [pickupPincode, deliveryPincode] },
+      },
+    });
 
     let zonePickup;
     let zoneDelivery;
 
-    if (isAirMode) {
-      // Skyking Air requires pickup FM and delivery LM.
-      zonePickup = locationRecords.find(
-        (item) =>
-          item.courier === 'SKYKING' &&
-          item.pincode === pickupPincode
-      );
+    if (courier === 'SHADOWFAX') {
+      const [pickupResponse, returnResponse, deliveryResponse] =
+        await Promise.all([
+          checkShadowfaxServiceability(pickupPincode, 'seller_pickup'),
+          checkShadowfaxServiceability(pickupPincode, 'seller_delivery'),
+          checkShadowfaxServiceability(deliveryPincode, 'customer_delivery'),
+        ]);
 
-      zoneDelivery = locationRecords.find(
-        (item) =>
-          item.courier === 'SKYKING' &&
-          item.pincode === deliveryPincode
-      );
+      const hasTier = (response, pin, tier) => {
+        if (!Array.isArray(response)) return false;
 
-      if (
-        zonePickup?.firstMile !== true ||
-        zoneDelivery?.lastMile !== true
-      ) {
-        return res.status(404).json({
-          success: false,
-          message:
-            'Skyking Air service is unavailable. Pickup requires First Mile and delivery requires Last Mile serviceability.',
-          airServiceability: {
-            courier: 'SKYKING',
-            pickupFirstMile: zonePickup?.firstMile === true,
-            deliveryLastMile: zoneDelivery?.lastMile === true,
-          },
-        });
-      }
-    } else if (courier === 'SHADOWFAX') {
-      // Existing Shadowfax zone calculation.
-      const zoneCourier = COURIERS.find((name) => {
-        const pickup = locationRecords.find(
-          (item) =>
-            item.courier === name &&
-            item.pincode === pickupPincode
+        const result = response.find(
+          item => String(item.code) === String(pin)
         );
 
+        return result?.services?.includes(tier) || false;
+      };
+
+      const isRegular = mode === 'NORMAL_SURFACE';
+
+      const pickupAvailable = hasTier(
+        pickupResponse,
+        pickupPincode,
+        isRegular ? 'Marketplace' : 'Surface_Mkt'
+      );
+
+      const returnAvailable = hasTier(
+        returnResponse,
+        pickupPincode,
+        isRegular ? 'RTS' : 'Surface_RTS'
+      );
+
+      const deliveryAvailable = hasTier(
+        deliveryResponse,
+        deliveryPincode,
+        isRegular ? 'Regular' : 'Surface'
+      );
+
+      if (!pickupAvailable || !returnAvailable || !deliveryAvailable) {
+        return res.status(404).json({
+          success: false,
+          message: `Shadowfax does not support ${mode} for this PIN combination.`,
+        });
+      }
+
+      // Use the PIN location data to determine the ShipNext zone.
+      const zoneCourier = COURIERS.find(name => {
+        const pickup = locationRecords.find(
+          item => item.courier === name && item.pincode === pickupPincode
+        );
         const delivery = locationRecords.find(
-          (item) =>
-            item.courier === name &&
-            item.pincode === deliveryPincode
+          item => item.courier === name && item.pincode === deliveryPincode
         );
 
         return pickup && delivery;
@@ -521,28 +592,19 @@ router.post('/quote', async (req, res) => {
       }
 
       zonePickup = locationRecords.find(
-        (item) =>
-          item.courier === zoneCourier &&
-          item.pincode === pickupPincode
+        item => item.courier === zoneCourier && item.pincode === pickupPincode
       );
 
       zoneDelivery = locationRecords.find(
-        (item) =>
-          item.courier === zoneCourier &&
-          item.pincode === deliveryPincode
+        item => item.courier === zoneCourier && item.pincode === deliveryPincode
       );
     } else {
-      // Existing courier serviceability for Surface modes.
       zonePickup = locationRecords.find(
-        (item) =>
-          item.courier === courier &&
-          item.pincode === pickupPincode
+        item => item.courier === courier && item.pincode === pickupPincode
       );
 
       zoneDelivery = locationRecords.find(
-        (item) =>
-          item.courier === courier &&
-          item.pincode === deliveryPincode
+        item => item.courier === courier && item.pincode === deliveryPincode
       );
 
       if (
@@ -554,13 +616,25 @@ router.post('/quote', async (req, res) => {
           message: `${courier} does not serve both PIN codes.`,
         });
       }
+
+      if (
+        courier === 'SKYKING' &&
+        isAirMode &&
+        (
+          zonePickup?.firstMile !== true ||
+          zoneDelivery?.lastMile !== true
+        )
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: 'Skyking Air requires First Mile pickup and Last Mile delivery serviceability.',
+        });
+      }
     }
 
     const zone = getShippingZone(zonePickup, zoneDelivery);
 
-    const pricingMode = mode.endsWith('_AIR')
-      ? 'AIR'
-      : 'SURFACE';
+    const pricingMode = isAirMode ? 'AIR' : 'SURFACE';
 
     const charge = calculateShippingCharge(
       zone,
@@ -585,6 +659,7 @@ router.post('/quote', async (req, res) => {
     });
   }
 });
+
 // ADMIN: Add one shipping mode to a PIN-to-PIN route
 router.post(
   '/admin/routes',

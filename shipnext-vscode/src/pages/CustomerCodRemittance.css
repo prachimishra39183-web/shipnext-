@@ -3,10 +3,15 @@
   min-height: 100vh;
   padding: 32px;
   box-sizing: border-box;
-  color: #f8fafc;
-  background:  #080e19;
+  color: #f8eee3;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(194, 105, 43, 0.13), transparent 35%),
+    linear-gradient(135deg, #160e09 0%, #21140e 50%, #100b08 100%);
+  border: 1px solid rgba(205, 145, 91, 0.16);
   border-radius: 18px;
 }
+
+/* HEADER */
 
 .customer-cod-header {
   display: flex;
@@ -17,7 +22,7 @@
 }
 
 .customer-cod-header span {
-  color: #ff5a36;
+  color: #e69a55;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 2px;
@@ -25,22 +30,35 @@
 
 .customer-cod-header h1 {
   margin: 8px 0;
+  color: #fff5e9;
   font-size: 30px;
+  font-weight: 700;
 }
 
 .customer-cod-header p {
-  color: #f8f9f9;
+  color: #c4aa93;
   font-size: 13px;
 }
 
 .customer-cod-header button {
-  padding: 11px 18px;
-  color: rgb(6, 3, 3);
-  background: #4d0e03;
-  border: none;
+  padding: 11px 19px;
+  color: #211109;
+  background: linear-gradient(135deg, #f2b36d, #d87932);
+  border: 1px solid #f5c18a;
   border-radius: 9px;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 5px 18px rgba(199, 105, 43, 0.2);
+  transition: all 0.3s ease;
 }
+
+.customer-cod-header button:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, #ffd09a, #e88b42);
+  box-shadow: 0 9px 25px rgba(199, 105, 43, 0.3);
+}
+
+/* SUMMARY CARDS */
 
 .customer-cod-summary {
   display: grid;
@@ -50,28 +68,47 @@
 }
 
 .customer-cod-card {
+  position: relative;
+  overflow: hidden;
   padding: 23px;
-  background: linear-gradient(145deg, #f1f1f4, #1b0f69);
-  border: 1px solid rgba(148, 163, 184, .17);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(227, 145, 76, 0.15), transparent 48%),
+    linear-gradient(145deg, #3a2418, #21140e 75%);
+  border: 1px solid rgba(213, 151, 99, 0.25);
   border-radius: 15px;
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 230, 201, 0.08);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.customer-cod-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(235, 164, 105, 0.6);
 }
 
 .customer-cod-card span {
   display: block;
-  color: #020e1f;
-  font-size: 15px;
+  color: #d6b99d;
+  font-size: 13px;
+  font-weight: 500;
   margin-bottom: 13px;
 }
 
 .customer-cod-card strong {
-  font-size: 24px;
+  color: #fff1df;
+  font-size: 26px;
+  font-weight: 700;
 }
 
+/* TABLE PANEL */
+
 .customer-cod-table-panel {
-  background: #450697;
-  border: 1px solid rgba(148, 163, 184, .17);
+  background: linear-gradient(145deg, #2b1a11, #1b100b);
+  border: 1px solid rgba(205, 145, 91, 0.23);
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
 }
 
 .customer-cod-table-heading {
@@ -79,17 +116,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(148, 163, 184, .15);
+  border-bottom: 1px solid rgba(205, 145, 91, 0.17);
 }
 
 .customer-cod-table-heading h2 {
+  color: #fff0df;
   font-size: 18px;
+  font-weight: 700;
 }
 
 .customer-cod-table-heading span {
-  color: #ff765b;
+  color: #e69a55;
   font-size: 12px;
+  font-weight: 600;
 }
+
+/* TABLE */
 
 .customer-cod-table-scroll {
   overflow-x: auto;
@@ -103,19 +145,27 @@
 }
 
 .customer-cod-table th {
-  padding: 15px;
-  background: #1b0599;
-  color: #94a3b8;
+  padding: 16px;
+  background: linear-gradient(90deg, #4a2b1b, #382015);
+  color: #e9b985;
   font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .customer-cod-table td {
   padding: 16px;
-  border-bottom: 1px solid rgba(148, 163, 184, .1);
+  color: #e8d7c7;
+  border-bottom: 1px solid rgba(205, 145, 91, 0.12);
   font-size: 12px;
   white-space: nowrap;
+  transition: background 0.25s ease;
+}
+
+.customer-cod-table tbody tr:hover td {
+  background: rgba(211, 132, 69, 0.08);
 }
 
 .customer-cod-table td strong,
@@ -123,41 +173,58 @@
   display: block;
 }
 
+.customer-cod-table td strong {
+  color: #fff0df;
+}
+
 .customer-cod-table td small {
-  color: #8291a6;
+  color: #b99a7e;
   margin-top: 5px;
 }
 
+/* STATUS */
+
 .customer-cod-status {
-  padding: 6px 9px;
+  display: inline-block;
+  padding: 6px 10px;
   border-radius: 20px;
   font-size: 10px;
   font-weight: 800;
+  letter-spacing: 0.4px;
 }
 
 .customer-cod-status.completed {
-  color: #86efac;
-  background: rgba(34, 197, 94, .13);
+  color: #b8e7b7;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(111, 190, 105, 0.25);
 }
 
 .customer-cod-status.pending {
-  color: #fcd34d;
-  background: rgba(245, 158, 11, .13);
+  color: #ffd18b;
+  background: rgba(225, 137, 48, 0.15);
+  border: 1px solid rgba(225, 137, 48, 0.25);
 }
+
+/* EMPTY STATE */
 
 .customer-cod-empty {
   padding: 45px 20px;
   text-align: center;
-  color: #94a3b8;
+  color: #c2a78e;
 }
+
+/* ERROR */
 
 .customer-cod-error {
   padding: 13px;
   margin-bottom: 18px;
-  color: #fecaca;
-  background: rgba(220, 38, 38, .13);
+  color: #ffd0c4;
+  background: rgba(174, 65, 38, 0.17);
+  border: 1px solid rgba(225, 112, 77, 0.25);
   border-radius: 9px;
 }
+
+/* RESPONSIVE */
 
 @media (max-width: 900px) {
   .customer-cod-summary {
@@ -177,5 +244,11 @@
 
   .customer-cod-summary {
     grid-template-columns: 1fr;
+  }
+
+  .customer-cod-table-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
   }
 }

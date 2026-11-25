@@ -1,5 +1,6 @@
-
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import API_URL from '../config/api';
 import './AdminPincodeBlockage.css';
 
@@ -128,16 +129,24 @@ export default function AdminPincodeBlockage() {
   return (
     <div className="sn-pincode-page">
       <div className="sn-pincode-header">
+        <Link to="/admin" className="sn-back-dashboard">
+  <ArrowLeft size={18} />
+  Back to Dashboard
+</Link>
         <div>
           <span className="sn-pincode-eyebrow">ADMIN CONTROL</span>
+            
           <h1>Pincode Blockage</h1>
           <p>Manage PIN codes restricted from shipment bookings.</p>
         </div>
-
+         
         <div className="sn-pincode-count">
+          
           <span>Total Blocked PINs</span>
+          
           <strong>{blockedPincodes.length}</strong>
         </div>
+      
       </div>
 
       {message && (

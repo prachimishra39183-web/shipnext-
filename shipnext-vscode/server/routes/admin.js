@@ -1006,7 +1006,7 @@ router.get(
           shipNextRate: true,
           delhiveryExpressRate: true,
           delhiveryStandardRate: true,
-         shippingMode: true,
+         
           rateApprovalStatus: true,
           createdAt: true,
 

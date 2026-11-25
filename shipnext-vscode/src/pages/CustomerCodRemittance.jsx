@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import API_URL from '../config/api';
 import './CustomerCodRemittance.css';
 
@@ -54,10 +55,13 @@ export default function CustomerCodRemittance() {
           <h1>COD Remittance</h1>
           <p>Track your cash-on-delivery collections and settlements.</p>
         </div>
-
+            
         <button onClick={fetchRecords}>↻ Refresh</button>
+         <Link to="/dashboard" className="sn-track-back">
+          Back to Dashboard
+        </Link>
       </div>
-
+      
       {error && <div className="customer-cod-error">{error}</div>}
 
       <div className="customer-cod-summary">
