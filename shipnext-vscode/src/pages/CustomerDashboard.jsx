@@ -1,7 +1,7 @@
 import { ChevronDown,FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { UserRound } from 'lucide-react';
+import { UserRound,CheckCheck  } from 'lucide-react';
 import API_URL from '../config/api';
 function CustomerDashboard() {
    const loggedInUser = JSON.parse(
