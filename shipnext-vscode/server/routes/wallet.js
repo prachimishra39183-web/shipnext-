@@ -505,4 +505,328 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
+// ADMIN: CREDIT OR DEBIT CUSTOMER WALLET
+
+// ADMIN: SECURE CUSTOMER WALLET CREDIT / DEBIT
+router.post(
+  '/admin/adjust',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const { userId, type, amount, reason } = req.body;
+
+      const transactionType = String(type || '').toUpperCase();
+      const amountString = String(amount ?? '').trim();
+      const adjustmentReason = String(reason || '').trim();
+
+      if (!userId || !['CREDIT', 'DEBIT'].includes(transactionType)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Select a customer and a valid transaction type.',
+        });
+      }
+
+      if (
+        !/^\d+(\.\d{1,2})?$/.test(amountString) ||
+        !Number.isFinite(Number(amountString)) ||
+        Number(amountString) <= 0 ||
+        Number(amountString) > 1000000
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Enter a valid amount between ₹0.01 and ₹10,00,000.',
+        });
+      }
+
+      if (adjustmentReason.length < 5 || adjustmentReason.length > 500) {
+        return res.status(400).json({
+          success: false,
+          message: 'Enter a reason between 5 and 500 characters.',
+        });
+      }
+
+      const adjustmentAmount = amountString;
+
+      const result = await prisma.$transaction(
+        async (tx) => {
+          const customer = await tx.user.findUnique({
+            where: { id: userId },
+            select: { id: true, role: true },
+          });
+
+          if (!customer || customer.role !== 'CUSTOMER') {
+            throw new Error('CUSTOMER_NOT_FOUND');
+          }
+
+          const wallet = await tx.wallet.upsert({
+            where: { userId },
+            update: {},
+            create: { userId },
+          });
+
+          const balanceBefore = wallet.balance;
+
+          if (transactionType === 'DEBIT') {
+            const updated = await tx.wallet.updateMany({
+              where: {
+                id: wallet.id,
+                balance: { gte: adjustmentAmount },
+              },
+              data: {
+                balance: { decrement: adjustmentAmount },
+              },
+            });
+
+            if (updated.count !== 1) {
+              throw new Error('INSUFFICIENT_WALLET_BALANCE');
+            }
+          } else {
+            await tx.wallet.update({
+              where: { id: wallet.id },
+              data: {
+                balance: { increment: adjustmentAmount },
+              },
+            });
+          }
+
+          const updatedWallet = await tx.wallet.findUnique({
+            where: { id: wallet.id },
+          });
+
+          const transaction = await tx.walletTransaction.create({
+            data: {
+              userId,
+              walletId: wallet.id,
+              type: transactionType,
+              amount: adjustmentAmount,
+              description: `Admin ${transactionType.toLowerCase()}: ${adjustmentReason}`,
+              reference: `ADMIN_${crypto.randomUUID()}`,
+
+              performedByAdminId: req.user.userId,
+              reason: adjustmentReason,
+              balanceBefore,
+              balanceAfter: updatedWallet.balance,
+            },
+          });
+
+          await tx.notification.create({
+            data: {
+              userId,
+              title: transactionType === 'CREDIT'
+                ? 'Wallet Amount Credited'
+                : 'Wallet Amount Debited',
+              message: `₹${adjustmentAmount} has been ${
+                transactionType === 'CREDIT' ? 'credited to' : 'debited from'
+              } your ShipNext wallet. Reason: ${adjustmentReason}`,
+              type: 'WALLET',
+            },
+          });
+
+          return {
+            wallet: updatedWallet,
+            transaction,
+          };
+        },
+        {
+          isolationLevel: 'Serializable',
+        }
+      );
+
+      return res.json({
+        success: true,
+        message: `Customer wallet ${transactionType.toLowerCase()} completed successfully.`,
+        balance: result.wallet.balance.toString(),
+        transaction: result.transaction,
+      });
+    } catch (error) {
+      if (error.message === 'CUSTOMER_NOT_FOUND') {
+        return res.status(404).json({
+          success: false,
+          message: 'Customer not found.',
+        });
+      }
+
+      if (error.message === 'INSUFFICIENT_WALLET_BALANCE') {
+        return res.status(400).json({
+          success: false,
+          message: 'Customer has insufficient wallet balance.',
+        });
+      }
+
+      if (error.code === 'P2034') {
+        return res.status(409).json({
+          success: false,
+          message: 'A simultaneous wallet update occurred. Please retry.',
+        });
+      }
+
+      console.error('Admin wallet adjustment error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to process wallet adjustment.',
+      });
+    }
+  }
+);
+
+// ADMIN: SEARCH CUSTOMERS FOR WALLET ADJUSTMENTS
+router.get(
+  '/admin/customers',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const search = String(req.query.search || '').trim();
+
+      if (search.length < 2) {
+        return res.json({
+          success: true,
+          customers: [],
+        });
+      }
+
+      const customers = await prisma.user.findMany({
+        where: {
+          role: 'CUSTOMER',
+          isActive: true,
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search } },
+            { companyName: { contains: search, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          companyName: true,
+          wallet: {
+            select: {
+              balance: true,
+            },
+          },
+        },
+        take: 20,
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      return res.json({
+        success: true,
+        customers: customers.map((customer) => ({
+          ...customer,
+          walletBalance: customer.wallet?.balance.toString() || '0.00',
+          wallet: undefined,
+        })),
+      });
+    } catch (error) {
+      console.error('Admin customer search error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to search customers.',
+      });
+    }
+  }
+);
+
+// ADMIN: VIEW CUSTOMER WALLET TRANSACTION HISTORY
+router.get(
+  '/admin/transactions',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const search = String(req.query.search || '').trim();
+      const type = String(req.query.type || '').toUpperCase();
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const limit = 20;
+      const skip = (page - 1) * limit;
+
+      if (type && !['CREDIT', 'DEBIT'].includes(type)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid transaction type.',
+        });
+      }
+
+      const where = {
+  performedByAdminId: { not: null },
+  ...(type ? { type } : {}),
+        ...(search
+          ? {
+              user: {
+                is: {
+                  OR: [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { email: { contains: search, mode: 'insensitive' } },
+                    { phone: { contains: search } },
+                    { companyName: { contains: search, mode: 'insensitive' } },
+                  ],
+                },
+              },
+            }
+          : {}),
+      };
+
+      const [transactions, total] = await Promise.all([
+        prisma.walletTransaction.findMany({
+          where,
+          include: {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      companyName: true,
+    },
+  },
+  performedByAdmin: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+},
+          orderBy: {
+            createdAt: 'desc',
+          },
+          skip,
+          take: limit,
+        }),
+        prisma.walletTransaction.count({ where }),
+      ]);
+
+      return res.json({
+        success: true,
+        transactions: transactions.map((transaction) => ({
+          ...transaction,
+          amount: transaction.amount.toString(),
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } catch (error) {
+      console.error('Admin wallet transaction history error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to retrieve wallet transaction history.',
+      });
+    }
+  }
+);
+
+
 module.exports = router;

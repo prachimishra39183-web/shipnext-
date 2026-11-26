@@ -81,27 +81,41 @@ async function checkServiceability(pincode, service = 'marketplace') {
     pincodes: pin,
   });
 
-  return shadowfaxRequest(
+   const response = await shadowfaxRequest(
     `/v1/clients/serviceability/?${query.toString()}`
   );
+
+console.log('SHADOWFAX LIVE SERVICEABILITY:', {
+  pincode: pin,
+  service,
+  response: JSON.stringify(response, null, 2),
+});
+
+  return response;
 }
+
 
 function getAvailableServices(response, pincode) {
   const result = Array.isArray(response)
-    ? response.find(item => String(item.code) === String(pincode))
+    ? response.find(
+        item => String(item.code) === String(pincode)
+      )
     : null;
+
+  const services = Array.isArray(result?.services)
+    ? result.services
+    : [];
 
   return {
     serviceable: Boolean(result),
-    services: result?.services || [],
-    regular: result?.services?.includes('Regular') || false,
-    surface: result?.services?.includes('Surface') || false,
-    marketplace: result?.services?.includes('Marketplace') || false,
-    surfaceMarketplace:
-      result?.services?.includes('Surface_Mkt') || false,
-    rts: result?.services?.includes('RTS') || false,
-    surfaceRts:
-      result?.services?.includes('Surface_RTS') || false,
+    services,
+    regular: services.includes('Regular'),
+    surface: services.includes('Surface'),
+    marketplace: services.includes('Marketplace'),
+    surfaceMarketplace: services.includes('Surface_Mkt'),
+    rts: services.includes('RTS'),
+    surfaceRts: services.includes('Surface_RTS'),
+    large: services.includes('Large'),
   };
 }
 

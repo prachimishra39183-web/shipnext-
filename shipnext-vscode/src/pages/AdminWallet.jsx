@@ -16,6 +16,16 @@ function AdminWallet() {
   });
 
   const [search, setSearch] = useState('');
+  // ADMIN WALLET CREDIT / DEBIT
+  const [showAdjustmentConfirm, setShowAdjustmentConfirm] = useState(false);
+ 
+const [selectedWallet, setSelectedWallet] = useState(null);
+const [adjustmentType, setAdjustmentType] = useState('CREDIT');
+const [adjustmentAmount, setAdjustmentAmount] = useState('');
+const [adjustmentReason, setAdjustmentReason] = useState('');
+const [adjustmentLoading, setAdjustmentLoading] = useState(false);
+const [adjustmentMessage, setAdjustmentMessage] = useState('');
+const [adjustmentError, setAdjustmentError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [transactionError, setTransactionError] = useState('');
@@ -219,6 +229,84 @@ setRefundLoading(false);
     setRefundActionLoading('');
   }
 };
+
+const handleWalletAdjustment = (event) => {
+  event.preventDefault();
+
+  setAdjustmentError('');
+  setAdjustmentMessage('');
+
+  if (!selectedWallet) {
+    setAdjustmentError('Please select a customer.');
+    return;
+  }
+
+  if (
+    !/^\d+(\.\d{1,2})?$/.test(adjustmentAmount) ||
+    Number(adjustmentAmount) <= 0 ||
+    Number(adjustmentAmount) > 1000000
+  ) {
+    setAdjustmentError('Enter a valid amount between ₹0.01 and ₹10,00,000.');
+    return;
+  }
+
+  if (
+    adjustmentReason.trim().length < 5 ||
+    adjustmentReason.trim().length > 500
+  ) {
+    setAdjustmentError('Reason must contain 5 to 500 characters.');
+    return;
+  }
+
+  setShowAdjustmentConfirm(true);
+};
+
+const confirmWalletAdjustment = async () => {
+  if (!selectedWallet) return;
+
+  try {
+    setAdjustmentLoading(true);
+    setAdjustmentError('');
+
+    const response = await fetch(
+      `${API_URL}/api/wallet/admin/adjust`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: selectedWallet.id,
+          type: adjustmentType,
+          amount: adjustmentAmount,
+          reason: adjustmentReason.trim(),
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Wallet adjustment failed.');
+    }
+
+    setAdjustmentMessage(
+      `${data.message} New balance: ₹${data.balance}`
+    );
+
+    setShowAdjustmentConfirm(false);
+    setSelectedWallet(null);
+    setAdjustmentAmount('');
+    setAdjustmentReason('');
+
+    await fetchWalletData();
+  } catch (err) {
+    setAdjustmentError(err.message || 'Unable to adjust wallet.');
+  } finally {
+    setAdjustmentLoading(false);
+  }
+};
   return (
     <div className="admin-layout sn-wallet-page">
       <aside className="admin-sidebar sn-wallet-sidebar">
@@ -311,7 +399,161 @@ setRefundLoading(false);
             </div>
             <span className="sn-wallet-count">{wallets.length} ACCOUNTS</span>
           </div>
+           {adjustmentMessage && (
+  <div className="sn-wallet-adjustment-success">{adjustmentMessage}</div>
+)}
 
+{adjustmentError && (
+  <div className="sn-wallet-adjustment-error">{adjustmentError}</div>
+)}
+
+{selectedWallet && (
+  <form
+    className="sn-wallet-adjustment-form"
+    onSubmit={handleWalletAdjustment}
+  >
+    <div className="sn-wallet-adjustment-form-header">
+      <div>
+        <span>WALLET ADJUSTMENT</span>
+        <h3>
+          {adjustmentType === 'CREDIT'
+            ? 'Credit Customer Wallet'
+            : 'Debit Customer Wallet'}
+        </h3>
+        <p>{selectedWallet.name} · {selectedWallet.email}</p>
+      </div>
+
+      <button type="button" onClick={() => setSelectedWallet(null)}>
+        Close
+      </button>
+    </div>
+
+    <div className="sn-wallet-adjustment-current">
+      Current balance:{' '}
+      <strong>
+        ₹{Number(selectedWallet.balance || 0).toFixed(2)}
+      </strong>
+    </div>
+
+    <div className="sn-wallet-adjustment-actions">
+      <button
+        type="button"
+        className={adjustmentType === 'CREDIT' ? 'active credit' : 'credit'}
+        onClick={() => setAdjustmentType('CREDIT')}
+      >
+        + CREDIT
+      </button>
+
+      <button
+        type="button"
+        className={adjustmentType === 'DEBIT' ? 'active debit' : 'debit'}
+        onClick={() => setAdjustmentType('DEBIT')}
+      >
+        − DEBIT
+      </button>
+    </div>
+
+    <label>Amount (₹)</label>
+    <input
+      type="number"
+      min="0.01"
+      max="1000000"
+      step="0.01"
+      value={adjustmentAmount}
+      onChange={(e) => setAdjustmentAmount(e.target.value)}
+      required
+    />
+
+    <label>Reason</label>
+    <textarea
+      value={adjustmentReason}
+      onChange={(e) => setAdjustmentReason(e.target.value)}
+      minLength={5}
+      maxLength={500}
+      rows={3}
+      placeholder="Enter the reason for this adjustment"
+      required
+    />
+
+    <button type="submit" disabled={adjustmentLoading}>
+      {adjustmentLoading
+        ? 'Processing...'
+        : adjustmentType === 'CREDIT'
+          ? 'Confirm Credit'
+          : 'Confirm Debit'}
+    </button>
+  </form>
+)}
+{showAdjustmentConfirm && selectedWallet && (
+  <div className="sn-wallet-confirm-overlay">
+    <div className="sn-wallet-confirm-card">
+      <div className="sn-wallet-confirm-icon">
+        {adjustmentType === 'CREDIT' ? '＋' : '−'}
+      </div>
+
+      <span className="sn-wallet-confirm-label">
+        FINAL CONFIRMATION
+      </span>
+
+      <h3>
+        {adjustmentType === 'CREDIT'
+          ? 'Confirm Wallet Credit'
+          : 'Confirm Wallet Debit'}
+      </h3>
+
+      <p className="sn-wallet-confirm-description">
+        Please review this transaction before proceeding.
+      </p>
+
+      <div className="sn-wallet-confirm-details">
+        <div>
+          <span>Customer</span>
+          <strong>{selectedWallet.name}</strong>
+        </div>
+
+        <div>
+          <span>Transaction Type</span>
+          <strong>{adjustmentType}</strong>
+        </div>
+
+        <div>
+          <span>Amount</span>
+          <strong>₹{Number(adjustmentAmount).toFixed(2)}</strong>
+        </div>
+
+        <div>
+          <span>Reason</span>
+          <strong>{adjustmentReason}</strong>
+        </div>
+      </div>
+
+      <div className="sn-wallet-confirm-warning">
+        This action will immediately update the customer's wallet balance.
+      </div>
+
+      <div className="sn-wallet-confirm-buttons">
+        <button
+          type="button"
+          onClick={() => setShowAdjustmentConfirm(false)}
+          disabled={adjustmentLoading}
+        >
+          Go Back
+        </button>
+
+        <button
+          type="button"
+          className={adjustmentType === 'CREDIT' ? 'confirm-credit' : 'confirm-debit'}
+          onClick={confirmWalletAdjustment}
+          disabled={adjustmentLoading}
+        >
+          {adjustmentLoading
+            ? 'Processing...'
+            : `Confirm ${adjustmentType}`}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
           <div className="sn-wallet-search">
             <span>⌕</span>
             <input
@@ -341,6 +583,7 @@ setRefundLoading(false);
                     <th>Phone</th>
                     <th>Wallet Balance</th>
                     <th>Account Status</th>
+<th>Wallet Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -352,11 +595,45 @@ setRefundLoading(false);
                       <td className="sn-wallet-amount">
                         ₹{Number(wallet.balance).toFixed(2)}
                       </td>
-                      <td>
-                        <span className={`sn-wallet-status ${wallet.isActive ? 'active' : 'inactive'}`}>
-                          {wallet.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
+                     <td>
+  <span className={`sn-wallet-status ${wallet.isActive ? 'active' : 'inactive'}`}>
+    {wallet.isActive ? 'Active' : 'Inactive'}
+  </span>
+</td>
+
+<td>
+  <div className="sn-wallet-actions">
+    <button
+      type="button"
+      className="sn-wallet-credit-btn"
+      onClick={() => {
+        setSelectedWallet(wallet);
+        setAdjustmentType('CREDIT');
+        setAdjustmentAmount('');
+        setAdjustmentReason('');
+        setAdjustmentMessage('');
+        setAdjustmentError('');
+      }}
+    >
+      + Credit
+    </button>
+
+    <button
+      type="button"
+      className="sn-wallet-debit-btn"
+      onClick={() => {
+        setSelectedWallet(wallet);
+        setAdjustmentType('DEBIT');
+        setAdjustmentAmount('');
+        setAdjustmentReason('');
+        setAdjustmentMessage('');
+        setAdjustmentError('');
+      }}
+    >
+      − Debit
+    </button>
+  </div>
+</td>
                     </tr>
                   ))}
                 </tbody>

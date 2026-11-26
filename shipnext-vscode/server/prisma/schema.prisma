@@ -122,6 +122,7 @@ model User {
   apiKeys                CustomerApiKey[]
   taxSettings            CustomerTaxSettings?
   invoices               ShipmentInvoice[]
+  adminWalletTransactions WalletTransaction[] @relation("WalletTransactionAdmin")
 }
 
 model Wallet {
@@ -145,11 +146,23 @@ model WalletTransaction {
   description String?
   reference   String?         @unique
 
+  // Financial audit information
+performedByAdminId String?
+performedByAdmin   User? @relation("WalletTransactionAdmin", fields: [performedByAdminId], references: [id])
+  reason              String?
+  balanceBefore       Decimal? @db.Decimal(12, 2)
+  balanceAfter        Decimal? @db.Decimal(12, 2)
+
   user   User   @relation(fields: [userId], references: [id])
   wallet Wallet @relation(fields: [walletId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([performedByAdminId, createdAt])
+  @@index([type, createdAt])
 }
+
 
 model RefundRequest {
   id          String       @id @default(uuid())
@@ -659,4 +672,16 @@ model PlayingWithNeon {
   value Float? @db.Real
 
   @@map("playing_with_neon")
+}
+model InvoiceSequence {
+  id           String   @id @default(uuid())
+  prefix       String
+  financialYear String
+  lastNumber   Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([prefix, financialYear])
+  @@index([financialYear])
 }

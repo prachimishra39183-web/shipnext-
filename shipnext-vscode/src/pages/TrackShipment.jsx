@@ -8,10 +8,14 @@ function TrackShipment() {
 
   const [trackingNumber, setTrackingNumber] = useState(trackingId || '');
   const [shipment, setShipment] = useState(null);
+  const [courierTracking, setCourierTracking] = useState(null);
+const [courierTrackingError, setCourierTrackingError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleTrack = async (event) => {
+    setCourierTracking(null);
+setCourierTrackingError('');
     event.preventDefault();
 
     if (!trackingNumber.trim()) {
@@ -35,8 +39,16 @@ function TrackShipment() {
       if (!response.ok) {
         throw new Error(data.message || 'Shipment not found.');
       }
+    setShipment(data.shipment);
+setCourierTracking(data.courierTracking || null);
+setCourierTrackingError(data.courierTrackingError || '');
 
-      setShipment(data.shipment);
+console.log('SHIPNEXT SHIPMENT:', data.shipment);
+console.log('SHADOWFAX TRACKING RESPONSE:', data.courierTracking);
+console.log(
+  'SHADOWFAX TRACKING EVENTS:',
+  JSON.stringify(data.courierTracking?.tracking_details, null, 2)
+);
     } catch (err) {
       setError(err.message || 'Unable to track shipment.');
     } finally {
@@ -226,13 +238,76 @@ function TrackShipment() {
             </div>
           </div>
 
+{/* COURIER TRACKING TIMELINE */}
+{shipment.courierPartner === 'SHADOWFAX' && (
+  <div className="sn-live-tracking">
+    <div className="sn-live-tracking-heading">
+      <div>
+        <span className="sn-track-small-label">
+          COURIER MOVEMENT
+        </span>
+        <h3>Shipment tracking history</h3>
+        <p>Latest updates received from the delivery network.</p>
+      </div>
+
+      <span className="sn-live-badge">SHADOWFAX</span>
+    </div>
+
+    {courierTrackingError && (
+      <p className="sn-tracking-warning">
+        {courierTrackingError}
+      </p>
+    )}
+
+    {courierTracking?.tracking_details?.length > 0 ? (
+      <div className="sn-timeline">
+        {[...courierTracking.tracking_details]
+          .sort(
+            (a, b) =>
+              new Date(b.created) - new Date(a.created)
+          )
+          .map((event, index) => (
+            <div className="sn-timeline-event" key={`${event.created}-${index}`}>
+              <div className="sn-timeline-marker">
+                <span></span>
+              </div>
+
+              <div className="sn-timeline-content">
+                <div className="sn-timeline-event-top">
+                  <strong>{event.status || 'Shipment update'}</strong>
+                  <span>
+                    {formatDate(event.created, true)}
+                  </span>
+                </div>
+
+                <p>{event.remarks || 'Shipment status updated.'}</p>
+
+                {event.location && (
+                  <div className="sn-timeline-location">
+                    <span>LOCATION</span>
+                    <strong>{event.location}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+      </div>
+    ) : (
+      <div className="sn-timeline-empty">
+        Tracking events are not available yet.
+        Please check again later.
+      </div>
+    )}
+  </div>
+)}
+
+
           <div className="sn-track-disclaimer">
             <strong>Tracking information</strong>
-            <p>
-              This page displays the latest shipment details returned
-              by ShipNext. Detailed movement events will appear here
-              when tracking updates are available.
-            </p>
+           <p>
+  Tracking updates are retrieved from the courier network.
+  New movement events will appear as they become available.
+</p>
           </div>
         </section>
       )}

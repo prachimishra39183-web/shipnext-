@@ -25,6 +25,9 @@ function CustomerDashboard() {
   const [loadingNotifications, setLoadingNotifications] = useState(true);
   const [notificationError, setNotificationError] = useState('');
 const [recentTransactions, setRecentTransactions] = useState([]);
+const [myShipments, setMyShipments] = useState([]);
+const [walletBalance, setWalletBalance] = useState(0);
+const [loadingDashboardData, setLoadingDashboardData] = useState(true);
   const fetchNotifications = async () => {
         if (bookingAccess) {
       setLoadingNotifications(false);
@@ -63,32 +66,72 @@ const [recentTransactions, setRecentTransactions] = useState([]);
       setLoadingNotifications(false);
     }
   };
-    useEffect(() => {
-  const fetchRecentTransactions = async () => {
+    
+useEffect(() => {
+  const fetchDashboardData = async () => {
     try {
       const token = sessionStorage.getItem('shipnextToken');
 
-      const response = await fetch(`${API_URL}/api/wallet/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      if (!token) return;
 
-      const data = await response.json();
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
 
-      if (response.ok) {
-        setRecentTransactions(data.wallet?.transactions || []);
+      const [shipmentResponse, walletResponse] = await Promise.all([
+        fetch(`${API_URL}/api/shipments/my`, { headers }),
+        fetch(`${API_URL}/api/wallet/me`, { headers }),
+      ]);
+
+      const shipmentData = await shipmentResponse.json();
+      const walletData = await walletResponse.json();
+
+      if (!shipmentResponse.ok) {
+        throw new Error(
+          shipmentData.message || 'Unable to load shipments.'
+        );
       }
+
+      if (!walletResponse.ok) {
+        throw new Error(
+          walletData.message || 'Unable to load wallet.'
+        );
+      }
+
+      const shipmentList = Array.isArray(shipmentData.shipments)
+        ? shipmentData.shipments
+        : Array.isArray(shipmentData.data)
+          ? shipmentData.data
+          : Array.isArray(shipmentData)
+            ? shipmentData
+            : [];
+
+      setMyShipments(shipmentList);
+
+      setWalletBalance(
+        Number(
+          walletData.wallet?.balance ??
+          walletData.balance ??
+          0
+        )
+      );
+
+      setRecentTransactions(
+        walletData.wallet?.transactions || []
+      );
+
+      console.log('CUSTOMER DASHBOARD SHIPMENTS:', shipmentData);
+      console.log('CUSTOMER DASHBOARD WALLET:', walletData);
+
     } catch (error) {
-      console.error('Wallet transactions error:', error);
+      console.error('Dashboard data error:', error);
+    } finally {
+      setLoadingDashboardData(false);
     }
   };
 
-  fetchRecentTransactions();
+  fetchDashboardData();
 }, []);
-    useEffect(() => {
-    fetchNotifications();
-  }, [bookingAccess]);
 
   const markAsRead = async (id) => {
     try {
@@ -166,7 +209,20 @@ const [recentTransactions, setRecentTransactions] = useState([]);
         return ;
     }
   };
+const totalShipments = myShipments.length;
 
+const inTransitShipments = myShipments.filter((shipment) =>
+  [
+    'PICKED_UP',
+    'IN_TRANSIT',
+    'OUT_FOR_DELIVERY',
+    'SHIPPED',
+  ].includes(shipment.status?.toUpperCase())
+).length;
+
+const deliveredShipments = myShipments.filter(
+  (shipment) => shipment.status?.toUpperCase() === 'DELIVERED'
+).length;
   return (
     <div className="dashboard">
   <aside className="sidebar">
@@ -367,7 +423,7 @@ const [recentTransactions, setRecentTransactions] = useState([]);
                     padding: '16px',
                     borderRadius: '10px',
                     border: '1px solid #e5eaf1',
-                    background: notification.isRead ? '#fff' : '#f0f6ff',
+                    background: notification.isRead ? '#810808' : '#7a050d',
                   }}
                 >
                   <div style={{ fontSize: '25px' }}>
@@ -379,14 +435,14 @@ const [recentTransactions, setRecentTransactions] = useState([]);
 
                     <p style={{
                       margin: '6px 0',
-                      color: '#64748b',
+                      color: '#e5e8ec',
                       lineHeight: '1.5',
                     }}>
                       {notification.message}
                     </p>
 
                     {notification.trackingId && (
-                      <small style={{ color: '#2563eb' }}>
+                      <small style={{ color: '#000204' }}>
                         Tracking ID: {notification.trackingId}
                       </small>
                     )}
@@ -415,54 +471,48 @@ const [recentTransactions, setRecentTransactions] = useState([]);
           )}
         </section>
 
-        <section className="dashboard-stats">
-          <div className="stat-card">
-            <span>Total Shipments</span>
-            <strong>0</strong>
-            <small>All your bookings</small>
-          </div>
+       
+<section className="dashboard-stats">
+  <div className="stat-card">
+    <span>Total Shipments</span>
+    <strong>
+      {loadingDashboardData ? '...' : totalShipments}
+    </strong>
+    <small>All your bookings</small>
+  </div>
 
-          <div className="stat-card">
-            <span>In Transit</span>
-            <strong>0</strong>
-            <small>Currently on the way</small>
-          </div>
+  <div className="stat-card">
+    <span>In Transit</span>
+    <strong>
+      {loadingDashboardData ? '...' : inTransitShipments}
+    </strong>
+    <small>Currently on the way</small>
+  </div>
 
-          <div className="stat-card">
-            <span>Delivered</span>
-            <strong>0</strong>
-            <small>Successfully delivered</small>
-          </div>
+  <div className="stat-card">
+    <span>Delivered</span>
+    <strong>
+      {loadingDashboardData ? '...' : deliveredShipments}
+    </strong>
+    <small>Successfully delivered</small>
+  </div>
 
-          <div className="stat-card" id="wallet">
-            <span>Wallet Balance</span>
-            <strong>₹0.00</strong>
-            <small>Available balance</small>
-            <Link to="/wallet" className="wallet-button">
-              + Add Money
-            </Link>
-          </div>
-        </section>
+  <div className="stat-card" id="wallet">
+    <span>Wallet Balance</span>
+    <strong>
+      {loadingDashboardData
+        ? '...'
+        : `₹${walletBalance.toFixed(2)}`}
+    </strong>
+    <small>Available balance</small>
+    <Link to="/wallet" className="wallet-button">
+      + Add Money
+    </Link>
+  </div>
+</section>
 
-        <section className="dashboard-panel" id="bookings">
-          <div className="panel-heading">
-            <div>
-              <h2>Recent Shipments</h2>
-              <p>Keep track of your latest parcel bookings.</p>
-            </div>
-            <Link to="/shipments">View All →</Link>
-          </div>
 
-          <div className="empty-state">
-            <div></div>
-            <h3>No shipments yet</h3>
-            <p>Your booked shipments will appear here.</p>
-            <Link to="/book-shipment" className="dashboard-button">
-              Book Your First Shipment
-            </Link>
-          </div>
-        </section>
-
+     
         <section className="dashboard-panel" id="transactions">
   <div className="panel-heading">
     <div>

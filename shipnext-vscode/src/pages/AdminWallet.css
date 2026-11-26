@@ -904,3 +904,342 @@
     font-size: 10px;
   }
 }
+/* ADMIN WALLET CREDIT / DEBIT */
+
+.sn-wallet-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sn-wallet-credit-btn,
+.sn-wallet-debit-btn {
+  padding: 8px 13px;
+  border: none;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.sn-wallet-credit-btn {
+  background: #e7f8ee;
+  color: #16834a;
+}
+
+.sn-wallet-credit-btn:hover {
+  background: #16834a;
+  color: #fff;
+}
+
+.sn-wallet-debit-btn {
+  background: #fff0ed;
+  color: #d9432f;
+}
+
+.sn-wallet-debit-btn:hover {
+  background: #d9432f;
+  color: #fff;
+}
+
+.sn-wallet-adjustment-form {
+  margin: 22px 0;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 650px;
+}
+
+.sn-wallet-adjustment-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.sn-wallet-adjustment-form-header span {
+  color: #f04b32;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.sn-wallet-adjustment-form-header h3 {
+  margin: 7px 0;
+  color: #182230;
+  font-size: 21px;
+}
+
+.sn-wallet-adjustment-form-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.sn-wallet-adjustment-form-header > button {
+  padding: 7px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.sn-wallet-adjustment-current {
+  padding: 13px;
+  background: #f7f8fa;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 14px;
+}
+
+.sn-wallet-adjustment-current strong {
+  color: #172033;
+}
+
+.sn-wallet-adjustment-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sn-wallet-adjustment-actions button {
+  flex: 1;
+  padding: 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sn-wallet-adjustment-actions .credit.active {
+  background: #16834a;
+  border-color: #16834a;
+  color: #fff;
+}
+
+.sn-wallet-adjustment-actions .debit.active {
+  background: #d9432f;
+  border-color: #d9432f;
+  color: #fff;
+}
+
+.sn-wallet-adjustment-form label {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sn-wallet-adjustment-form input,
+.sn-wallet-adjustment-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #d9e0e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+  outline: none;
+}
+
+.sn-wallet-adjustment-form input:focus,
+.sn-wallet-adjustment-form textarea:focus {
+  border-color: #f04b32;
+  box-shadow: 0 0 0 3px rgba(240, 75, 50, 0.1);
+}
+
+.sn-wallet-adjustment-form > button[type="submit"] {
+  padding: 13px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 8px;
+  background: #f04b32;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sn-wallet-adjustment-form > button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sn-wallet-adjustment-success,
+.sn-wallet-adjustment-error {
+  max-width: 650px;
+  margin: 12px 0;
+  padding: 12px 15px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sn-wallet-adjustment-success {
+  background: #e8f8ee;
+  color: #16834a;
+}
+
+.sn-wallet-adjustment-error {
+  background: #fff0ed;
+  color: #c73527;
+}
+
+@media (max-width: 600px) {
+  .sn-wallet-adjustment-form {
+    padding: 16px;
+  }
+
+  .sn-wallet-actions {
+    flex-direction: column;
+  }
+}/* WALLET CONFIRMATION CARD */
+
+.sn-wallet-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.sn-wallet-confirm-card {
+  width: 100%;
+  max-width: 460px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+  animation: walletConfirmIn 0.2s ease-out;
+}
+
+@keyframes walletConfirmIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sn-wallet-confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 27px;
+  font-weight: 800;
+  background: #fff0ed;
+  color: #e34b32;
+  margin-bottom: 18px;
+}
+
+.sn-wallet-confirm-label {
+  color: #e34b32;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.sn-wallet-confirm-card h3 {
+  margin: 8px 0;
+  color: #172033;
+  font-size: 23px;
+}
+
+.sn-wallet-confirm-description {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.sn-wallet-confirm-details {
+  margin: 22px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.sn-wallet-confirm-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.sn-wallet-confirm-details span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.sn-wallet-confirm-details strong {
+  color: #172033;
+  font-size: 13px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.sn-wallet-confirm-warning {
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a5414;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sn-wallet-confirm-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.sn-wallet-confirm-buttons button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 9px;
+  border: 1px solid #e2e8f0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sn-wallet-confirm-buttons button:first-child {
+  background: #fff;
+  color: #475569;
+}
+
+.sn-wallet-confirm-buttons .confirm-credit {
+  background: #16834a;
+  color: #fff;
+  border-color: #16834a;
+}
+
+.sn-wallet-confirm-buttons .confirm-debit {
+  background: #d9432f;
+  color: #fff;
+  border-color: #d9432f;
+}
+
+.sn-wallet-confirm-buttons button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .sn-wallet-confirm-card {
+    padding: 22px;
+  }
+}

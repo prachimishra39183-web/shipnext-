@@ -6,6 +6,7 @@ const {
   checkServiceability: checkShadowfaxServiceability,
   getAvailableServices,
   createShipment: createShadowfaxShipment,
+  trackShipment: trackShadowfaxShipment,
 } = require('../integrations/shadowfax');
 const {
   authenticateToken,
@@ -70,6 +71,83 @@ function generateTrackingId() {
   return `SN${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
+
+async function generateInvoiceNumber(tx, {
+  shipmentType,
+  shippingMode,
+  paymentMode,
+}) {
+  const payment = String(paymentMode || 'PREPAID').toUpperCase();
+
+    let prefix;
+
+  // Express Air Documents
+  if (
+    shipmentType === 'DOCUMENT' &&
+    shippingMode === 'EXPRESS_AIR'
+  ) {
+    prefix = 'SNEA';
+  } else {
+    const prefixes = {
+      EXPRESS_AIR: {
+        PREPAID: 'SNEAP',
+        COD: 'SNEAC',
+      },
+      NORMAL_AIR: {
+        PREPAID: 'SNESP',
+        COD: 'SNESC',
+      },
+      EXPRESS_SURFACE: {
+        PREPAID: 'SNGEP',
+        COD: 'SNGEC',
+      },
+      NORMAL_SURFACE: {
+        PREPAID: 'SNGSP',
+        COD: 'SNGSC',
+      },
+    };
+
+    prefix = prefixes[shippingMode]?.[payment];
+
+    if (!prefix) {
+      throw new Error('Unable to determine invoice prefix.');
+    }
+  }
+
+  // Financial year based on Indian Standard Time
+  const parts = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(new Date());
+
+  const year = Number(parts.find(p => p.type === 'year').value);
+  const month = Number(parts.find(p => p.type === 'month').value);
+
+  const fyStart = month >= 4 ? year : year - 1;
+  const financialYear = `${fyStart}-${String(fyStart + 1).slice(-2)}`;
+  const yearCode = String(fyStart).slice(-2);
+
+  const sequence = await tx.invoiceSequence.upsert({
+    where: {
+      prefix_financialYear: {
+        prefix,
+        financialYear,
+      },
+    },
+    update: {
+      lastNumber: { increment: 1 },
+    },
+    create: {
+      prefix,
+      financialYear,
+      lastNumber: 1,
+    },
+  });
+
+  return `${prefix}-${yearCode}-${String(sequence.lastNumber).padStart(6, '0')}`;
+}
+
 // SAVE SELECTED MODE AND CALCULATE INTERNAL SHIPNEXT RATE
 
 router.post(
@@ -98,6 +176,12 @@ router.post(
           message: 'Air shipments are available only through Skyking.',
         });
       }
+      if (!isAirMode && requestedCourier === 'SKYKING') {
+  return res.status(400).json({
+    success: false,
+    message: 'Skyking is not available for Surface shipments.',
+  });
+}
 
       if (
         !COURIERS.includes(requestedCourier) &&
@@ -415,7 +499,9 @@ if (normalizedPaymentMode === 'COD') {
         'Other',
       ];
 
-      const normalizedType = shipmentType || 'DOCUMENT';
+      const normalizedType = String(shipmentType || 'DOCUMENT')
+  .trim()
+  .toUpperCase();
 
       if (!['DOCUMENT', 'NON_DOCUMENT'].includes(normalizedType)) {
         return res.status(400).json({
@@ -1832,11 +1918,11 @@ codSettlementStatus: isCod ? 'PENDING' : null,
             },
           });
           // Automatically generate invoice for the confirmed shipment.
-const invoiceNumber = `SN-INV-${Date.now()}-${crypto
-  .randomBytes(4)
-  .toString('hex')
-  .toUpperCase()}`;
-
+const invoiceNumber = await generateInvoiceNumber(tx, {
+  shipmentType: draft.shipmentType,
+  shippingMode: mode,
+  paymentMode: draft.paymentMode,
+});
 const invoice = await tx.shipmentInvoice.create({
   data: {
     invoiceNumber,
@@ -1900,6 +1986,7 @@ if (requestedCourier === 'SHADOWFAX') {
   });
 
   const isCod = draft.paymentMode === 'COD';
+  
 
   const shadowfaxPayload = {
     customer_details: {
@@ -2128,13 +2215,14 @@ router.get('/track/:trackingId', async (req, res) => {
     const trackingId = req.params.trackingId.trim();
 
     const shipment = await prisma.shipment.findUnique({
-      where: {
-        trackingId,
-      },
+      where: { trackingId },
       select: {
         trackingId: true,
         docketNumber: true,
         status: true,
+        courierPartner: true,
+        courierAwb: true,
+        awbAssignedAt: true,
         pickupPincode: true,
         deliveryPincode: true,
         weightGrams: true,
@@ -2150,10 +2238,31 @@ router.get('/track/:trackingId', async (req, res) => {
       });
     }
 
+    let courierTracking = null;
+    let courierTrackingError = null;
+
+    // Fetch live tracking from Shadowfax
+    if (
+      shipment.courierPartner?.toUpperCase() === 'SHADOWFAX' &&
+      shipment.courierAwb
+    ) {
+      try {
+        courierTracking = await trackShadowfaxShipment(
+          shipment.courierAwb
+        );
+      } catch (error) {
+        console.error('Shadowfax tracking error:', error.message);
+        courierTrackingError = 'Unable to fetch the latest courier tracking update.';
+      }
+    }
+
     return res.json({
       success: true,
       shipment,
+      courierTracking,
+      courierTrackingError,
     });
+
   } catch (error) {
     console.error('Track shipment error:', error);
 
@@ -2163,6 +2272,7 @@ router.get('/track/:trackingId', async (req, res) => {
     });
   }
 });
+
 // VERIFY CHILD ACCOUNT BEFORE SHIPMENT BOOKING
 // VERIFY CHILD ACCOUNT BEFORE SHIPMENT BOOKING
 async function validateChildAccount(req, res, next) {

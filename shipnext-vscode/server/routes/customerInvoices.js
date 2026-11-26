@@ -97,10 +97,15 @@ router.get(
         `Rs. ${Number(value || 0).toFixed(2)}`;
 
       // Header
-      doc.fillColor(dark)
-        .fontSize(25)
-        .font('Helvetica-Bold')
-        .text('SHIPNEXT');
+    const path = require('path');
+
+const logoPath = path.join(__dirname, '../../public/logo.jpeg');
+
+doc.image(logoPath, 50, 40, {
+  width: 130,
+  height: 45,
+  fit: [130, 45],
+});
 
       doc.fillColor(orange)
         .fontSize(10)

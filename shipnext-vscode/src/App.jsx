@@ -40,6 +40,7 @@ import CustomerSettings from './pages/CustomerSettings.jsx';
 import CustomerInvoices from './pages/CustomerInvoices.jsx';
 import AdminCustomerAnalytics from './pages/AdminCustomerAnalytics.jsx';
 import AdminCustomerHistory from './pages/AdminCustomerHistory';
+import AdminRefunds from './pages/AdminRefunds.jsx';
 function App() {
   return (
     <BrowserRouter>
@@ -132,6 +133,7 @@ function App() {
   path="/admin/pincode-rates"
   element={<AdminPincodeRates />}
 />
+<Route path="/admin/refunds" element={<AdminRefunds />} />
 </Route>
 
 

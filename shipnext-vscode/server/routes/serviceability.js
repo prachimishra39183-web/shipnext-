@@ -327,27 +327,25 @@ router.post('/check', async (req, res) => {
       const pickupAvailable = isCourierPinUsable(pickup, courier);
       const deliveryAvailable = isCourierPinUsable(delivery, courier);
 
-      const surfaceServiceable = pickupAvailable && deliveryAvailable;
+     const surfaceServiceable = pickupAvailable && deliveryAvailable;
 
-      const airServiceable =
-        surfaceServiceable &&
-        (
-          courier !== 'SKYKING' ||
-          (
-            pickup?.firstMile === true &&
-            delivery?.lastMile === true
-          )
-        );
+// Air shipments are Skyking-only.
+// Skyking must have First Mile pickup and Last Mile delivery.
+const airServiceable =
+  courier === 'SKYKING' &&
+  surfaceServiceable &&
+  pickup?.firstMile === true &&
+  delivery?.lastMile === true;
 
-      const availableModes = [];
+const availableModes = [];
 
-      if (airServiceable) {
-        availableModes.push('EXPRESS_AIR', 'NORMAL_AIR');
-      }
+if (airServiceable) {
+  availableModes.push('EXPRESS_AIR', 'NORMAL_AIR');
+}
 
-      if (surfaceServiceable) {
-        availableModes.push('EXPRESS_SURFACE', 'NORMAL_SURFACE');
-      }
+if (surfaceServiceable) {
+  availableModes.push('EXPRESS_SURFACE', 'NORMAL_SURFACE');
+}
 
       return {
         courier,
@@ -404,7 +402,11 @@ router.post('/check', async (req, res) => {
       if (surfaceAvailable) {
         shadowfaxModes.push('EXPRESS_SURFACE');
       }
-
+         console.log('SHADOWFAX MODE DEBUG:', {
+  regularAvailable,
+  surfaceAvailable,
+  shadowfaxModes,
+});
       courierResults.push({
         courier: 'SHADOWFAX',
         serviceable: shadowfaxModes.length > 0,

@@ -40,17 +40,7 @@ function ShippingCharges() {
   const [bookingError, setBookingError] = useState('');
   const [bookingResult, setBookingResult] = useState(null);
   const isCod = shipment?.paymentMode === 'COD';
-const getCourierForMode = (mode) => {
-  if (mode === 'EXPRESS_AIR' || mode === 'NORMAL_AIR') {
-    const airModeAvailable = availableModes.some(
-      (item) => item.mode === mode
-    );
-
-    return airModeAvailable ? 'SKYKING' : '';
-  }
-
-  return selectedCourier;
-};
+ 
   // LOAD SAVED SHIPMENT
   useEffect(() => {
     const fetchDraft = async () => {
@@ -99,6 +89,33 @@ const getCourierForMode = (mode) => {
 
     fetchDraft();
   }, [urlDraftId, location.state, navigate]);
+
+const getCourierForMode = (mode) => {
+  // Air shipments: Skyking only
+  if (mode === 'EXPRESS_AIR' || mode === 'NORMAL_AIR') {
+    const skyking = courierResults.find(
+      (item) =>
+        String(item.courier || '').toUpperCase() === 'SKYKING'
+    );
+
+    return skyking?.availableModes?.includes(mode)
+      ? 'SKYKING'
+      : '';
+  }
+
+  // Surface shipments: Skyking is never allowed
+  const selected = courierResults.find(
+    (item) =>
+      String(item.courier || '').toUpperCase() ===
+        String(selectedCourier || '').toUpperCase() &&
+      String(item.courier || '').toUpperCase() !== 'SKYKING' &&
+      item.availableModes?.includes(mode)
+  );
+
+  return selected
+    ? String(selected.courier).toUpperCase()
+    : '';
+};
 
 // REFRESH LATEST ADMIN RATE APPROVAL
 const refreshApprovalStatus = async () => {
@@ -219,73 +236,44 @@ if (shipment.paymentMode === 'COD') {
           );
         }
 
-        const modes = (data.availableModes || []).filter(
-          (item) => item && MODE_LABELS[item.mode]
-        );
-
-        setAvailableModes(modes);
-      // Check live availability across all four courier partners
-try {
-  const courierResponse = await fetch(
-    `${API_URL}/api/serviceability/couriers/check`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pickupPincode: String(shipment.pickupPincode),
-        deliveryPincode: String(shipment.deliveryPincode),
-      }),
+        
+const modes = (data.availableModes || [])
+  .map((item) => {
+    if (typeof item === 'string') {
+      return { mode: item };
     }
-  );
 
-  const courierData = await courierResponse.json();
+    if (item && typeof item.mode === 'string') {
+      return item;
+    }
 
-  if (!courierResponse.ok || !courierData.success) {
-    throw new Error(
-      courierData.message || 'Courier availability check failed.'
-    );
-  }
+    return null;
+  })
+  .filter((item) => item && MODE_LABELS[item.mode]);
 
-  const results = courierData.courierResults || [];
+setAvailableModes(modes);
 
-  setCourierResults(results);
+// Use mode-specific courier availability from the same response.
+const results = data.courierResults || [];
 
-  // Internal courier priority. Never display these names to customers.
-  const courierPriority = [
-    'DELHIVERY',
-    'SKYKING',
-    'BLUEDART',
-    'SHADOWFAX',
-  ];
+setCourierResults(results);
+setSelectedCourier('');
 
-  const assignedCourier = courierPriority.find((name) =>
-    results.some(
-      (courier) =>
-        String(courier.courier || '').toUpperCase() === name &&
-        courier.serviceable === true
-    )
-  );
+const hasAvailableCourier = results.some(
+  (courier) =>
+    Array.isArray(courier.availableModes) &&
+    courier.availableModes.length > 0
+);
 
-  setSelectedCourier(assignedCourier || '');
+setCourierCheckError(
+  hasAvailableCourier
+    ? ''
+    : 'No delivery option is currently available for this route.'
+);
 
-  setCourierCheckError(
-    assignedCourier
-      ? ''
-      : 'No delivery option is currently available for this route.'
-  );
+console.log('SHIPPING MODES:', modes);
+console.log('COURIER AVAILABILITY:', results);
 
-} catch (courierError) {
-  console.error('Courier availability check:', courierError);
-
-  setCourierResults([]);
-  setSelectedCourier('');
-
-  setCourierCheckError(
-    'Unable to verify delivery availability. Please try again.'
-  );
-}
 
         if (modes.length === 0) {
           setModeError('No shipping modes are currently available for this route.');
@@ -470,7 +458,12 @@ const confirmBooking = async () => {
   }
 
   const weightKg = (Number(shipment.weightGrams) / 1000).toFixed(2);
-
+const eligibleCouriers = courierResults.filter(
+  (courier) =>
+    courier.serviceable === true &&
+    Array.isArray(courier.availableModes) &&
+    courier.availableModes.includes(selectedMode)
+);
   // SUCCESSFUL BOOKING SCREEN
   if (bookingResult) {
     const bookedShipment = bookingResult.shipment;
@@ -691,6 +684,7 @@ const confirmBooking = async () => {
                     checked={selectedMode === item.mode}
                     onChange={() => {
                       setSelectedMode(item.mode);
+                      setSelectedCourier('');
                       setQuote(null);
                       setQuoteError('');
                       setBookingError('');
@@ -705,26 +699,66 @@ const confirmBooking = async () => {
                 </span>
               </label>
             ))}
-           {/* SHIPNEXT AUTOMATIC COURIER ALLOCATION */}
+           
 <div className="shipnext-allocation-card">
   <div className="shipnext-allocation-icon">🚚</div>
 
   <div className="shipnext-allocation-content">
-    <h3>ShipNext Delivery Network</h3>
-    
-    {courierResults.length === 0 ? (
-      <span>Checking delivery availability...</span>
-    ) : selectedCourier ? (
+    <h3>Choose Your Courier Partner</h3>
+
+    {!selectedMode ? (
+      <span>Please select a shipping mode first.</span>
+    ) : selectedMode === 'EXPRESS_AIR' ||
+      selectedMode === 'NORMAL_AIR' ? (
       <span className="allocation-success">
-        ✓ Delivery network available for your route
+        ✓ Skyking will be automatically assigned for Air shipments.
       </span>
     ) : (
-      <span className="allocation-error">
-        No delivery option is currently available for this route.
-      </span>
+      <>
+        <label htmlFor="courierSelect">
+          Select your preferred courier:
+        </label>
+
+        <select
+          id="courierSelect"
+          value={selectedCourier}
+          onChange={(e) => {
+            setSelectedCourier(e.target.value);
+            setQuote(null);
+            setQuoteError('');
+            setBookingError('');
+          }}
+        >
+          <option value="">Select Courier</option>
+
+          {eligibleCouriers
+  .filter(
+    (courier) =>
+      String(courier.courier).toUpperCase() !== 'SKYKING'
+  )
+  .map((courier) => (
+            <option
+              key={courier.courier}
+              value={String(courier.courier).toUpperCase()}
+            >
+              {String(courier.courier).toUpperCase() === 'BLUEDART'
+                ? 'Blue Dart'
+                : String(courier.courier).charAt(0).toUpperCase() +
+                  String(courier.courier).slice(1).toLowerCase()}
+            </option>
+          ))}
+        </select>
+
+        {eligibleCouriers.length === 0 && (
+          <span className="allocation-error">
+            No courier is available for this shipping mode.
+          </span>
+        )}
+      </>
     )}
   </div>
 </div>
+
             {availableModes.length > 0 && (
               
               <button
