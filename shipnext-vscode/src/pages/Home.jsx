@@ -918,7 +918,7 @@ D2C & B2B Logistics // 29,400+ PIN Codes · AI Carrier Core · Smart NDR.
 
     <p className="about-intro">
       SHIPNEXT is a Pan-India, end-to-end logistics and courier
-      aggregation platform serving both B2B and B2C customers.
+       platform serving both B2B and B2C customers.
       We connect businesses, individuals, courier companies,
       transporters, franchisees and last-mile delivery partners
       through one integrated logistics ecosystem.
