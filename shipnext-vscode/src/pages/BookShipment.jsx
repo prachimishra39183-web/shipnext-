@@ -40,12 +40,12 @@ const initialData = {
 };
 
 const steps = [
-  { title: 'Shipment Route', subtitle: 'Where is your shipment going?', icon: '⌖' },
-  { title: 'Pickup Details', subtitle: 'Enter sender and pickup information.', icon: '📍' },
-  { title: 'Delivery Details', subtitle: 'Enter receiver and delivery information.', icon: '🏠' },
-  { title: 'Parcel Details', subtitle: 'Tell us what you are shipping.', icon: '📦' },
-  { title: 'RTO Details', subtitle: 'Add your return-to-origin address.', icon: '↩' },
-  { title: 'Payment Details', subtitle: 'Choose your shipment payment method.', icon: '₹' },
+  { title: 'Shipment Route', subtitle: 'Where is your shipment going?', icon: '' },
+  { title: 'Pickup Details', subtitle: 'Enter sender and pickup information.', icon: '' },
+  { title: 'Delivery Details', subtitle: 'Enter receiver and delivery information.', icon: '' },
+  { title: 'Parcel Details', subtitle: 'Tell us what you are shipping.', icon: '' },
+  { title: 'RTO Details', subtitle: 'Add your return-to-origin address.', icon: '' },
+  { title: 'Payment Details', subtitle: 'Choose your shipment payment method.', icon: '' },
 ];
 const Field = ({
   label,
@@ -619,7 +619,7 @@ const handleSubmit = async () => {
             <p>Complete each step to prepare your shipment.</p>
           </div>
           <Link to="/bulk-booking" className="sn-wizard-bulk">
-            <span>▦</span> Bulk Booking →
+            <span></span> Bulk Booking →
           </Link>
         </div>
 
