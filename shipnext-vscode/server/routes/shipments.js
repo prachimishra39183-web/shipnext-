@@ -342,33 +342,32 @@ router.post(
   total: charge.total,
 });
 
-      await prisma.shipmentDraft.update({
-        where: { id: draft.id },
-        data: {
-          shippingMode: mode,
+   await prisma.shipmentDraft.update({
+  where: { id: draft.id },
+  data: {
+    shippingMode: mode,
+    selectedCourier: requestedCourier,
+    quotedShippingCharge: charge.total,
 
-          // Internal rate: never return this amount to the customer.
-          shipNextRate: charge.total,
+    // Keep legacy fields compatible with existing reports.
+    shipNextRate: charge.total,
+    rateApprovalStatus: 'NOT_REQUIRED',
+    selectedRateOption: 'SHIPNEXT',
+    approvedShippingCharge: charge.total,
+    rateApprovedById: null,
+    rateApprovedAt: null,
 
-          // Delhivery rates are cleared until correctly recalculated.
-          delhiveryExpressRate: null,
-          delhiveryStandardRate: null,
-
-          // Changing mode requires fresh admin approval.
-          rateApprovalStatus: 'PENDING',
-          selectedRateOption: null,
-          approvedShippingCharge: null,
-          rateApprovedById: null,
-          rateApprovedAt: null,
-        },
-      });
-
-      return res.json({
-        success: true,
-        message: 'Shipping mode saved. Your shipment is awaiting rate approval.',
-        rateApprovalStatus: 'PENDING',
-        shippingMode: mode,
-      });
+    delhiveryExpressRate: null,
+    delhiveryStandardRate: null,
+  },
+});
+          return res.json({
+  success: true,
+  message: 'Shipping charge calculated successfully.',
+  shippingMode: mode,
+  selectedCourier: requestedCourier,
+  shippingCharge: Number(charge.total),
+}); 
     } catch (error) {
       console.error('Prepare shipment rates error:', error);
 
@@ -548,6 +547,41 @@ if (
       const draft = await prisma.shipmentDraft.create({
         data: {
           customerId: req.user.userId,
+            
+          // RTO details
+          sameRto: req.body.sameRto ?? true,
+          rtoName: req.body.sameRto === false ? req.body.rtoName || null : null,
+          rtoPhone: req.body.sameRto === false ? req.body.rtoPhone || null : null,
+          rtoAddress: req.body.sameRto === false ? req.body.rtoAddress || null : null,
+          rtoCity: req.body.sameRto === false ? req.body.rtoCity || null : null,
+          rtoPincode: req.body.sameRto === false ? req.body.rtoPincode || null : null,
+
+          // Alternate receiver
+          alternateEnabled: req.body.alternateEnabled ?? false,
+          alternateName: req.body.alternateEnabled ? req.body.alternateName || null : null,
+          alternatePhone: req.body.alternateEnabled ? req.body.alternatePhone || null : null,
+          alternateRelation: req.body.alternateEnabled ? req.body.alternateRelation || null : null,
+
+          // Dates
+          pickupDate: req.body.pickupDate ? new Date(req.body.pickupDate) : null,
+          preferredDeliveryDate: req.body.preferredDeliveryDate
+            ? new Date(req.body.preferredDeliveryDate)
+            : null,
+
+          // Parcel details
+          quantity: Number(req.body.quantity || 1),
+          length: req.body.length ? Number(req.body.length) : null,
+          width: req.body.width ? Number(req.body.width) : null,
+          height: req.body.height ? Number(req.body.height) : null,
+
+          // Courier and rate selection
+          selectedCourier: req.body.selectedCourier || null,
+          shippingMode: req.body.shippingMode || null,
+          quotedShippingCharge:
+            req.body.quotedShippingCharge !== undefined &&
+            req.body.quotedShippingCharge !== null
+              ? Number(req.body.quotedShippingCharge)
+              : null,
 
           pickupName: pickupName.trim(),
           pickupPhone: String(pickupPhone),
@@ -1383,6 +1417,251 @@ router.get(
   }
 );
 
+// UPDATE AN EXISTING SHIPMENT DRAFT
+
+router.put(
+  '/drafts/:id',
+  authenticateToken,
+  authorizeRole('CUSTOMER'),
+  validateChildAccount,
+  async (req, res) => {
+    try {
+      const draft = await prisma.shipmentDraft.findFirst({
+        where: {
+          id: req.params.id,
+          customerId: req.user.userId,
+        },
+      });
+
+      if (!draft) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shipment draft not found.',
+        });
+      }
+
+      const body = req.body;
+      const data = {};
+
+      const stringFields = [
+        'pickupName',
+        'pickupPhone',
+        'pickupAddress',
+        'pickupPincode',
+        'pickupCity',
+        'deliveryName',
+        'deliveryPhone',
+        'deliveryAddress',
+        'deliveryPincode',
+        'deliveryCity',
+        'rtoName',
+        'rtoPhone',
+        'rtoAddress',
+        'rtoCity',
+        'rtoPincode',
+        'alternateName',
+        'alternatePhone',
+        'alternateRelation',
+        'itemCategory',
+        'itemName',
+        'itemDescription',
+        'selectedCourier',
+      ];
+
+      for (const field of stringFields) {
+        if (body[field] !== undefined) {
+          data[field] =
+            body[field] === '' || body[field] === null
+              ? null
+              : String(body[field]).trim();
+        }
+      }
+
+      if (body.weight !== undefined) {
+        const weight = Number(body.weight);
+
+        if (!Number.isFinite(weight) || weight < 0.5) {
+          return res.status(400).json({
+            success: false,
+            message: 'Minimum parcel weight is 500 grams.',
+          });
+        }
+
+        data.weightGrams = Math.round(weight * 1000);
+      }
+
+      if (body.productValue !== undefined) {
+        const value = Number(body.productValue);
+
+        if (!Number.isFinite(value) || value <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Enter a valid product value.',
+          });
+        }
+
+        data.productValue = value;
+      }
+
+      if (body.paymentMode !== undefined) {
+        if (!['PREPAID', 'COD'].includes(body.paymentMode)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid payment mode.',
+          });
+        }
+
+        data.paymentMode = body.paymentMode;
+      }
+
+      const paymentMode = data.paymentMode || draft.paymentMode;
+
+      if (paymentMode === 'COD') {
+        const amount = body.codAmount !== undefined
+          ? String(body.codAmount).trim()
+          : String(draft.codAmount ?? '');
+
+        if (
+          !/^\d+(\.\d{1,2})?$/.test(amount) ||
+          !Number.isFinite(Number(amount)) ||
+          Number(amount) <= 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: 'Enter a valid COD amount.',
+          });
+        }
+
+        data.codAmount = amount;
+      } else if (paymentMode === 'PREPAID') {
+        data.codAmount = null;
+      }
+
+      if (body.shipmentType !== undefined) {
+        const type = String(body.shipmentType).toUpperCase();
+
+        if (!['DOCUMENT', 'NON_DOCUMENT'].includes(type)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid shipment type.',
+          });
+        }
+
+        data.shipmentType = type;
+      }
+
+      if (body.shippingMode !== undefined) {
+        const modes = [
+          'EXPRESS_AIR',
+          'NORMAL_AIR',
+          'EXPRESS_SURFACE',
+          'NORMAL_SURFACE',
+        ];
+
+        if (!modes.includes(body.shippingMode)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid shipping mode.',
+          });
+        }
+
+        data.shippingMode = body.shippingMode;
+      }
+
+      for (const field of ['sameRto', 'alternateEnabled']) {
+        if (body[field] !== undefined) {
+          data[field] = Boolean(body[field]);
+        }
+      }
+
+      if (body.quantity !== undefined) {
+        const quantity = Number(body.quantity);
+
+        if (!Number.isInteger(quantity) || quantity < 1) {
+          return res.status(400).json({
+            success: false,
+            message: 'Quantity must be at least 1.',
+          });
+        }
+
+        data.quantity = quantity;
+      }
+
+      for (const field of ['length', 'width', 'height']) {
+        if (body[field] !== undefined) {
+          if (body[field] === '' || body[field] === null) {
+            data[field] = null;
+          } else {
+            const value = Number(body[field]);
+
+            if (!Number.isFinite(value) || value <= 0) {
+              return res.status(400).json({
+                success: false,
+                message: `Invalid ${field}.`,
+              });
+            }
+
+            data[field] = value;
+          }
+        }
+      }
+
+      for (const field of ['pickupDate', 'preferredDeliveryDate']) {
+        if (body[field] !== undefined) {
+          if (!body[field]) {
+            data[field] = null;
+          } else {
+            const date = new Date(body[field]);
+
+            if (Number.isNaN(date.getTime())) {
+              return res.status(400).json({
+                success: false,
+                message: `Invalid ${field}.`,
+              });
+            }
+
+            data[field] = date;
+          }
+        }
+      }
+
+      if (body.quotedShippingCharge !== undefined) {
+  const charge = Number(body.quotedShippingCharge);
+
+  if (!Number.isFinite(charge) || charge <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid shipping charge.',
+    });
+  }
+
+  data.quotedShippingCharge = charge;
+  data.shipNextRate = charge;
+  data.approvedShippingCharge = charge;
+  data.rateApprovalStatus = 'NOT_REQUIRED';
+  data.selectedRateOption = 'SHIPNEXT';
+}
+      const updatedDraft = await prisma.shipmentDraft.update({
+        where: { id: draft.id },
+        data,
+      });
+
+      return res.json({
+        success: true,
+        message: 'Shipment draft updated successfully.',
+        draft: updatedDraft,
+      });
+    } catch (error) {
+      console.error('Update shipment draft error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to update shipment draft.',
+      });
+    }
+  }
+);
+
 
 // GET A CUSTOMER'S OWN SHIPMENT DRAFT
 
@@ -1424,13 +1703,35 @@ router.get(
           codAmount: true,
 
           shippingMode: true,
+         sameRto: true,
+rtoName: true,
+rtoPhone: true,
+rtoAddress: true,
+rtoCity: true,
+rtoPincode: true,
 
+alternateEnabled: true,
+alternateName: true,
+alternatePhone: true,
+alternateRelation: true,
+
+pickupDate: true,
+preferredDeliveryDate: true,
+
+quantity: true,
+length: true,
+width: true,
+height: true,
+
+selectedCourier: true,
+quotedShippingCharge: true,
           // Customer may see approval status and approved amount only.
           rateApprovalStatus: true,
           approvedShippingCharge: true,
           selectedRateOption: true,
           rateApprovedAt: true,
-
+shipNextRate: true,
+delhiveryExpressRate: true,
           createdAt: true,
         },
       });
@@ -1532,24 +1833,17 @@ if (!preflightDraft) {
     message: 'Shipment draft not found.',
   });
 }
-// Customer cannot book until an admin approves one of the three rates.
-const validRateOptions = [
-  'SHIPNEXT',
-  'DELHIVERY_EXPRESS',
-  'DELHIVERY_STANDARD',
-];
-
 if (
-  preflightDraft.rateApprovalStatus !== 'APPROVED' ||
-  !validRateOptions.includes(preflightDraft.selectedRateOption) ||
-  preflightDraft.approvedShippingCharge === null ||
-  Number(preflightDraft.approvedShippingCharge) <= 0
+  preflightDraft.shippingMode !== mode ||
+  String(preflightDraft.selectedCourier || '').toUpperCase() !== requestedCourier
 ) {
   return res.status(409).json({
     success: false,
-    message: 'Your shipment is awaiting admin shipping-rate approval. You can book after approval.',
+    message: 'Your shipping quote has changed. Please calculate the shipping charge again.',
   });
 }
+// Customer cannot book until an admin approves one of the three rates.
+
 if (requestedCourier === 'SHADOWFAX') {
   if (Number(preflightDraft.productValue) >= 50000) {
     return res.status(400).json({
@@ -1582,19 +1876,6 @@ if (requestedCourier === 'SHADOWFAX') {
             },
           });
 
-          // Recheck approval inside the transaction to prevent bypasses.
-if (
-  draft.rateApprovalStatus !== 'APPROVED' ||
-  !validRateOptions.includes(draft.selectedRateOption) ||
-  draft.approvedShippingCharge === null ||
-  Number(draft.approvedShippingCharge) <= 0
-) {
-  const error = new Error(
-    'Your shipment is awaiting admin shipping-rate approval.'
-  );
-  error.code = 'RATE_NOT_APPROVED';
-  throw error;
-}
 
           // Prevent booking the same draft more than once.
           const existingShipment = await tx.shipment.findUnique({
@@ -1774,8 +2055,14 @@ const isIntraState =
   normalizedState === '24';
 
 // Calculate taxable value and GST.
-// Admin-approved rate is authoritative for this booking.
-const grossCharge = Number(draft.approvedShippingCharge);
+// Use the shipping charge calculated by the server.
+const grossCharge = Number(charge.total);
+
+if (!Number.isFinite(grossCharge) || grossCharge <= 0) {
+  const error = new Error('Invalid shipping charge.');
+  error.code = 'INVALID_SHIPPING_CHARGE';
+  throw error;
+}
 const taxableAmount = taxInclusive
   ? Number((grossCharge / (1 + gstRate / 100)).toFixed(2))
   : grossCharge;
@@ -2152,6 +2439,547 @@ if (requestedCourier === 'SHADOWFAX') {
       return res.status(500).json({
         success: false,
         message: 'Unable to complete shipment booking.',
+      });
+    }
+  }
+);
+
+// ADMIN: CUSTOMER AUTOCOMPLETE SUGGESTIONS
+
+router.get(
+  '/admin/customer-suggestions',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const search = String(req.query.q || '').trim();
+
+      const where = {
+        role: 'CUSTOMER',
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search, mode: 'insensitive' } },
+                {
+                  shipments: {
+                    some: {
+                      OR: [
+                        { trackingId: { contains: search, mode: 'insensitive' } },
+                        { docketNumber: { contains: search, mode: 'insensitive' } },
+                        { courierAwb: { contains: search, mode: 'insensitive' } },
+                      ],
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+      };
+
+      const customers = await prisma.user.findMany({
+        where,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          _count: {
+            select: { shipments: true },
+          },
+        },
+      });
+
+      return res.json({
+        success: true,
+        results: customers.map((customer) => ({
+          customer: {
+            id: customer.id,
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+          },
+          summary: {
+            totalShipments: customer._count.shipments,
+          },
+        })),
+      });
+    } catch (error) {
+      console.error('Customer suggestions error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to load customer suggestions.',
+      });
+    }
+  }
+);
+
+// ADMIN: SEARCH CUSTOMERS AND VIEW COMPLETE CUSTOMER DETAILS
+
+router.get(
+  '/admin/customer-search',
+  authenticateToken,
+  authorizeRole('ADMIN'),
+  async (req, res) => {
+    try {
+      const search = String(req.query.q || '').trim();
+
+      if (search.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Enter at least 2 characters to search.',
+        });
+      }
+
+      const shipmentSearch = {
+        OR: [
+          { trackingId: { contains: search, mode: 'insensitive' } },
+          { docketNumber: { contains: search, mode: 'insensitive' } },
+          { courierAwb: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+
+      const customers = await prisma.user.findMany({
+        where: {
+          role: 'CUSTOMER',
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search, mode: 'insensitive' } },
+            { id: search },
+            {
+              shipments: {
+                some: shipmentSearch,
+              },
+            },
+          ],
+        },
+
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          isActive: true,
+          companyName: true,
+          companyLogoUrl: true,
+          address: true,
+          city: true,
+          state: true,
+          pincode: true,
+          createdAt: true,
+          updatedAt: true,
+
+          // WALLET
+          wallet: {
+            select: {
+              id: true,
+              balance: true,
+              createdAt: true,
+              updatedAt: true,
+              transactions: {
+                orderBy: { createdAt: 'desc' },
+                take: 50,
+                select: {
+                  id: true,
+                  type: true,
+                  amount: true,
+                  description: true,
+                  reference: true,
+                  reason: true,
+                  balanceBefore: true,
+                  balanceAfter: true,
+                  createdAt: true,
+                },
+              },
+            },
+          },
+
+          // WALLET RECHARGE REQUESTS
+          walletRechargeRequests: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              amount: true,
+              upiReference: true,
+              razorpayOrderId: true,
+              razorpayPaymentId: true,
+              status: true,
+              paymentMethod: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+
+          // REFUNDS
+          refundRequests: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              shipmentId: true,
+              amount: true,
+              reason: true,
+              adminNote: true,
+              status: true,
+              processedAt: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+
+          // SUPPORT TICKETS
+          supportTickets: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              ticketNumber: true,
+              shipmentId: true,
+              category: true,
+              subject: true,
+              message: true,
+              status: true,
+              adminReply: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+
+          // CUSTOMER DOCUMENT METADATA ONLY
+          customerDocuments: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              documentType: true,
+              originalName: true,
+              mimeType: true,
+              fileSize: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+
+          // PICKUP LOCATIONS
+          pickupLocations: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              locationName: true,
+              contactName: true,
+              phone: true,
+              address: true,
+              landmark: true,
+              city: true,
+              state: true,
+              pincode: true,
+              isDefault: true,
+              isActive: true,
+              createdAt: true,
+            },
+          },
+
+          // CHILD ACCOUNTS / BRANCHES
+          childAccounts: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              accountName: true,
+              branchName: true,
+              branchCode: true,
+              contactPerson: true,
+              email: true,
+              phone: true,
+              address: true,
+              city: true,
+              state: true,
+              pincode: true,
+              status: true,
+              dailyShipmentLimit: true,
+              dailyWalletLimit: true,
+              createdAt: true,
+            },
+          },
+
+          // CUSTOMER INVOICES
+          invoices: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              invoiceNumber: true,
+              shipmentId: true,
+              docketNumber: true,
+              invoiceDate: true,
+              billingName: true,
+              billingGst: true,
+              billingAddress: true,
+              billingState: true,
+              billingPincode: true,
+              shippingCharge: true,
+              codCharge: true,
+              taxableAmount: true,
+              gstRate: true,
+              cgstAmount: true,
+              sgstAmount: true,
+              igstAmount: true,
+              totalTax: true,
+              totalAmount: true,
+              paymentStatus: true,
+              pdfUrl: true,
+              createdAt: true,
+            },
+          },
+
+          // CUSTOMER SETTINGS
+          invoiceSettings: true,
+          shippingLabelSettings: true,
+          taxSettings: true,
+
+          // API KEY METADATA ONLY - NEVER RETURN keyHash
+          apiKeys: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              name: true,
+              keyPrefix: true,
+              lastFour: true,
+              isActive: true,
+              lastUsedAt: true,
+              expiresAt: true,
+              createdAt: true,
+              revokedAt: true,
+            },
+          },
+        },
+
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const results = await Promise.all(
+        customers.map(async (customerData) => {
+          const customerId = customerData.id;
+
+          const [
+            totalShipments,
+            pendingCount,
+            confirmedCount,
+            pickedUpCount,
+            inTransitCount,
+            outForDeliveryCount,
+            deliveredCount,
+            cancelledCount,
+            ndrCount,
+            rtoCount,
+            shipments,
+          ] = await Promise.all([
+            prisma.shipment.count({
+              where: { customerId },
+            }),
+
+            prisma.shipment.count({
+              where: { customerId, status: 'PENDING' },
+            }),
+
+            prisma.shipment.count({
+              where: { customerId, status: 'CONFIRMED' },
+            }),
+
+            prisma.shipment.count({
+              where: { customerId, status: 'PICKED_UP' },
+            }),
+
+            prisma.shipment.count({
+              where: { customerId, status: 'IN_TRANSIT' },
+            }),
+
+            prisma.shipment.count({
+              where: { customerId, status: 'OUT_FOR_DELIVERY' },
+            }),
+
+            prisma.shipment.count({
+              where: { customerId, status: 'DELIVERED' },
+            }),
+
+            prisma.shipment.count({
+              where: { customerId, status: 'CANCELLED' },
+            }),
+
+            prisma.shipment.count({
+              where: {
+                customerId,
+                ndrRecords: { some: {} },
+              },
+            }),
+
+            prisma.shipment.count({
+              where: {
+                customerId,
+                OR: [
+                  { status: 'RTO' },
+                  {
+                    ndrRecords: {
+                      some: { status: 'RTO_INITIATED' },
+                    },
+                  },
+                ],
+              },
+            }),
+
+            // COMPLETE SHIPMENT HISTORY - NO 100-SHIPMENT LIMIT
+            prisma.shipment.findMany({
+              where: { customerId },
+              orderBy: { createdAt: 'desc' },
+
+              select: {
+                id: true,
+                trackingId: true,
+                docketNumber: true,
+                courierPartner: true,
+                courierAwb: true,
+                labelUrl: true,
+                awbAssignedAt: true,
+                processingDate: true,
+                status: true,
+                shippingMode: true,
+
+                pickupName: true,
+                pickupPhone: true,
+                pickupAddress: true,
+                pickupPincode: true,
+
+                deliveryName: true,
+                deliveryPhone: true,
+                deliveryAddress: true,
+                deliveryPincode: true,
+
+                weightGrams: true,
+                productValue: true,
+                shippingCharge: true,
+                selectedRateOption: true,
+                paymentMode: true,
+                recipientPaymentMode: true,
+
+                codAmount: true,
+                codCharge: true,
+                codNetAmount: true,
+                codCollectionStatus: true,
+                codRemittanceStatus: true,
+                codCollectedAt: true,
+                codRemittedAt: true,
+                codRemittanceReference: true,
+                codSettlementStatus: true,
+                codSettledAt: true,
+                codSettlementReference: true,
+
+                createdAt: true,
+                updatedAt: true,
+
+                // ORIGINAL DRAFT / PRODUCT DETAILS
+                draft: {
+                  select: {
+                    id: true,
+                    shipmentType: true,
+                    itemCategory: true,
+                    itemName: true,
+                    itemDescription: true,
+                    productValue: true,
+                    pickupCity: true,
+                    deliveryCity: true,
+                    shipNextRate: true,
+                    delhiveryExpressRate: true,
+                    delhiveryStandardRate: true,
+                    rateApprovalStatus: true,
+                    selectedRateOption: true,
+                    approvedShippingCharge: true,
+                    shippingMode: true,
+                  },
+                },
+
+                // NDR HISTORY
+                ndrRecords: {
+                  orderBy: { reportedAt: 'desc' },
+                  select: {
+                    id: true,
+                    attemptNumber: true,
+                    reason: true,
+                    status: true,
+                    actionRequired: true,
+                    remarks: true,
+                    nextAttemptDate: true,
+                    reportedAt: true,
+                    resolvedAt: true,
+                  },
+                },
+              },
+            }),
+          ]);
+
+          // Keep customer profile separate from its related records.
+          const {
+            wallet,
+            walletRechargeRequests,
+            refundRequests,
+            supportTickets,
+            customerDocuments,
+            pickupLocations,
+            childAccounts,
+            invoices,
+            invoiceSettings,
+            shippingLabelSettings,
+            taxSettings,
+            apiKeys,
+            ...customer
+          } = customerData;
+
+          return {
+            customer,
+
+            // Relations returned at top level for the dashboard.
+            wallet,
+            walletRechargeRequests,
+            refundRequests,
+            supportTickets,
+            customerDocuments,
+            pickupLocations,
+            childAccounts,
+            invoices,
+            invoiceSettings,
+            shippingLabelSettings,
+            taxSettings,
+            apiKeys,
+
+            summary: {
+              totalShipments,
+              pending: pendingCount,
+              confirmed: confirmedCount,
+              pickup: pickedUpCount,
+              inTransit: inTransitCount,
+              outForDelivery: outForDeliveryCount,
+              delivered: deliveredCount,
+              cancelled: cancelledCount,
+              ndrNpr: ndrCount,
+              rto: rtoCount,
+            },
+
+            shipments,
+          };
+        })
+      );
+
+      return res.json({
+        success: true,
+        count: results.length,
+        results,
+      });
+    } catch (error) {
+      console.error('Admin customer shipment search error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to search customer shipment records.',
       });
     }
   }

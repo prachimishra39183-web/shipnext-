@@ -41,6 +41,7 @@ import CustomerInvoices from './pages/CustomerInvoices.jsx';
 import AdminCustomerAnalytics from './pages/AdminCustomerAnalytics.jsx';
 import AdminCustomerHistory from './pages/AdminCustomerHistory';
 import AdminRefunds from './pages/AdminRefunds.jsx';
+import AdminCustomerDetails from './pages/AdminCustomerDetails';
 function App() {
   return (
     <BrowserRouter>
@@ -99,6 +100,10 @@ function App() {
 <Route element={<ProtectedRoute allowedRole="ADMIN" />}>
   <Route element={<AdminLayout />}>
     <Route path="/admin" element={<AdminDashboard />} />
+      <Route
+  path="/admin/customer-details/:customerId"
+  element={<AdminCustomerDetails />}
+/>
     <Route path="/admin/customers" element={<AdminCustomers />} />
     <Route path="/admin/shipments" element={<AdminShipments />} />
     <Route path="/admin/bookings" element={<AdminBookings />} />

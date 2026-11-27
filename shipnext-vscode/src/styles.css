@@ -1,5 +1,5 @@
 
-
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&display=swap');
 
@@ -9491,49 +9491,181 @@ body,
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* RESTRICTED ITEMS SECTION */
 .restricted-items-section {
-  margin-top: 30px;
-  padding: 24px;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  width: 90%;
+  max-width: 1150px;
+  margin: 30px auto;
+  padding: 22px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.restricted-items-section h3 {
+.restricted-header {
+  margin-bottom: 18px;
+}
+
+.restricted-header .restricted-eyebrow {
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  color: white;
+  background: green;
+}
+
+.restricted-header h3 {
   color: #ff4b35;
-  font-size: 21px;
-  margin-bottom: 10px;
+  font-size: 20px;
+  margin: 7px 0;
 }
 
-.restricted-items-section p {
-  color: #b8bec9;
-  margin-bottom: 20px;
+.restricted-header p {
+  color: black;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 700px;
 }
 
-.restricted-items-image {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 12px;
-  background: white;
+/* SMALL COMPACT CARDS */
+.dangerous-goods-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
 }
 
+.dangerous-goods-card {
+  min-width: 0;
+  padding: 13px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-sizing: border-box;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.dangerous-goods-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 75, 53, 0.5);
+}
+
+.goods-class {
+  font-size: 9px;
+  color: #ff927f;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.goods-icon {
+  font-size: 22px;
+  margin: 7px 0;
+}
+
+.dangerous-goods-card h4 {
+  color: blue;
+  font-size: 13px;
+  margin: 4px 0 6px;
+}
+
+.dangerous-goods-card p {
+  color: black;
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0 0 9px;
+}
+
+.goods-status {
+  display: inline-block;
+  font-size: 9px;
+  color: #ff9b88;
+  background: rgba(255, 59, 31, 0.12);
+  padding: 4px 7px;
+  border-radius: 5px;
+}
+
+/* WARNING */
 .restricted-items-warning {
+  display: flex;
+  gap: 10px;
   margin-top: 16px;
-  padding: 14px;
+  padding: 12px;
   border-radius: 10px;
   background: rgba(255, 59, 31, 0.10);
   color: #ff8b78;
-  font-size: 13px;
-  line-height: 1.6;
 }
 
-@media (max-width: 768px) {
-  .restricted-items-section {
-    padding: 14px;
+.restricted-items-warning h4 {
+  font-size: 12px;
+  margin: 0 0 4px;
+}
+
+.restricted-items-warning p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: red;
+  margin: 0;
+}
+
+.warning-symbol {
+  flex-shrink: 0;
+  font-weight: bold;
+}
+
+/* TABLET */
+@media (max-width: 850px) {
+  .dangerous-goods-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+/* MOBILE */
+@media (max-width: 520px) {
+  .restricted-items-section {
+    width: 94%;
+    padding: 15px;
+    margin: 22px auto;
+  }
+
+  .restricted-header h3 {
+    font-size: 17px;
+  }
+
+  .restricted-header p {
+    font-size: 11px;
+  }
+
+  .dangerous-goods-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .dangerous-goods-card {
+    padding: 10px;
+  }
+
+  .goods-icon {
+    font-size: 19px;
+  }
+
+  .dangerous-goods-card h4 {
+    font-size: 12px;
+  }
+
+  .dangerous-goods-card p {
+    font-size: 10px;
+  }
+
+  .goods-status {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .dangerous-goods-grid {
+    grid-template-columns: 1fr;
+  }
+}
 /* ==========================================
    SHIPNEXT PREMIUM ABOUT SECTION
    Exact match for your Home.jsx
@@ -9883,7 +10015,7 @@ body,
 
 /* ===== SHIPNEXT PREMIUM NAVBAR ===== */
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
 
 .navbar {
   position: relative;
@@ -16899,5 +17031,185 @@ body [class*="Icon-"] {
   .sn-timeline-event-top {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+.customer-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 20px;
+  background: #fff;
+  color: #e84435;
+  border: 1px solid #e84435;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.customer-logout-btn:hover {
+  background: #e84435;
+  color: #fff;
+  box-shadow: 0 5px 15px rgba(232, 68, 53, 0.2);
+  transform: translateY(-2px);
+}
+
+/* =========================================
+   SHIPNEXT DOCKET & SHIPPING LABEL
+========================================= */
+
+.shipnext-document-container {
+  width: 100%;
+  max-width: 1000px;
+  margin: 35px auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.shipnext-document-container #shipnext-docket,
+.shipnext-document-container #shipnext-label {
+  background: #ffffff !important;
+  color: #172033 !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.10);
+}
+
+/* Document headings */
+
+.shipnext-document-container h3 {
+  color: #172033;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 18px 0 10px;
+}
+
+.shipnext-document-container p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* Document separators */
+
+.shipnext-document-container hr {
+  border: none;
+  border-top: 1px solid #dce1e8;
+  margin: 18px 0;
+}
+
+/* Download and print buttons */
+
+.shipnext-document-container .no-print {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 18px auto 35px;
+}
+
+.shipnext-document-container .booking-submit {
+  min-width: 240px;
+  padding: 13px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #ff3b1f;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 5px 14px rgba(255, 59, 31, 0.20);
+}
+
+.shipnext-document-container .booking-submit:hover {
+  background: #df2d16;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(255, 59, 31, 0.28);
+}
+
+.shipnext-document-container .booking-submit:active {
+  transform: scale(0.98);
+}
+
+/* Shipping label */
+
+#shipnext-label {
+  overflow: hidden;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Barcode */
+
+#shipnext-label svg {
+  display: block;
+  margin: 5px auto;
+  max-width: 100%;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media screen and (max-width: 600px) {
+  .shipnext-document-container {
+    padding: 10px;
+    margin: 15px auto;
+  }
+
+  .shipnext-document-container #shipnext-docket {
+    padding: 16px !important;
+    margin: 15px auto !important;
+  }
+
+  .shipnext-document-container #shipnext-label {
+    width: 100% !important;
+    padding: 10px !important;
+    margin: 15px auto !important;
+  }
+
+  .shipnext-document-container .booking-submit {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .shipnext-document-container .no-print {
+    padding: 0 5px;
+  }
+}
+
+/* =========================================
+   PRINT SETTINGS
+========================================= */
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  body.print-label {
+    background: #ffffff !important;
+  }
+
+  body.print-docket {
+    background: #ffffff !important;
+  }
+
+  #shipnext-label,
+  #shipnext-docket {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.print-label #shipnext-label {
+    width: 4in !important;
+    min-height: 6in !important;
+    padding: 10px !important;
+  }
+
+  body.print-docket #shipnext-docket {
+    box-shadow: none !important;
   }
 }

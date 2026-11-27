@@ -1,0 +1,568 @@
+
+/* =========================================
+   ADMIN CUSTOMER DETAILS
+========================================= */
+
+.acd-page {
+  min-height: 100vh;
+  padding: 28px;
+  background: #f5f7fa;
+  color: #252b35;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.acd-page * {
+  box-sizing: border-box;
+}
+
+/* =========================================
+   PAGE HEADER
+========================================= */
+
+.acd-page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.acd-page-header > div {
+  flex: 1;
+}
+
+.acd-page-header h1 {
+  margin: 5px 0 6px;
+  color: #202632;
+  font-size: 27px;
+  font-weight: 750;
+  letter-spacing: -0.5px;
+}
+
+.acd-page-header p {
+  margin: 0;
+  color: #7a8491;
+  font-size: 13px;
+}
+
+.acd-eyebrow {
+  color: #ef5428;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.acd-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e4e8ee;
+  border-radius: 9px;
+  color: #404957;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.acd-back-button:hover {
+  border-color: #ef5428;
+  color: #ef5428;
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   COMMON SECTIONS
+========================================= */
+
+.acd-info-section,
+.acd-profile-card {
+  background: #fff;
+  border: 1px solid #e9edf2;
+  border-radius: 13px;
+  padding: 21px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 12px rgba(20, 35, 55, 0.035);
+}
+
+.acd-info-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf0f3;
+  color: #28313d;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.acd-info-section h3 svg {
+  color: #ef5428;
+}
+
+.acd-info-section h4 {
+  margin: 23px 0 13px;
+  color: #343e4b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.acd-info-section h4:first-child {
+  margin-top: 0;
+}
+
+/* =========================================
+   CUSTOMER PROFILE
+========================================= */
+
+.acd-profile-card {
+  padding: 25px;
+}
+
+.acd-profile-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.acd-profile-avatar {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff0e9;
+  color: #ef5428;
+  border-radius: 15px;
+}
+
+.acd-profile-main h2 {
+  margin: 0 0 5px;
+  color: #202632;
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.acd-profile-main p {
+  margin: 0 0 9px;
+  color: #77818e;
+  font-size: 13px;
+}
+
+/* =========================================
+   DETAIL GRID
+========================================= */
+
+.acd-shipment-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+
+.acd-detail-item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.acd-detail-item > span {
+  color: #87919e;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+
+.acd-detail-item > strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #303a47;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.acd-detail-item > strong svg {
+  flex-shrink: 0;
+  color: #ef5428;
+}
+
+/* =========================================
+   SUMMARY CARDS
+========================================= */
+
+.acd-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.acd-summary-card {
+  position: relative;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 17px 19px;
+  background: #fff;
+  border: 1px solid #e9edf2;
+  border-radius: 11px;
+  transition: 0.2s ease;
+}
+
+.acd-summary-card:hover {
+  border-color: #f2b29d;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(20, 35, 55, 0.05);
+}
+
+.acd-summary-card span {
+  color: #7b8592;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.acd-summary-card strong {
+  color: #26313e;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* =========================================
+   TABLES
+========================================= */
+
+.acd-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 12px;
+  border: 1px solid #edf0f3;
+  border-radius: 10px;
+}
+
+.acd-data-table {
+  width: 100%;
+  min-width: 750px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.acd-data-table th {
+  padding: 14px 15px;
+  background: #f7f8fa;
+  color: #687381;
+  font-size: 11px;
+  font-weight: 750;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+  white-space: nowrap;
+  border-bottom: 1px solid #e9edf2;
+}
+
+.acd-data-table td {
+  padding: 13px 15px;
+  color: #3e4855;
+  font-size: 12px;
+  line-height: 1.5;
+  border-bottom: 1px solid #f0f2f5;
+  vertical-align: middle;
+}
+
+.acd-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.acd-data-table tbody tr:hover {
+  background: #fffaf7;
+}
+
+.acd-data-table td:first-child {
+  font-weight: 600;
+}
+
+/* =========================================
+   SHIPMENT HISTORY TABS
+========================================= */
+
+.acd-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 19px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.acd-tabs button {
+  padding: 9px 14px;
+  border: 1px solid #e6eaf0;
+  border-radius: 8px;
+  background: #fff;
+  color: #67717e;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.acd-tabs button:hover {
+  border-color: #f1a58d;
+  color: #e95325;
+}
+
+.acd-tabs button.active {
+  background: #fff0e9;
+  border-color: #ef5428;
+  color: #e95325;
+}
+
+/* =========================================
+   SHIPMENT CARDS
+========================================= */
+
+.acd-shipment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.acd-shipment-card {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e8edf2;
+  border-radius: 11px;
+  transition: 0.2s ease;
+}
+
+.acd-shipment-card:hover {
+  border-color: #f0b39e;
+  box-shadow: 0 4px 14px rgba(20, 35, 55, 0.04);
+}
+
+.acd-shipment-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding-bottom: 15px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.acd-shipment-card-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.acd-shipment-card-header strong {
+  color: #28313d;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.acd-shipment-card-header span {
+  color: #84909d;
+  font-size: 11px;
+}
+
+/* =========================================
+   NDR HISTORY
+========================================= */
+
+.acd-ndr-section {
+  margin-top: 22px;
+  padding: 17px;
+  background: #fffaf6;
+  border: 1px solid #f5e5dc;
+  border-radius: 10px;
+}
+
+.acd-ndr-section h4 {
+  margin: 0 0 15px;
+  color: #d75b30;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.acd-ndr-record {
+  padding: 15px 0;
+  border-bottom: 1px solid #f1e4dd;
+}
+
+.acd-ndr-record:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* =========================================
+   EMPTY AND LOADING STATES
+========================================= */
+
+.acd-empty {
+  padding: 27px 15px;
+  text-align: center;
+  color: #929ba6;
+  background: #fafbfc;
+  border: 1px dashed #e2e7ed;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.acd-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 130px;
+  padding: 25px;
+  color: #65717e;
+  background: #fff;
+  border: 1px solid #e9edf2;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.acd-message svg {
+  color: #ef5428;
+  flex-shrink: 0;
+}
+
+/* =========================================
+   NOTES AND FOOTER
+========================================= */
+
+.acd-note {
+  margin: 13px 0 0;
+  color: #87919d;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.acd-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 3px;
+  color: #7c8793;
+  font-size: 12px;
+}
+
+.acd-footer svg {
+  color: #269b68;
+}
+
+/* =========================================
+   RESPONSIVE TABLET
+========================================= */
+
+@media (max-width: 1100px) {
+  .acd-shipment-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .acd-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =========================================
+   RESPONSIVE MOBILE
+========================================= */
+
+@media (max-width: 700px) {
+  .acd-page {
+    padding: 15px;
+  }
+
+  .acd-page-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .acd-page-header h1 {
+    font-size: 22px;
+  }
+
+  .acd-profile-card,
+  .acd-info-section {
+    padding: 16px;
+    border-radius: 11px;
+  }
+
+  .acd-profile-main {
+    align-items: flex-start;
+  }
+
+  .acd-profile-main h2 {
+    font-size: 18px;
+  }
+
+  .acd-shipment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+  }
+
+  .acd-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .acd-summary-card {
+    min-height: 85px;
+    padding: 13px;
+  }
+
+  .acd-summary-card strong {
+    font-size: 22px;
+  }
+
+  .acd-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
+
+  .acd-tabs button {
+    flex-shrink: 0;
+  }
+
+  .acd-shipment-card {
+    padding: 15px;
+  }
+
+  .acd-shipment-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .acd-data-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 400px) {
+  .acd-shipment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .acd-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+

@@ -1,6 +1,6 @@
 import { ChevronDown,FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UserRound,CheckCheck  } from 'lucide-react';
 import API_URL from '../config/api';
 function CustomerDashboard() {
@@ -28,6 +28,14 @@ const [recentTransactions, setRecentTransactions] = useState([]);
 const [myShipments, setMyShipments] = useState([]);
 const [walletBalance, setWalletBalance] = useState(0);
 const [loadingDashboardData, setLoadingDashboardData] = useState(true);
+const navigate = useNavigate();
+
+const handleLogout = () => {
+  sessionStorage.removeItem('shipnextToken');
+  sessionStorage.removeItem('shipnextUser');
+
+  navigate('/login', { replace: true });
+};
   const fetchNotifications = async () => {
         if (bookingAccess) {
       setLoadingNotifications(false);
@@ -240,11 +248,8 @@ const deliveredShipments = myShipments.filter(
 <nav className="sidebar-nav">
   <a href="#overview" className="active">Dashboard</a>
   <Link to="/shipments">My Shipments</Link>
-  <Link to="/invoices" className="sidebar-link">
-  <FileText size={20} />
-  <span>My Invoices</span>
-</Link>
-  <Link to="/bulk-booking">Bulk Booking</Link>
+ 
+  
   <Link to="/track">Track Shipment</Link>
   <Link to="/wallet">My Wallet</Link>
   <Link to="/cod-remittance">COD Remittance</Link>
@@ -257,6 +262,9 @@ const deliveredShipments = myShipments.filter(
         <div className="sidebar-bottom">
           <Link to="/">← Back to Website</Link>
         </div>
+        <button className="customer-logout-btn" onClick={handleLogout}>
+  <span>↪</span> Logout
+</button>
       </aside>
 
       <main className="dashboard-main" id="overview">
@@ -332,13 +340,7 @@ const deliveredShipments = myShipments.filter(
       
     ) : (
   <div className="dashboard-booking-actions">
-    <Link to="/book-shipment" className="dashboard-button">
-      + Book a Shipment
-    </Link>
-
-    <Link to="/bulk-booking" className="dashboard-button bulk-dashboard-button">
-      Bulk Booking →
-    </Link>
+   
   </div>
 )}
   </div>

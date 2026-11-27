@@ -78,8 +78,28 @@ function ShippingCharges() {
           throw new Error(data.message || 'Unable to load shipment details.');
         }
 
-        setShipment(data.draft);
-        sessionStorage.setItem('shipnextDraftId', draftId);
+        const draft = data.draft;
+
+setShipment(draft);
+
+const savedCharge = Number(draft.quotedShippingCharge);
+
+if (
+  Number.isFinite(savedCharge) &&
+  savedCharge > 0 &&
+  draft.shippingMode
+) {
+  setQuote({
+    shippingCharge: savedCharge,
+    shippingMode: draft.shippingMode,
+    courier: draft.selectedCourier || '',
+  });
+} else {
+  setQuote(null);
+  setQuoteError('Saved shipping charge not found. Please return to the booking page and calculate the charge again.');
+}
+
+sessionStorage.setItem('shipnextDraftId', draftId);
       } catch (err) {
         setError(err.message || 'Unable to load shipment details.');
       } finally {
@@ -117,35 +137,6 @@ const getCourierForMode = (mode) => {
     : '';
 };
 
-// REFRESH LATEST ADMIN RATE APPROVAL
-const refreshApprovalStatus = async () => {
-  const token = sessionStorage.getItem('shipnextToken');
-
-  if (!token || !shipment?.id) return;
-
-  try {
-    const response = await fetch(
-      `${API_URL}/api/shipments/drafts/${shipment.id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Unable to refresh approval status.');
-    }
-
-    setShipment(data.draft);
-    setBookingError('');
-
-  } catch (err) {
-    setBookingError(err.message || 'Unable to refresh approval status.');
-  }
-};
 
   // LOAD CUSTOMER WALLET BALANCE
   useEffect(() => {
@@ -199,101 +190,13 @@ if (shipment.paymentMode === 'COD') {
     fetchWallet();
   }, [shipment]);
 
-  // CHECK AVAILABLE SHIPPING MODES
-  useEffect(() => {
-    if (!shipment) return;
-
-    const checkModes = async () => {
-
-      setModeLoading(true);
-      setModeError('');
-      setAvailableModes([]);
-      
-      setSelectedMode(shipment.shippingMode || '');
-      setQuote(null);
-      setQuoteError('');
-
-      try {
-        const response = await fetch(
-          `${API_URL}/api/serviceability/check`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              pickupPincode: String(shipment.pickupPincode),
-              deliveryPincode: String(shipment.deliveryPincode),
-            }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || 'Unable to check available modes.'
-          );
-        }
-
-        
-const modes = (data.availableModes || [])
-  .map((item) => {
-    if (typeof item === 'string') {
-      return { mode: item };
-    }
-
-    if (item && typeof item.mode === 'string') {
-      return item;
-    }
-
-    return null;
-  })
-  .filter((item) => item && MODE_LABELS[item.mode]);
-
-setAvailableModes(modes);
-
-// Use mode-specific courier availability from the same response.
-const results = data.courierResults || [];
-
-setCourierResults(results);
-setSelectedCourier('');
-
-const hasAvailableCourier = results.some(
-  (courier) =>
-    Array.isArray(courier.availableModes) &&
-    courier.availableModes.length > 0
-);
-
-setCourierCheckError(
-  hasAvailableCourier
-    ? ''
-    : 'No delivery option is currently available for this route.'
-);
-
-console.log('SHIPPING MODES:', modes);
-console.log('COURIER AVAILABILITY:', results);
-
-
-        if (modes.length === 0) {
-          setModeError('No shipping modes are currently available for this route.');
-        }
-      } catch (err) {
-        setModeError(err.message || 'Unable to check available modes.');
-      } finally {
-        setModeLoading(false);
-      }
-    };
-
-    checkModes();
-  }, [shipment]);
-
-
-// PREPARE SHIPPING RATE FOR ADMIN APPROVAL
 const calculateCharge = async () => {
   const courierForMode = getCourierForMode(selectedMode);
 
-  if (!selectedMode || !courierForMode || !shipment) return;
+  if (!selectedMode || !courierForMode || !shipment) {
+    setQuoteError('Please select a valid shipping mode and courier.');
+    return;
+  }
 
   setQuoteLoading(true);
   setQuoteError('');
@@ -319,34 +222,36 @@ const calculateCharge = async () => {
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Unable to prepare shipping rates.');
+      throw new Error(data.message || 'Unable to calculate shipping charge.');
     }
 
-    // Do not display internal rate amounts to the customer.
-    setQuote(null);
-    setShipment((prev) => ({
-  ...prev,
-  shippingMode: selectedMode,
-  rateApprovalStatus: 'PENDING',
-  selectedRateOption: null,
-  approvedShippingCharge: null,
-}));
+    const shippingCharge = Number(data.shippingCharge);
 
-    setBookingError(
-      'Your shipping rate request has been sent to ShipNext admin. Booking will be available after rate approval.'
-    );
+    if (!Number.isFinite(shippingCharge) || shippingCharge <= 0) {
+      throw new Error('Invalid shipping charge received from server.');
+    }
+
+    setQuote({
+      shippingCharge,
+      shippingMode: selectedMode,
+      courier: courierForMode,
+    });
+
+    setShipment((prev) => ({
+      ...prev,
+      shippingMode: selectedMode,
+      selectedCourier: courierForMode,
+      quotedShippingCharge: shippingCharge,
+      rateApprovalStatus: 'NOT_REQUIRED',
+    }));
+
   } catch (err) {
-    setQuoteError(err.message || 'Unable to prepare shipping rates.');
+    setQuoteError(err.message || 'Unable to calculate shipping charge.');
   } finally {
     setQuoteLoading(false);
   }
 };
-
-
- 
-// CONFIRM BOOKING AFTER ADMIN RATE APPROVAL
 const confirmBooking = async () => {
-  const courierForMode = getCourierForMode(selectedMode);
   const token = sessionStorage.getItem('shipnextToken');
 
   if (!token) {
@@ -354,23 +259,18 @@ const confirmBooking = async () => {
     return;
   }
 
+  const selectedMode = shipment?.shippingMode;
+  const courierForMode = shipment?.selectedCourier;
+
   if (!shipment || !selectedMode || !courierForMode) {
-    setBookingError('Please select an available shipping mode.');
+    setBookingError('Saved shipping mode or courier information is missing.');
     return;
   }
 
-  if (
-    shipment.rateApprovalStatus !== 'APPROVED' ||
-    !shipment.approvedShippingCharge ||
-    Number(shipment.approvedShippingCharge) <= 0
-  ) {
-    setBookingError(
-      'Your shipping rate is awaiting admin approval. You can book after approval.'
-    );
+  if (!quote || quote.shippingCharge <= 0) {
+    setBookingError('Saved shipping charge is missing. Please return to the booking page.');
     return;
   }
-
-  const approvedCharge = Number(shipment.approvedShippingCharge);
 
   if (!isCod) {
     if (walletBalance === null || walletLoading) {
@@ -378,8 +278,8 @@ const confirmBooking = async () => {
       return;
     }
 
-    if (walletBalance < approvedCharge) {
-      setBookingError('Your wallet balance may be insufficient. Please recharge your wallet.');
+    if (walletBalance < quote.shippingCharge) {
+      setBookingError('Insufficient wallet balance. Please recharge your wallet.');
       return;
     }
   }
@@ -388,21 +288,18 @@ const confirmBooking = async () => {
   setBookingError('');
 
   try {
-    const response = await fetch(
-      `${API_URL}/api/shipments/confirm`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          draftId: shipment.id,
-          mode: selectedMode,
-          courier: courierForMode,
-        }),
-      }
-    );
+    const response = await fetch(`${API_URL}/api/shipments/confirm`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        draftId: shipment.id,
+        mode: selectedMode,
+        courier: courierForMode,
+      }),
+    });
 
     const data = await response.json();
 
@@ -420,14 +317,13 @@ const confirmBooking = async () => {
     }
 
     sessionStorage.removeItem('shipnextDraftId');
+
   } catch (err) {
     setBookingError(err.message || 'Shipment booking failed.');
   } finally {
     setBookingLoading(false);
   }
 };
-
-
   if (loading) {
     return (
       <div className="booking-page">
@@ -582,7 +478,7 @@ const eligibleCouriers = courierResults.filter(
         <div className="booking-heading">
           <span>SHIPNEXT BOOKING</span>
           <h1>Shipping Charges</h1>
-          <p>Review your shipment and select an available shipping mode.</p>
+          <p>Review your saved shipment details and complete your payment.</p>
         </div>
 
         <div className="charges-card">
@@ -638,143 +534,8 @@ const eligibleCouriers = courierResults.filter(
           </div>
 
           <div style={{ marginTop: '30px' }}>
-            <h2>Available Shipping Modes</h2>
-
-            <p style={{ color: '#64748b', marginBottom: '18px' }}>
-              Select one of the shipping modes available for your route.
-            </p>
-
-            {modeLoading && <p>Checking available shipping modes...</p>}
-
-            {modeError && !modeLoading && (
-              <div style={{
-                padding: '14px',
-                background: '#fef2f2',
-                color: '#b91c1c',
-                borderRadius: '8px',
-                marginBottom: '16px',
-              }}>
-                {modeError}
-              </div>
-            )}
-
-            {!modeLoading && availableModes.map((item) => (
-              <label
-                key={item.mode}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                  padding: '16px',
-                  marginBottom: '12px',
-                  border: selectedMode === item.mode
-                    ? '2px solid #ff3b1f'
-                    : '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  background: selectedMode === item.mode ? '#fff7f5' : '#fff',
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <input
-                    type="radio"
-                    name="shippingMode"
-                    value={item.mode}
-                    checked={selectedMode === item.mode}
-                    onChange={() => {
-                      setSelectedMode(item.mode);
-                      setSelectedCourier('');
-                      setQuote(null);
-                      setQuoteError('');
-                      setBookingError('');
-                    }}
-                  />
-
-                  <strong>{MODE_LABELS[item.mode]}</strong>
-                </span>
-
-                <span style={{ color: '#15803d', fontWeight: 600 }}>
-                  Available
-                </span>
-              </label>
-            ))}
            
-<div className="shipnext-allocation-card">
-  <div className="shipnext-allocation-icon">🚚</div>
-
-  <div className="shipnext-allocation-content">
-    <h3>Choose Your Courier Partner</h3>
-
-    {!selectedMode ? (
-      <span>Please select a shipping mode first.</span>
-    ) : selectedMode === 'EXPRESS_AIR' ||
-      selectedMode === 'NORMAL_AIR' ? (
-      <span className="allocation-success">
-        ✓ Skyking will be automatically assigned for Air shipments.
-      </span>
-    ) : (
-      <>
-        <label htmlFor="courierSelect">
-          Select your preferred courier:
-        </label>
-
-        <select
-          id="courierSelect"
-          value={selectedCourier}
-          onChange={(e) => {
-            setSelectedCourier(e.target.value);
-            setQuote(null);
-            setQuoteError('');
-            setBookingError('');
-          }}
-        >
-          <option value="">Select Courier</option>
-
-          {eligibleCouriers
-  .filter(
-    (courier) =>
-      String(courier.courier).toUpperCase() !== 'SKYKING'
-  )
-  .map((courier) => (
-            <option
-              key={courier.courier}
-              value={String(courier.courier).toUpperCase()}
-            >
-              {String(courier.courier).toUpperCase() === 'BLUEDART'
-                ? 'Blue Dart'
-                : String(courier.courier).charAt(0).toUpperCase() +
-                  String(courier.courier).slice(1).toLowerCase()}
-            </option>
-          ))}
-        </select>
-
-        {eligibleCouriers.length === 0 && (
-          <span className="allocation-error">
-            No courier is available for this shipping mode.
-          </span>
-        )}
-      </>
-    )}
-  </div>
-</div>
-
-            {availableModes.length > 0 && (
-              
-              <button
-                type="button"
-                className="booking-submit"
-                onClick={calculateCharge}
-                disabled={
-  !selectedMode ||
-  !getCourierForMode(selectedMode) ||
-  quoteLoading ||
-  bookingLoading
-}
-              >
-                {quoteLoading ? 'Calculating...' : 'Calculate Shipping Charge'}
-              </button>
-            )}
+            
 
             {quoteError && (
               <div style={{
@@ -792,8 +553,7 @@ const eligibleCouriers = courierResults.filter(
           </div>
 
  
-            
-{/* ADMIN RATE APPROVAL AND PAYMENT */}
+            {/* SHIPPING CHARGE AND DIRECT PAYMENT */}
 <div style={{
   marginTop: '24px',
   padding: '20px',
@@ -801,45 +561,43 @@ const eligibleCouriers = courierResults.filter(
   borderRadius: '12px',
   background: '#f8fafc',
 }}>
-  {shipment.rateApprovalStatus !== 'APPROVED' ? (
-    <>
-      <h2>Shipping Rate Approval Pending</h2>
-      <p style={{ color: '#64748b' }}>
-        Your shipment details have been submitted to ShipNext admin.
-        Your shipping charge will be displayed after approval.
-      </p>
+  <h2>Shipping Charge & Payment</h2>
 
-      <button
-        type="button"
-        className="booking-submit"
-        onClick={refreshApprovalStatus}
-        style={{ marginTop: '14px' }}
-      >
-        Refresh Approval Status
-      </button>
-    </>
+  {!quote ? (
+    <p style={{ color: '#b91c1c' }}>
+  {quoteError || 'Saved shipping charge is unavailable.'}
+  <br />
+  <Link to="/book-shipment" className="charges-edit">
+    Return to shipment booking
+  </Link>
+</p>
   ) : (
     <>
-      <h2>Approved Shipping Charge</h2>
-
       <div className="charge-row">
         <span>Shipping Mode</span>
-        <strong>{MODE_LABELS[selectedMode]}</strong>
+        <strong>{MODE_LABELS[quote.shippingMode]}</strong>
       </div>
 
       <div className="charge-row">
-        <span>Approved Shipping Charge</span>
-        <strong style={{ color: '#ff3b1f', fontSize: '22px' }}>
-          ₹{Number(shipment.approvedShippingCharge).toFixed(2)}
+        <span>Selected Courier</span>
+        <strong>{quote.courier}</strong>
+      </div>
+
+      <div className="charge-row">
+        <span>Shipping Charge</span>
+        <strong style={{ color: '#ff3b1f', fontSize: '24px' }}>
+          ₹{quote.shippingCharge.toFixed(2)}
         </strong>
       </div>
 
       {!isCod ? (
         <>
-          <h3 style={{ marginTop: '20px' }}>Pay Using ShipNext Wallet</h3>
+          <h3 style={{ marginTop: '22px' }}>Pay Using ShipNext Wallet</h3>
 
           {walletLoading ? (
             <p>Loading wallet balance...</p>
+          ) : walletError ? (
+            <p style={{ color: '#b91c1c' }}>{walletError}</p>
           ) : (
             <>
               <div className="charge-row">
@@ -863,22 +621,34 @@ const eligibleCouriers = courierResults.filter(
                 type="button"
                 className="booking-submit"
                 onClick={confirmBooking}
-                disabled={bookingLoading || walletBalance === null}
+                disabled={
+                  bookingLoading ||
+                  walletLoading ||
+                  walletBalance === null ||
+                  walletBalance < quote.shippingCharge
+                }
                 style={{ width: '100%', marginTop: '18px' }}
               >
                 {bookingLoading ? 'Processing Payment...' : 'Confirm & Pay'}
               </button>
+
+              {walletBalance !== null &&
+                walletBalance < quote.shippingCharge && (
+                  <p style={{ color: '#b91c1c', marginTop: '12px' }}>
+                    Insufficient wallet balance. Please recharge to continue.
+                  </p>
+                )}
             </>
           )}
         </>
       ) : (
         <>
-          <h3 style={{ marginTop: '20px' }}>Cash on Delivery (COD)</h3>
+          <h3 style={{ marginTop: '22px' }}>Cash on Delivery (COD)</h3>
 
           <p style={{ color: '#166534' }}>
-            The recipient will pay the COD amount to the courier.
-            No shipping charge or COD amount will be deducted from
-            your ShipNext wallet.
+            Your customer will pay the COD amount to the courier.
+            No shipping charge or COD amount will be deducted from your
+            ShipNext wallet.
           </p>
 
           <div className="charge-row">
@@ -900,7 +670,6 @@ const eligibleCouriers = courierResults.filter(
     </>
   )}
 </div>
-
           {bookingError && (
             <div style={{
               padding: '14px',

@@ -305,6 +305,33 @@ model ShipmentDraft {
   itemCategory           String?
   itemName               String?
   itemDescription        String?
+    // RTO details
+  sameRto       Boolean @default(true)
+  rtoName       String?
+  rtoPhone      String?
+  rtoAddress    String?
+  rtoCity       String?
+  rtoPincode    String?
+
+  // Alternate contact
+  alternateEnabled  Boolean @default(false)
+  alternateName     String?
+  alternatePhone    String?
+  alternateRelation String?
+
+  // Pickup and delivery preferences
+  pickupDate             DateTime?
+  preferredDeliveryDate  DateTime?
+
+  // Parcel dimensions and quantity
+  quantity  Int     @default(1)
+  length    Decimal? @db.Decimal(10, 2)
+  width     Decimal? @db.Decimal(10, 2)
+  height    Decimal? @db.Decimal(10, 2)
+
+  // Selected courier and quoted rate
+  selectedCourier        String?
+  quotedShippingCharge   Decimal? @db.Decimal(12, 2)
   shipment               Shipment?
 
   customer User @relation(fields: [customerId], references: [id], onDelete: Cascade)

@@ -50,6 +50,35 @@ async function getBlockedPincodes(pincodes) {
     blocked.map((item) => [item.pincode, item])
   );
 }
+async function getPincodeLocations(pincodes) {
+  const records = await prisma.courierPincodeServiceability.findMany({
+    where: {
+      pincode: { in: pincodes },
+    },
+    select: {
+      pincode: true,
+      district: true,
+      stateCode: true,
+    },
+  });
+
+  const locationMap = new Map();
+
+  records.forEach((record) => {
+    if (!locationMap.has(record.pincode)) {
+      locationMap.set(record.pincode, {
+        pincode: record.pincode,
+        district: record.district,
+        stateCode: record.stateCode,
+      });
+    }
+  });
+
+  return {
+    pickupLocation: locationMap.get(pincodes[0]) || null,
+    deliveryLocation: locationMap.get(pincodes[1]) || null,
+  };
+}
 function getSkykingStatus(record) {
   return record?.serviceabilityStatus || 'Serviceable';
 }
@@ -83,11 +112,13 @@ router.post('/couriers/check', async (req, res) => {
         message: 'Enter valid six-digit pickup and delivery PIN codes.',
       });
     }
-  const blockedPincodes = await getBlockedPincodes([
+   const { pickupLocation, deliveryLocation } =
+  await getPincodeLocations([pickupPincode, deliveryPincode]);
+
+const blockedPincodes = await getBlockedPincodes([
   pickupPincode,
   deliveryPincode,
 ]);
-
 if (blockedPincodes.size > 0) {
   return res.json({
     success: true,
@@ -95,6 +126,8 @@ if (blockedPincodes.size > 0) {
     serviceable: false,
     pickupPincode,
     deliveryPincode,
+    pickupLocation,
+deliveryLocation,
     blockedPincodes: Array.from(blockedPincodes.values()),
     courierResults: [],
     message: 'Service is unavailable for one or more entered PIN codes.',
@@ -262,6 +295,8 @@ return res.json({
   pickupPincode,
   deliveryPincode,
   courierResults,
+  pickupLocation,
+deliveryLocation,
   message: 'Courier PIN-code check completed.',
 });
   } catch (error) {
@@ -289,7 +324,8 @@ router.post('/check', async (req, res) => {
         message: 'Enter valid six-digit pickup and delivery PIN codes.',
       });
     }
-
+     const { pickupLocation, deliveryLocation } =
+  await getPincodeLocations([pickupPincode, deliveryPincode]);
     const blockedPincodes = await getBlockedPincodes([
       pickupPincode,
       deliveryPincode,
@@ -302,6 +338,8 @@ router.post('/check', async (req, res) => {
         serviceable: false,
         pickupPincode,
         deliveryPincode,
+        pickupLocation,
+deliveryLocation,
         blockedPincodes: Array.from(blockedPincodes.values()),
         courierResults: [],
         message: 'Service is unavailable for one or more entered PIN codes.',
@@ -447,6 +485,8 @@ if (surfaceServiceable) {
       deliveryPincode,
       availableModes,
       courierResults,
+      pickupLocation,
+deliveryLocation,
       message: 'Courier serviceability check completed.',
     });
   } catch (error) {

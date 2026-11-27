@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import AdminNotificationBell from '../components/AdminNotificationBell';
 import API_URL from '../config/api';
 import {
@@ -84,6 +84,7 @@ const statCards = [
   }
 ];
 function AdminDashboard() {
+  const navigate = useNavigate();
     const loggedInUser = JSON.parse(
     sessionStorage.getItem('shipnextUser') || '{}'
   );
@@ -101,7 +102,12 @@ function AdminDashboard() {
   });
 
   const [statsLoading, setStatsLoading] = useState(true);
-
+  const [customerSearch, setCustomerSearch] = useState('');
+const [customerResults, setCustomerResults] = useState([]);
+const [selectedCustomer, setSelectedCustomer] = useState(null);
+const [customerSearchLoading, setCustomerSearchLoading] = useState(false);
+const [activeShipmentTab, setActiveShipmentTab] = useState('PICKUP');
+const [customerSearchFocused, setCustomerSearchFocused] = useState(false);
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -156,7 +162,45 @@ function AdminDashboard() {
     fetchStats();
   }, []);
 
-  
+useEffect(() => {
+  if (!customerSearchFocused) return;
+
+  const searchCustomers = async () => {
+    try {
+      setCustomerSearchLoading(true);
+
+      const token = sessionStorage.getItem('shipnextToken');
+      const query = customerSearch.trim();
+
+      const response = await fetch(
+        `${API_URL}/api/shipments/admin/customer-suggestions?q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Customer search failed');
+      }
+
+      setCustomerResults(data.results || []);
+    } catch (error) {
+      console.error('Customer search error:', error);
+      setCustomerResults([]);
+    } finally {
+      setCustomerSearchLoading(false);
+    }
+  };
+
+  const timer = setTimeout(searchCustomers, 250);
+
+  return () => clearTimeout(timer);
+}, [customerSearch, customerSearchFocused]);
+
   return (
     <div className="sn-admin">
 
@@ -185,7 +229,7 @@ function AdminDashboard() {
 
               {group.items.map((item) => {
                 const Icon = item.icon;
-
+                 
                 return (
                   <Link
                     key={item.path}
@@ -236,8 +280,65 @@ function AdminDashboard() {
             <b>/</b>
             <strong>Dashboard</strong>
           </div>
+           <div className="sn-admin-top-actions">
 
-          <div className="sn-admin-top-actions">
+  
+<div className="sn-admin-global-search">
+  <Users size={18} />
+
+  <input
+    type="text"
+    placeholder="Search customer, phone, email, docket..."
+    value={customerSearch}
+    onFocus={() => setCustomerSearchFocused(true)}
+    onBlur={() => {
+      setTimeout(() => setCustomerSearchFocused(false), 150);
+    }}
+    onChange={(e) => {
+      setCustomerSearch(e.target.value);
+      setSelectedCustomer(null);
+    }}
+  />
+
+  {customerSearchLoading && <span>...</span>}
+
+  {customerSearchFocused && (
+    <div className="sn-admin-global-search-results">
+      {customerResults.length > 0 ? (
+        customerResults.map((result) => (
+          <button
+            type="button"
+            key={result.customer.id}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              navigate(`/admin/customer-details/${result.customer.id}`, {
+                state: { customerResult: result },
+              });
+
+              setSelectedCustomer(result.customer);
+              setCustomerSearch(result.customer.name);
+              setCustomerResults([]);
+              setCustomerSearchFocused(false);
+            }}
+          >
+            <strong>{result.customer.name}</strong>
+            <span>{result.customer.email}</span>
+            <small>
+              {result.summary.totalShipments} Shipments
+            </small>
+          </button>
+        ))
+      ) : (
+        !customerSearchLoading && (
+          <div className="sn-admin-search-empty">
+            No customers found
+          </div>
+        )
+      )}
+    </div>
+  )}
+</div>
+
   <div className="sn-admin-live">
     <i />
     ADMIN WORKSPACE
@@ -254,6 +355,7 @@ function AdminDashboard() {
   </div>
 
   <AdminNotificationBell />
+
 </div>
         </header>
 
@@ -292,7 +394,7 @@ function AdminDashboard() {
 
             <div className="sn-admin-hero-index">01 / OVERVIEW</div>
           </section>
-
+         
           <section className="sn-admin-section-heading">
             <div>
               <span className="sn-admin-section-kicker">LIVE OVERVIEW</span>

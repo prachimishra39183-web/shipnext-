@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import API_URL from '../config/api';
+import DocketSlip from '../components/DocketSlip';
 import '../styles.css';
 
 function MyShipments() {
@@ -16,7 +17,7 @@ const [refundLoading, setRefundLoading] = useState(true);
 const [refundSubmitting, setRefundSubmitting] = useState(false);
 const [refundError, setRefundError] = useState('');
 const [refundSuccess, setRefundSuccess] = useState('');
-
+const [labelShipment, setLabelShipment] = useState(null);
 const [refundForm, setRefundForm] = useState({
   shipmentId: '',
   amount: '',
@@ -417,13 +418,7 @@ const handleRefundSubmit = async (event) => {
                           )}
                         </div>
 
-                        <Link
-                          to={`/shipping-charges/${draft.id}`}
-                          className="sn-card-action"
-                        >
-                          Continue Booking <span>→</span>
-                        </Link>
-                      </article>
+                               </article>
                     ))}
                   </div>
                 )}
@@ -570,16 +565,45 @@ const handleRefundSubmit = async (event) => {
                           )}
                         </div>
 
-                        <Link
-                          to={`/track/${shipment.trackingId}`}
-                          className="sn-card-action"
-                        >
-                          View Shipment Details <span>→</span>
-                        </Link>
+                        <button
+  type="button"
+  className="sn-card-action sn-download-label-button"
+  onClick={() => setLabelShipment(shipment)}
+>
+  Download Shipping Label <span>↓</span>
+</button>
+
+<Link
+  to={`/track/${shipment.trackingId}`}
+  className="sn-card-action"
+>
+  View Shipment Details <span>→</span>
+</Link>
                       </article>
                     ))}
                   </div>
                 )}
+                {labelShipment && (
+  <div className="sn-label-preview">
+    <div className="sn-label-preview-heading">
+      <div>
+        <span className="sn-eyebrow">SHIPNEXT / SHIPPING LABEL</span>
+        <h3>Download Your Label</h3>
+        <p>Tracking ID: {labelShipment.trackingId}</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setLabelShipment(null)}
+        className="sn-label-close"
+      >
+        Close ✕
+      </button>
+    </div>
+
+    <DocketSlip shipment={labelShipment} />
+  </div>
+)}
                             </section>
 
               {/* REFUND MANAGEMENT SECTION START */}
