@@ -1,7 +1,18 @@
-import { ChevronDown,FileText,CreditCard } from 'lucide-react';
+import {
+  ChevronDown,
+  FileText,
+  CreditCard,
+  UserRound,
+  CheckCheck,
+  AlertCircle,
+  Package
+} from 'lucide-react';
+
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { UserRound,CheckCheck  } from 'lucide-react';
+
+import NdrManagement from '../components/NdrManagement';
+import RtoManagement from '../components/RtoManagement';
 import API_URL from '../config/api';
 function CustomerDashboard() {
    const loggedInUser = JSON.parse(
@@ -30,7 +41,7 @@ const [walletBalance, setWalletBalance] = useState(0);
 const [loadingDashboardData, setLoadingDashboardData] = useState(true);
 const navigate = useNavigate();
 const [paymentsOpen, setPaymentsOpen] = useState(false);
-
+const [activeManagementTab, setActiveManagementTab] = useState('ndr');
 const handleLogout = () => {
   sessionStorage.removeItem('shipnextToken');
   sessionStorage.removeItem('shipnextUser');
@@ -385,130 +396,43 @@ const deliveredShipments = myShipments.filter(
   <div className="welcome-icon"></div>
 </section>
 
-        {/* NOTIFICATIONS PANEL */}
-        <section className="dashboard-panel" id="notifications">
-          <div className="panel-heading">
-            <div>
-              <h2>
-                 Notifications
-                {unreadCount > 0 && (
-                  <span style={{
-                    marginLeft: '10px',
-                    background: '#e53935',
-                    color: '#fff',
-                    padding: '3px 9px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                  }}>
-                    {unreadCount} New
-                  </span>
-                )}
-              </h2>
-              <p>Updates about your bookings and deliveries.</p>
-            </div>
+{/* NDR & RTO MANAGEMENT TABS */}
+<section className="dashboard-panel sn-management-panel" id="ndr-rto-management">
 
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                style={{
-                  border: 'none',
-                  background: 'none',
-                  color: '#2563eb',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                }}
-              >
-                Mark All as Read
-              </button>
-            )}
-          </div>
+  <div className="sn-management-heading">
+    <div>
+      <h2>Shipment Exception Management</h2>
+      <p>Manage delivery exceptions and return shipments.</p>
+    </div>
+  </div>
 
-          {loadingNotifications ? (
-            <div className="empty-state compact">
-              <p>Loading notifications...</p>
-            </div>
-          ) : notificationError ? (
-            <div className="empty-state compact">
-              <p>{notificationError}</p>
-              <button
-                onClick={() => {
-                  setLoadingNotifications(true);
-                  fetchNotifications();
-                }}
-                className="dashboard-button"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="empty-state compact">
-              <div></div>
-              <h3>No notifications yet</h3>
-              <p>Your shipment updates will appear here.</p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-            }}>
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '14px',
-                    padding: '16px',
-                    borderRadius: '10px',
-                    border: '1px solid #e5eaf1',
-                    background: notification.isRead ? '#810808' : '#7a050d',
-                  }}
-                >
-                  <div style={{ fontSize: '25px' }}>
-                    {getNotificationIcon(notification.type)}
-                  </div>
+  <div className="sn-management-tabs">
+    <button
+      className={`sn-management-tab ${activeManagementTab === 'ndr' ? 'active' : ''}`}
+      onClick={() => setActiveManagementTab('ndr')}
+    >
+      <AlertCircle size={17} />
+      NDR Management
+    </button>
 
-                  <div style={{ flex: 1 }}>
-                    <strong>{notification.title}</strong>
+    <button
+      className={`sn-management-tab ${activeManagementTab === 'rto' ? 'active' : ''}`}
+      onClick={() => setActiveManagementTab('rto')}
+    >
+      <Package size={17} />
+      RTO Management
+    </button>
+  </div>
 
-                    <p style={{
-                      margin: '6px 0',
-                      color: '#e5e8ec',
-                      lineHeight: '1.5',
-                    }}>
-                      {notification.message}
-                    </p>
+  <div className="sn-management-content">
+    {activeManagementTab === 'ndr' ? (
+      <NdrManagement />
+    ) : (
+      <RtoManagement />
+    )}
+  </div>
 
-                    {notification.trackingId && (
-                      <small style={{ color: '#000204' }}>
-                        Tracking ID: {notification.trackingId}
-                      </small>
-                    )}
-
-                    <div style={{
-                      marginTop: '7px',
-                      color: '#94a3b8',
-                      fontSize: '12px',
-                    }}>
-                      {new Date(notification.createdAt).toLocaleString('en-IN')}
-                    </div>
-                  </div>
-
-                  {!notification.isRead && (
-                    <button
-  className="notification-mark-read"
-  onClick={() => markAsRead(notification.id)}
->
-  <CheckCheck size={14} />
-  Mark as Read
-</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+</section>
 
        
 <section className="dashboard-stats">

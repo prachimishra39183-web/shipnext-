@@ -247,6 +247,7 @@ model Shipment {
   draftId        String          @unique
   draft          ShipmentDraft   @relation(fields: [draftId], references: [id])
   ndrRecords     NDRRecord[]
+    rtoRecords RTORecord[]
   childAccountId String?
   childAccount   ChildAccount?   @relation(fields: [childAccountId], references: [id], onDelete: SetNull)
   refundRequests RefundRequest[]
@@ -256,6 +257,8 @@ model Shipment {
   @@index([status])
   @@index([codCollectionStatus])
   @@index([codRemittanceStatus])
+
+
 }
 
 model Enquiry {
@@ -557,7 +560,27 @@ model NDRRecord {
   @@index([reportedAt])
   @@index([status])
 }
+model RTORecord {
+  id              String    @id @default(uuid())
+  shipmentId      String
+  reason          String
+  status          RTOStatus @default(INITIATED)
 
+  returnAwb       String?
+  remarks         String?
+
+  initiatedAt     DateTime  @default(now())
+  deliveredAt     DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId])
+  @@index([status])
+  @@index([initiatedAt])
+}
 model PickupLocation {
   id     String @id @default(uuid())
   userId String
@@ -711,4 +734,11 @@ model InvoiceSequence {
 
   @@unique([prefix, financialYear])
   @@index([financialYear])
+}
+enum RTOStatus {
+  INITIATED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED_TO_SELLER
+  CANCELLED
 }

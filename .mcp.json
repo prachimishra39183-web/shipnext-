@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "delhivery-one": {
+      "command": "C:\\Users\\kaushal Mishra\\.local\\bin\\uvx.exe",
+      "args": [
+        "d1-mcp-mint@latest"
+      ],
+      "env": {
+        "D1_CLIENT_ID": "ucp-service-cli",
+        "D1_CLIENT_SECRET": "8JIHH7EB7U40B5O6EUG5E468QBRP4QTL",
+        "D1_AUTH_URL": "https://ucp-auth.delhivery.com/holyknight",
+        "D1_REALM": "ucp-1LCWPOI6IKHC",
+        "D1_CLIENT_CMS": "cms::client::9887160f-e970-11f1-8d4f-02fff2f353d5",
+        "D1_MCP_URL": "https://mcp-client.delhivery.com/mcp"
+      }
+    }
+  }
+}

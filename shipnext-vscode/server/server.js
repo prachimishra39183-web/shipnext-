@@ -30,7 +30,8 @@ const customerTaxSettingsRoutes = require('./routes/customerTaxSettings');
 const customerInvoicesRoutes = require('./routes/customerInvoices');
 const adminCustomerAnalyticsRoutes = require('./routes/adminCustomerAnalytics');
 const adminDeliveryHistoryRoutes = require('./routes/adminDeliveryHistory');
-
+const skykingRoutes = require('./routes/skyking');
+const rtoRoutes = require('./routes/rto');
 // Middleware
 app.use(cors());
 app.use(express.json({
@@ -65,8 +66,8 @@ app.use('/api/customer-tax-settings', customerTaxSettingsRoutes);
 app.use('/api/customer-invoices', customerInvoicesRoutes);
 app.use('/api/admin/customer-analytics', adminCustomerAnalyticsRoutes);
 app.use('/api/admin/delivery-history', adminDeliveryHistoryRoutes);
-
-
+app.use('/api/skyking', skykingRoutes);
+app.use('/api/rto', rtoRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
