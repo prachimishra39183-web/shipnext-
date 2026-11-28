@@ -3,10 +3,17 @@ import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
 
-function DocketSlip({ shipment }) {
+function DocketSlip({ shipment, documentType = 'label' }) {
   const [qrCode, setQrCode] = useState('');
   const barcodeRef = useRef(null);
-
+  const awbNumber = shipment?.trackingId || '';
+console.log('SHIPMENT DATA:', shipment);
+const courierName = (
+  shipment?.courierPartner ||
+  shipment?.selectedCourier ||
+  shipment?.courier ||
+  'SHIPNEXT'
+).toUpperCase();
   useEffect(() => {
     if (!shipment?.trackingId) return;
 
@@ -27,9 +34,7 @@ function DocketSlip({ shipment }) {
   useEffect(() => {
     if (!shipment) return;
 
-    const barcodeValue =
-      shipment.docketNumber || shipment.trackingId;
-
+   const barcodeValue = awbNumber;
     if (!barcodeValue || !barcodeRef.current) return;
 
     try {
@@ -45,7 +50,7 @@ function DocketSlip({ shipment }) {
     } catch (error) {
       console.error('Barcode generation failed:', error);
     }
-  }, [shipment?.docketNumber, shipment?.trackingId]);
+}, [awbNumber, documentType]);
 
   if (!shipment) return null;
 
@@ -87,131 +92,214 @@ function DocketSlip({ shipment }) {
 
   return (
     <div className="shipnext-document-container">
-
-      {/* EXISTING DOCKET SLIP - PRESERVED */}
-
-      <div
-        id="shipnext-docket"
-        style={{
-          maxWidth: '750px',
-          margin: '25px auto',
-          padding: '30px',
-          background: '#fff',
-          color: '#172033',
-          border: '2px solid #172033',
-          borderRadius: '10px',
-          fontFamily: 'Arial, sans-serif',
-        }}
-      >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '3px solid #ff3b1f',
-          paddingBottom: '18px',
-        }}>
-          <img
-            src="/logo.jpeg"
-            alt="ShipNext"
+             
+      {/* ORIGINAL SHIPNEXT DOCKET DESIGN */}
+      {documentType === 'docket' && (
+        <>
+          <div
+            id="shipnext-docket"
             style={{
-              height: '45px',
-              width: 'auto',
-              objectFit: 'contain',
+              maxWidth: '550px',
+              margin: '25px auto',
+              padding: '30px',
+              background: '#fff',
+              color: '#172033',
+              border: '2px solid #172033',
+              borderRadius: '10px',
+              fontFamily: 'Arial, sans-serif',
             }}
-          />
+          >
+            {/* HEADER */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '3px solid #ff3b1f',
+              paddingBottom: '18px',
+            }}>
+              <img
+                src="/logo.jpeg"
+                alt="ShipNext"
+                style={{
+                  height: '45px',
+                  width: 'auto',
+                  objectFit: 'contain',
+                }}
+              />
 
-          <strong>SHIPNEXT DOCKET SLIP</strong>
-        </div>
+              <strong style={{
+                fontSize: '16px',
+                background: '#ffe1d8',
+                padding: '3px 6px',
+              }}>
+                SHIPPING DOCKET
+              </strong>
+            </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: '20px',
-          marginTop: '22px',
-        }}>
-          <div>
-            <p><strong>Docket Number</strong></p>
-            <h2 style={{ color: '#ff3b1f', margin: 0 }}>
-              {shipment.docketNumber}
-            </h2>
+            {/* DOCKET NUMBER AND QR CODE */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '20px',
+              marginTop: '22px',
+            }}>
+              <div>
+                <p style={{ margin: '3px 0' }}>
+                  <strong>Docket Number</strong>
+                </p>
 
-            <p><strong>Tracking ID:</strong> {shipment.trackingId}</p>
-            <p><strong>Status:</strong> {shipment.status}</p>
+                <h2 style={{
+                  color: '#ff3b1f',
+                  margin: '0 0 4px',
+                  fontSize: '21px',
+                }}>
+                  {shipment.docketNumber}
+                </h2>
+
+                <p style={{ margin: '3px 0' }}>
+                  <strong>Tracking ID:</strong> {shipment.trackingId}
+                </p>
+
+                <p style={{ margin: '3px 0' }}>
+                  <strong>Status:</strong> {shipment.status}
+                </p>
+              </div>
+
+              {qrCode && (
+                <img
+                  src={qrCode}
+                  alt="Shipment tracking QR code"
+                  style={{
+                    width: '130px',
+                    height: '130px',
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+            </div>
+
+            <hr />
+
+           {/* PICKUP & DELIVERY DETAILS - SIDE BY SIDE */}
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    margin: '12px 0',
+  }}
+>
+  {/* PICKUP DETAILS */}
+  <div
+    style={{
+      border: '1px solid #ddd',
+      borderRadius: '6px',
+      padding: '10px',
+      minWidth: 0,
+    }}
+  >
+    <h3 style={{ margin: '0 0 8px', fontSize: '14px' }}>
+      Pickup Details
+    </h3>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>Sender:</strong> {shipment.pickupName}
+    </p>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>Mobile:</strong> {shipment.pickupPhone}
+    </p>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>Address:</strong> {shipment.pickupAddress}
+    </p>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>PIN Code:</strong> {shipment.pickupPincode}
+    </p>
+  </div>
+
+  {/* DELIVERY DETAILS */}
+  <div
+    style={{
+      border: '1px solid #ddd',
+      borderRadius: '6px',
+      padding: '10px',
+      minWidth: 0,
+    }}
+  >
+    <h3 style={{ margin: '0 0 8px', fontSize: '14px' }}>
+      Delivery Details
+    </h3>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>Receiver:</strong> {shipment.deliveryName}
+    </p>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>Mobile:</strong> {shipment.deliveryPhone}
+    </p>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>Address:</strong> {shipment.deliveryAddress}
+    </p>
+    <p style={{ margin: '4px 0', fontSize: '12px' }}>
+      <strong>PIN Code:</strong> {shipment.deliveryPincode}
+    </p>
+  </div>
+</div>
+
+<hr />
+            {/* PARCEL DETAILS */}
+            <h3 style={{ margin: '5px 0' }}>Parcel Details</h3>
+            <p><strong>Weight:</strong> {weight} kg</p>
+            <p><strong>Shipping Mode:</strong> {shipment.shippingMode}</p>
+            <p>
+              <strong>Shipping Charge:</strong>{' '}
+              ₹{Number(shipment.shippingCharge || 0).toFixed(2)}
+            </p>
+
+            <hr />
+
+            {/* FOOTER */}
+            <p style={{
+              textAlign: 'center',
+              fontSize: '12px',
+              marginTop: '18px',
+            }}>
+              Thank you for choosing ShipNext.
+              <br />
+              Scan the QR code to track your shipment.
+            </p>
           </div>
 
-          {qrCode && (
-            <img
-              src={qrCode}
-              alt="Shipment tracking QR code"
-              style={{ width: '130px', height: '130px' }}
-            />
-          )}
-        </div>
-
-        <hr />
-
-        <h3>Pickup Details</h3>
-        <p><strong>Sender:</strong> {shipment.pickupName}</p>
-        <p><strong>Mobile:</strong> {shipment.pickupPhone}</p>
-        <p><strong>Address:</strong> {shipment.pickupAddress}</p>
-        <p><strong>PIN Code:</strong> {shipment.pickupPincode}</p>
-
-        <hr />
-
-        <h3>Delivery Details</h3>
-        <p><strong>Receiver:</strong> {shipment.deliveryName}</p>
-        <p><strong>Mobile:</strong> {shipment.deliveryPhone}</p>
-        <p><strong>Address:</strong> {shipment.deliveryAddress}</p>
-        <p><strong>PIN Code:</strong> {shipment.deliveryPincode}</p>
-
-        <hr />
-
-        <h3>Parcel Details</h3>
-        <p><strong>Weight:</strong> {weight} kg</p>
-        <p><strong>Shipping Mode:</strong> {shipment.shippingMode}</p>
-        <p>
-          <strong>Shipping Charge:</strong>{' '}
-          ₹{Number(shipment.shippingCharge || 0).toFixed(2)}
-        </p>
-
-        <hr />
-
-        <p style={{ textAlign: 'center', fontSize: '12px' }}>
-          Thank you for choosing ShipNext.
-          <br />
-          Scan the QR code to track your shipment.
-        </p>
-      </div>
-
-      <div className="no-print" style={{
-        textAlign: 'center',
-        marginBottom: '35px',
-      }}>
-        <button
-          type="button"
-          onClick={() => printSection('docket')}
-          className="booking-submit"
-        >
-          Print / Download Docket
-        </button>
-      </div>
+          <div className="no-print" style={{
+            textAlign: 'center',
+            marginBottom: '35px',
+          }}>
+            <button
+              type="button"
+              onClick={() => printSection('docket')}
+              className="booking-submit"
+            >
+              Download Docket Slip (PDF)
+            </button>
+          </div>
+        </>
+      )}
 
       {/* NEW SHIPNEXT SHIPPING LABEL */}
-
+           {documentType === 'label' && (
+              <>
       <div
         id="shipnext-label"
         style={{
-          width: '380px',
-          maxWidth: '100%',
-          minHeight: '560px',
-          margin: '25px auto',
-          padding: '14px',
-          background: '#fff',
-          color: '#111',
-          border: '2px solid #111',
-          fontFamily: 'Arial, sans-serif',
-          boxSizing: 'border-box',
-        }}
+  width: '100%',
+  maxWidth: '550px',
+  minHeight: 'auto',
+  margin: '15px auto',
+padding: '12px 22px',
+  background: '#fff',
+  color: '#111',
+  border: '1.5px solid #111',
+  fontFamily: 'Arial, sans-serif',
+  boxSizing: 'border-box',
+  fontSize: '11px',
+}}
       >
         {/* BRAND HEADER */}
 
@@ -246,8 +334,8 @@ function DocketSlip({ shipment }) {
             fontSize: '12px',
             fontWeight: 'bold',
           }}>
-            {paymentMode}
-            {paymentMode === 'COD' && (
+            {courierName}
+{paymentMode === 'COD' && (
               <div style={{ marginTop: '5px' }}>
                 ₹{Number(shipment.codAmount || 0).toFixed(2)}
               </div>
@@ -357,7 +445,7 @@ function DocketSlip({ shipment }) {
         }}>
           <div style={headingStyle}>SHIPMENT INFORMATION</div>
           <div style={valueStyle}>
-            <strong>Docket:</strong> {shipment.docketNumber}
+            <strong>Tracking ID:</strong> {shipment.trackingId}
             <br />
             <strong>Weight:</strong> {weight} kg
             <br />
@@ -420,6 +508,8 @@ function DocketSlip({ shipment }) {
           Download Shipping Label (PDF)
         </button>
       </div>
+      </>
+)}
 
       <style>{`
         @media print {

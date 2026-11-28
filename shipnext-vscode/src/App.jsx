@@ -38,10 +38,13 @@ import AdminPincodeRates from './pages/AdminPincodeRates.jsx';
 import AdminRateApprovals from './pages/AdminRateApprovals.jsx';
 import CustomerSettings from './pages/CustomerSettings.jsx';
 import CustomerInvoices from './pages/CustomerInvoices.jsx';
+
 import AdminCustomerAnalytics from './pages/AdminCustomerAnalytics.jsx';
 import AdminCustomerHistory from './pages/AdminCustomerHistory';
 import AdminRefunds from './pages/AdminRefunds.jsx';
 import AdminCustomerDetails from './pages/AdminCustomerDetails';
+import Settlement from './pages/Settlement';
+import CustomerRefunds from './pages/CustomerRefunds.jsx';
 function App() {
   return (
     <BrowserRouter>
@@ -77,10 +80,13 @@ function App() {
 
 <Route path="/shipping-charges/:draftId" element={<ShippingCharges />} />
               <Route path="/wallet" element={<Wallet />} />
+<Route path="/settlement" element={<Settlement />} />
+              
               <Route path="/shipments" element={<MyShipments />} />
               <Route path="/profile" element={<MyProfile />} />
               <Route path="/support" element={<Support />} />
-              
+                <Route path="/billing" element={<CustomerInvoices />} />
+              <Route path="/refunds" element={<CustomerRefunds />} />
               
               <Route
   path="/child-accounts"

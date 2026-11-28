@@ -12,12 +12,14 @@ function MyShipments() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [activeTab, setActiveTab] = useState('CONFIRMED');
 const [refunds, setRefunds] = useState([]);
 const [refundLoading, setRefundLoading] = useState(true);
 const [refundSubmitting, setRefundSubmitting] = useState(false);
 const [refundError, setRefundError] = useState('');
 const [refundSuccess, setRefundSuccess] = useState('');
 const [labelShipment, setLabelShipment] = useState(null);
+const [labelDocumentType, setLabelDocumentType] = useState('label');
 const [refundForm, setRefundForm] = useState({
   shipmentId: '',
   amount: '',
@@ -238,26 +240,26 @@ const handleRefundSubmit = async (event) => {
 
   return (
     <div className="sn-shipments-page">
+      
       <header className="sn-shipments-header">
         <Link to="/dashboard" className="sn-back-link">
           Back to Dashboard
         </Link>
+        <h1>Customer Shipments</h1>
       </header>
 
       <main className="sn-shipments-main">
         <section className="sn-page-intro">
           <div>
             <span className="sn-eyebrow">SHIPNEXT / YOUR ACCOUNT</span>
-            <h1>My <span>Shipments.</span></h1>
+           
             <p>
               Manage your bookings, review saved drafts and follow
               your shipment activity from one place.
             </p>
           </div>
 
-          <Link to="/book-shipment" className="sn-primary-button">
-            Book a Shipment
-          </Link>
+        
         </section>
 
         {loading ? (
@@ -277,32 +279,70 @@ const handleRefundSubmit = async (event) => {
           </section>
         ) : (
           <>
-            <section className="sn-overview-grid">
-              <article className="sn-overview-card sn-overview-featured">
-                <span className="sn-card-label">TOTAL SHIPMENTS</span>
-                <strong>{confirmedCount + draftCount}</strong>
-                <p>All your saved and confirmed bookings</p>
-                <div className="sn-card-decoration" />
-              </article>
+            {/* QUICK ACTION CARDS */}
+<section className="sn-shipment-quick-actions">
 
-              <article className="sn-overview-card">
-                <span className="sn-card-label">CONFIRMED BOOKINGS</span>
-                <strong>{confirmedCount}</strong>
-                <p>Shipments successfully booked</p>
-              </article>
+  {/* BOOK A SHIPMENT */}
+  <Link
+    to="/book-shipment"
+    className="sn-quick-action-card sn-book-action"
+  >
+    <div className="sn-quick-action-icon">
+      <span>＋</span>
+    </div>
 
-              <article className="sn-overview-card">
-                <span className="sn-card-label">SAVED DRAFTS</span>
-                <strong>{draftCount}</strong>
-                <p>Bookings waiting for completion</p>
-              </article>
+    <div className="sn-quick-action-content">
+      <span className="sn-quick-action-label">GET STARTED</span>
+      <h3>Book a Shipment</h3>
+      <p>
+        Create a new shipment, add pickup and delivery details,
+        and book your parcel with ShipNext.
+      </p>
+      <strong>Book Shipment <span>→</span></strong>
+    </div>
+  </Link>
 
-              <article className="sn-overview-card">
-                <span className="sn-card-label">COD SHIPMENTS</span>
-                <strong>{codShipments.length}</strong>
-                <p>Bookings with recipient payment due</p>
-              </article>
-            </section>
+  {/* TRACK A SHIPMENT */}
+  <Link
+    to="/track"
+    className="sn-quick-action-card sn-track-action"
+  >
+    <div className="sn-quick-action-icon">
+      <span>⌖</span>
+    </div>
+
+    <div className="sn-quick-action-content">
+      <span className="sn-quick-action-label">SHIPMENT VISIBILITY</span>
+      <h3>Track a Shipment</h3>
+      <p>
+        Enter your ShipNext tracking ID to view shipment status,
+        tracking updates, and delivery information.
+      </p>
+      <strong>Track Shipment <span>→</span></strong>
+    </div>
+  </Link>
+
+  {/* REFUND MANAGEMENT */}
+  <Link
+    to="/refunds"
+    className="sn-quick-action-card sn-refund-action"
+  >
+    <div className="sn-quick-action-icon">
+      <span>₹</span>
+    </div>
+
+    <div className="sn-quick-action-content">
+      <span className="sn-quick-action-label">CUSTOMER SERVICES</span>
+      <h3>Refund Management</h3>
+      <p>
+        Submit refund requests for your shipments and
+        monitor their approval and payment status.
+      </p>
+      <strong>Manage Refunds <span>→</span></strong>
+    </div>
+  </Link>
+
+</section>
 
             <section className="sn-shipment-workspace">
               <div className="sn-workspace-heading">
@@ -337,7 +377,32 @@ const handleRefundSubmit = async (event) => {
                   ))}
                 </div>
               </div>
+               <div className="sn-shipment-tabs">
+  <button
+    type="button"
+    className={activeTab === 'CONFIRMED' ? 'active' : ''}
+    onClick={() => setActiveTab('CONFIRMED')}
+  >
+    <span className="sn-tab-icon">▣</span>
+    <span>
+      Confirmed Shipments
+      <small>{confirmedCount} bookings</small>
+    </span>
+  </button>
 
+  <button
+    type="button"
+    className={activeTab === 'DRAFTS' ? 'active' : ''}
+    onClick={() => setActiveTab('DRAFTS')}
+  >
+    <span className="sn-tab-icon">◷</span>
+    <span>
+      Draft Shipments
+      <small>{draftCount} saved drafts</small>
+    </span>
+  </button>
+</div>        
+                   {activeTab === 'DRAFTS' && (
               <section className="sn-shipment-section">
                 <div className="sn-section-heading">
                   <div>
@@ -422,9 +487,11 @@ const handleRefundSubmit = async (event) => {
                     ))}
                   </div>
                 )}
-              </section>
+             </section>
+)}          
+                   {activeTab === 'CONFIRMED' && (
+                      <section className="sn-shipment-section">
 
-              <section className="sn-shipment-section">
                 <div className="sn-section-heading">
                   <div>
                     <span className="sn-section-kicker">02 / ACTIVE RECORDS</span>
@@ -482,27 +549,7 @@ const handleRefundSubmit = async (event) => {
                           </div>
                         </div>
 
-                        <div className="sn-card-details">
-                          <div>
-                            <span>Parcel weight</span>
-                            <strong>
-                              {(Number(shipment.weightGrams || 0) / 1000).toFixed(2)} kg
-                            </strong>
-                          </div>
-                          <div>
-                            <span>Booking date</span>
-                            <strong>{formatDate(shipment.createdAt)}</strong>
-                          </div>
-                          <div>
-                            <span>Shipping charge</span>
-                            <strong>{formatMoney(shipment.shippingCharge)}</strong>
-                          </div>
-                          <div>
-                            <span>Shipping payment</span>
-                            <strong>{shipment.paymentMode || 'WALLET'}</strong>
-                          </div>
-                        </div>
-
+                        
                         <div className="sn-cod-panel">
                           <div className="sn-cod-heading">
                             <div>
@@ -527,20 +574,7 @@ const handleRefundSubmit = async (event) => {
                                 <strong>{formatMoney(shipment.codAmount)}</strong>
                               </div>
 
-                              <div className="sn-cod-status-grid">
-                                <div>
-                                  <span>Collection status</span>
-                                  <strong className={`sn-cod-status ${getCodStatusClass(shipment.codCollectionStatus)}`}>
-                                    {formatLabel(shipment.codCollectionStatus)}
-                                  </strong>
-                                </div>
-                                <div>
-                                  <span>Remittance status</span>
-                                  <strong className={`sn-cod-status ${getCodStatusClass(shipment.codRemittanceStatus)}`}>
-                                    {formatLabel(shipment.codRemittanceStatus)}
-                                  </strong>
-                                </div>
-                              </div>
+                             
 
                               {shipment.codCollectedAt && (
                                 <div className="sn-cod-extra">
@@ -556,11 +590,7 @@ const handleRefundSubmit = async (event) => {
                                 </div>
                               )}
 
-                              <p className="sn-cod-note">
-                                COD is collected and remitted directly by the courier
-                                to the merchant. ShipNext displays the available
-                                tracking information.
-                              </p>
+                             
                             </>
                           )}
                         </div>
@@ -568,27 +598,41 @@ const handleRefundSubmit = async (event) => {
                         <button
   type="button"
   className="sn-card-action sn-download-label-button"
-  onClick={() => setLabelShipment(shipment)}
+  onClick={() => {
+  setLabelDocumentType('label');
+  setLabelShipment(shipment);
+}}
 >
   Download Shipping Label <span>↓</span>
 </button>
-
-<Link
-  to={`/track/${shipment.trackingId}`}
+<button
+  type="button"
   className="sn-card-action"
+  onClick={() => {
+    setLabelDocumentType('docket');
+    setLabelShipment(shipment);
+  }}
 >
-  View Shipment Details <span>→</span>
-</Link>
+  Download Docket Slip <span>↓</span>
+</button>
+
+
                       </article>
                     ))}
                   </div>
                 )}
                 {labelShipment && (
+        <div className="sn-document-modal-backdrop">
   <div className="sn-label-preview">
     <div className="sn-label-preview-heading">
       <div>
-        <span className="sn-eyebrow">SHIPNEXT / SHIPPING LABEL</span>
-        <h3>Download Your Label</h3>
+        <span className="sn-eyebrow">SHIPNEXT / YOUR DOCUMENT</span>
+
+<h3>
+  {labelDocumentType === 'docket'
+    ? 'Download Shipping Docket'
+    : 'Download Shipping Label'}
+</h3>
         <p>Tracking ID: {labelShipment.trackingId}</p>
       </div>
 
@@ -599,149 +643,19 @@ const handleRefundSubmit = async (event) => {
       >
         Close ✕
       </button>
+      
     </div>
 
-    <DocketSlip shipment={labelShipment} />
+    <DocketSlip
+  shipment={labelShipment}
+  documentType={labelDocumentType}
+/>
+  </div>
   </div>
 )}
-                            </section>
-
-              {/* REFUND MANAGEMENT SECTION START */}
-
-              <section className="sn-shipment-section sn-refund-section">
-                <div className="sn-section-heading">
-                  <div>
-                    <span className="sn-section-kicker">03 / CUSTOMER SERVICES</span>
-                    <h3>Refund Management</h3>
-                    <p>Submit a refund request and track its progress.</p>
-                  </div>
-                  <span className="sn-count">{refunds.length} REQUESTS</span>
-                </div>
-
-                <div className="sn-refund-form-card">
-                  <div className="sn-refund-form-heading">
-                    <span className="sn-eyebrow">SHIPNEXT SUPPORT</span>
-                    <h4>Request a Refund</h4>
-                    <p>Select a shipment and provide the refund details.</p>
-                  </div>
-
-                  <form onSubmit={handleRefundSubmit} className="sn-refund-form">
-                    <div className="sn-refund-field">
-                      <label htmlFor="refund-shipment">Select Shipment</label>
-                      <select
-                        id="refund-shipment"
-                        value={refundForm.shipmentId}
-                        onChange={(event) =>
-                          setRefundForm({ ...refundForm, shipmentId: event.target.value })
-                        }
-                        required
-                      >
-                        <option value="">Choose a shipment</option>
-                        {shipments.map((shipment) => (
-                          <option key={shipment.id} value={shipment.id}>
-                            {shipment.docketNumber || shipment.trackingId} — {shipment.pickupPincode} to {shipment.deliveryPincode}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="sn-refund-field">
-                      <label htmlFor="refund-amount">Refund Amount (₹)</label>
-                      <input
-                        id="refund-amount"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        max={shipments.find(
-                          (shipment) => shipment.id === refundForm.shipmentId
-                        )?.shippingCharge || undefined}
-                        placeholder="Enter amount"
-                        value={refundForm.amount}
-                        onChange={(event) =>
-                          setRefundForm({ ...refundForm, amount: event.target.value })
-                        }
-                        required
-                      />
-                      <small>Maximum refundable amount is the shipment's shipping charge.</small>
-                    </div>
-
-                    <div className="sn-refund-field">
-                      <label htmlFor="refund-reason">Reason for Refund</label>
-                      <textarea
-                        id="refund-reason"
-                        rows="4"
-                        maxLength="1000"
-                        placeholder="Explain why you are requesting a refund..."
-                        value={refundForm.reason}
-                        onChange={(event) =>
-                          setRefundForm({ ...refundForm, reason: event.target.value })
-                        }
-                        required
-                      />
-                    </div>
-
-                    {refundError && (
-                      <div className="sn-refund-message error">{refundError}</div>
-                    )}
-
-                    {refundSuccess && (
-                      <div className="sn-refund-message success">{refundSuccess}</div>
-                    )}
-
-                    <button
-                      type="submit"
-                      className="sn-refund-submit"
-                      disabled={refundSubmitting || shipments.length === 0}
-                    >
-                      {refundSubmitting ? 'Submitting Request...' : 'Submit Refund Request'}
-                    </button>
-                  </form>
-                </div>
-
-                <div className="sn-refund-history">
-                  <div className="sn-refund-history-heading">
-                    <h4>Your Refund Requests</h4>
-                    <span>{refunds.length} TOTAL</span>
-                  </div>
-
-                  {refundLoading ? (
-                    <p className="sn-refund-empty">Loading refund history...</p>
-                  ) : refunds.length === 0 ? (
-                    <div className="sn-refund-empty">No refund requests yet.</div>
-                  ) : (
-                    <div className="sn-refund-list">
-                      {refunds.map((refund) => (
-                        <article className="sn-refund-item" key={refund.id}>
-                          <div className="sn-refund-item-main">
-                            <span className="sn-section-kicker">
-                              {refund.shipment?.docketNumber ||
-                                refund.shipment?.trackingId || 'GENERAL REFUND'}
-                            </span>
-                            <h5>{refund.reason}</h5>
-                            <span className="sn-refund-date">
-                              Requested {formatDate(refund.createdAt)}
-                            </span>
-                          </div>
-
-                          <div className="sn-refund-item-side">
-                            <strong>{formatMoney(refund.amount)}</strong>
-                            <span className={`sn-refund-status ${String(refund.status || 'PENDING').toLowerCase()}`}>
-                              {formatLabel(refund.status)}
-                            </span>
-                          </div>
-
-                          {refund.adminNote && (
-                            <p className="sn-refund-admin-note">
-                              Admin note: {refund.adminNote}
-                            </p>
-                          )}
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-
+   </section>
+)}
+           
               {/* REFUND MANAGEMENT SECTION END */}
 
             </section>

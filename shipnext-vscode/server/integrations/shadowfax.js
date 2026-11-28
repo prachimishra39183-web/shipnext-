@@ -148,17 +148,33 @@ async function trackShipment(awbNumber) {
 }
 
 // 4. Cancel shipment
-async function cancelShipment(awbNumber, remarks = '') {
-  return shadowfaxRequest(
+async function cancelShipment(awbNumber, remarks = 'ShipNext test order cancellation') {
+  const awb = String(awbNumber || '').trim();
+
+  if (!awb) {
+    throw new Error('Shadowfax AWB number is required.');
+  }
+
+  const result = await shadowfaxRequest(
     '/v3/clients/orders/cancel/',
     {
       method: 'POST',
       body: JSON.stringify({
-        request_id: awbNumber,
+        request_id: awb,
         cancel_remarks: remarks,
       }),
     }
   );
+
+  if (Number(result.responseCode) !== 200) {
+    throw new Error(
+      result.responseMsg || 'Shadowfax cancellation was not confirmed.'
+    );
+  }
+
+  console.log('SHADOWFAX CANCELLATION CONFIRMED:', result);
+
+  return result;
 }
 module.exports = {
   checkServiceability,

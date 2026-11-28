@@ -1,7 +1,7 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import API_URL from '../config/api';
+import './Wallet.css';
 
 function Wallet() {
   const [balance, setBalance] = useState('0.00');
@@ -12,6 +12,11 @@ function Wallet() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  const [filter, setFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const token = sessionStorage.getItem('shipnextToken');
 
@@ -32,12 +37,15 @@ function Wallet() {
       }
 
       if (!requestResponse.ok) {
-        throw new Error(requestData.message || 'Unable to load recharge history.');
+        throw new Error(
+          requestData.message || 'Unable to load recharge history.'
+        );
       }
 
       setBalance(walletData.wallet.balance);
       setTransactions(walletData.wallet.transactions || []);
       setRequests(requestData.requests || []);
+      setError('');
     } catch (err) {
       setError(err.message || 'Unable to load wallet details.');
     } finally {
@@ -95,7 +103,6 @@ function Wallet() {
         throw new Error('Unable to load Razorpay Checkout. Please try again.');
       }
 
-      // Create order on ShipNext backend.
       const orderResponse = await fetch(
         `${API_URL}/api/wallet/recharge-orders`,
         {
@@ -121,9 +128,7 @@ function Wallet() {
         name: 'SHIPNEXT',
         description: 'Wallet Recharge',
         order_id: orderData.order.id,
-        theme: {
-          color: '#FF3B1F',
-        },
+        theme: { color: '#155EEF' },
 
         handler: async (paymentResponse) => {
           try {
@@ -169,7 +174,9 @@ function Wallet() {
         modal: {
           ondismiss: () => {
             setSubmitting(false);
-            setMessage('Payment window closed. Your wallet has not been credited.');
+            setMessage(
+              'Payment window closed. Your wallet has not been credited.'
+            );
           },
         },
       };
@@ -178,8 +185,7 @@ function Wallet() {
 
       razorpayInstance.on('payment.failed', (response) => {
         setError(
-          response.error?.description ||
-          'Payment failed. Please try again.'
+          response.error?.description || 'Payment failed. Please try again.'
         );
         setSubmitting(false);
       });
@@ -223,270 +229,387 @@ function Wallet() {
     .filter((item) => item.type === 'DEBIT')
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
+  const completedRecharges = requests.filter(
+    (item) => String(item.status || '').toUpperCase() === 'COMPLETED'
+  ).length;
+
+  const getChargeType = (transaction) => {
+    const description = String(transaction.description || '').toLowerCase();
+
+    if (description.includes('refund')) return 'Refund';
+    if (description.includes('recharge')) return 'Wallet Recharge';
+    if (description.includes('admin')) return 'Wallet Adjustment';
+
+    return 'Wallet Transaction';
+  };
+
+  const filteredTransactions = useMemo(() => {
+    let list = [...transactions];
+
+    if (filter === 'CREDIT') {
+      list = list.filter((item) => item.type !== 'DEBIT');
+    }
+
+    if (filter === 'DEBIT') {
+      list = list.filter((item) => item.type === 'DEBIT');
+    }
+
+    if (filter === 'REFUND') {
+      list = list.filter((item) =>
+        String(item.description || '').toLowerCase().includes('refund')
+      );
+    }
+
+    if (search.trim()) {
+      const query = search.toLowerCase();
+
+      list = list.filter((item) =>
+        [
+          item.id,
+          item.reference,
+          item.description,
+          item.type,
+        ].some((value) =>
+          String(value || '').toLowerCase().includes(query)
+        )
+      );
+    }
+
+    if (fromDate) {
+      const start = new Date(`${fromDate}T00:00:00`);
+      list = list.filter((item) => new Date(item.createdAt) >= start);
+    }
+
+    if (toDate) {
+      const end = new Date(`${toDate}T23:59:59.999`);
+      list = list.filter((item) => new Date(item.createdAt) <= end);
+    }
+
+    return list;
+  }, [transactions, filter, search, fromDate, toDate]);
+
+  const clearFilters = () => {
+    setFilter('ALL');
+    setSearch('');
+    setFromDate('');
+    setToDate('');
+  };
+
+  const exportTransactions = () => {
+    const headers = [
+      'Transaction Date',
+      'Transaction ID',
+      'Charge Type',
+      'Type',
+      'Amount',
+      'Description',
+    ];
+
+    const rows = filteredTransactions.map((item) => [
+      formatDate(item.createdAt),
+      item.id,
+      getChargeType(item),
+      item.type,
+      item.amount,
+      item.description || '',
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row.map((value) =>
+          `"${String(value ?? '').replace(/"/g, '""')}"`
+        ).join(',')
+      )
+      .join('\n');
+
+    const blob = new Blob([csv], {
+      type: 'text/csv;charset=utf-8;',
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'shipnext-wallet-transactions.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="sn-wallet-page">
-      <header className="sn-wallet-header">
-        <Link to="/dashboard" className="sn-wallet-back">
-          Back to Dashboard
-        </Link>
-      </header>
-
       <div className="sn-wallet-container">
-        <section className="sn-wallet-intro">
-          <span className="sn-wallet-eyebrow">
+
+        <header className="sn-wallet-header">
+          
+          <Link to="/dashboard" className="sn-wallet-back">
+            <span>←</span> Dashboard
+          </Link>
+            
+          <span className="sn-wallet-header-label">
             SHIPNEXT FINANCIAL CENTRE
           </span>
-          <h1>My <span>Wallet.</span></h1>
-          <p>
-            Manage your shipping funds, recharge securely
-            and review your account activity.
-          </p>
-        </section>
-
+        </header>
         {error && (
           <div className="sn-wallet-alert sn-wallet-alert-error">
-            {error}
+            <span>!</span> {error}
           </div>
         )}
 
         {message && (
           <div className="sn-wallet-alert sn-wallet-alert-success">
-            {message}
+            <span>✓</span> {message}
           </div>
         )}
 
-        <section className="sn-wallet-overview">
-          <div className="sn-wallet-balance">
+               {/* COMPACT WALLET BALANCE + ADD MONEY */}
+        <section className="sn-wallet-top-grid">
+
+          <div className="sn-wallet-balance-card">
             <div className="sn-wallet-balance-top">
-              <span>AVAILABLE WALLET BALANCE</span>
-              <span className="sn-wallet-live-label">SHIPNEXT ACCOUNT</span>
+              <div>
+                <span className="sn-wallet-card-label">
+                  AVAILABLE WALLET BALANCE
+                </span>
+                <span className="sn-wallet-card-status">
+                  <i /> ACTIVE
+                </span>
+              </div>
+              <div className="sn-wallet-balance-symbol">₹</div>
             </div>
 
-            <div className="sn-wallet-balance-amount">
+            <div className="sn-wallet-balance-value">
               <span>₹</span>
-              <strong>
-                {loading ? 'Loading...' : formatAmount(balance)}
-              </strong>
+              <strong>{loading ? '...' : formatAmount(balance)}</strong>
             </div>
 
-            <p>Your current available shipping funds</p>
-
-            <div className="sn-wallet-balance-bottom">
-              <span>SHIPNEXT</span>
-              <span>WALLET ACCOUNT</span>
-            </div>
+            <p>Your available ShipNext wallet funds</p>
           </div>
 
-          <div className="sn-wallet-metrics">
-            <article className="sn-wallet-metric">
-              <span>TOTAL CREDITS</span>
-              <strong>₹{formatAmount(totalCredits)}</strong>
-              <small>Based on loaded transactions</small>
-            </article>
-
-            <article className="sn-wallet-metric">
-              <span>TOTAL DEBITS</span>
-              <strong>₹{formatAmount(totalDebits)}</strong>
-              <small>Based on loaded transactions</small>
-            </article>
-
-            <article className="sn-wallet-metric">
-              <span>RECHARGE REQUESTS</span>
-              <strong>{requests.length}</strong>
-              <small>All recharge attempts</small>
-            </article>
-          </div>
-        </section>
-
-        <section className="sn-wallet-recharge">
-          <div className="sn-wallet-section-heading">
-            <div>
-              <span className="sn-wallet-eyebrow">WALLET FUNDING</span>
-              <h2>Add money to your wallet</h2>
-              <p>
-                Securely recharge your ShipNext wallet through Razorpay.
-              </p>
+          <section className="sn-wallet-recharge-card" id="wallet-recharge">
+            <div className="sn-wallet-recharge-heading">
+              <div className="sn-wallet-recharge-icon">＋</div>
+              <div>
+                <span className="sn-wallet-eyebrow">WALLET FUNDING</span>
+                <h2>Add Money</h2>
+              </div>
             </div>
 
-            <span className="sn-wallet-step">01 / RECHARGE</span>
-          </div>
-
-          <div className="sn-wallet-form-layout">
-            <form
-              className="sn-wallet-form"
-              onSubmit={handleRecharge}
-            >
-              <span className="sn-wallet-eyebrow">
-                SECURE PAYMENT
-              </span>
-
-              <h3>Wallet recharge</h3>
-
-              <div className="sn-wallet-field">
-                <label htmlFor="walletAmount">
-                  Recharge amount
-                </label>
-
-                <div className="sn-wallet-amount-input">
-                  <span>₹</span>
-                  <input
-                    id="walletAmount"
-                    type="number"
-                    min="1"
-                    max="1000000"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-
-                <small>Minimum ₹1 · Maximum ₹10,00,000</small>
+            <form onSubmit={handleRecharge}>
+              <div className="sn-wallet-amount-input">
+                <span>₹</span>
+                <input
+                  id="walletAmount"
+                  type="number"
+                  min="1"
+                  max="1000000"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  required
+                  disabled={submitting}
+                />
+                <span className="sn-wallet-inr">INR</span>
               </div>
 
               <button
                 type="submit"
-                className="sn-wallet-submit-btn"
+                className="sn-wallet-pay-button"
                 disabled={submitting || loading}
               >
-                {submitting ? 'Processing...' : 'Add Money Securely'}
+                {submitting ? 'Processing Payment...' : 'Add Money Securely'}
+                <span>→</span>
               </button>
-
-              <p className="sn-wallet-verification-note">
-                Payments are verified by ShipNext's server.
-                Your wallet is credited only after successful payment verification.
-              </p>
-
-              <div className="sn-wallet-payment-security">
-                <strong>SECURE PAYMENTS BY RAZORPAY</strong>
-                <span>UPI · Cards · Netbanking · Supported payment methods</span>
-              </div>
             </form>
-          </div>
+
+            <div className="sn-wallet-secure-note">
+              <span>✓</span>
+              Secure payment powered by Razorpay
+            </div>
+          </section>
         </section>
 
-        <section className="sn-wallet-history">
-          <div className="sn-wallet-section-heading">
-            <div>
-              <span className="sn-wallet-eyebrow">PAYMENT ACTIVITY</span>
-              <h2>Recharge history</h2>
-              <p>Track your wallet recharge payments.</p>
-            </div>
+        
+        
 
-            <span className="sn-wallet-history-count">
-              {requests.length} REQUESTS
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="sn-wallet-empty">
-              Loading recharge history...
-            </div>
-          ) : requests.length === 0 ? (
-            <div className="sn-wallet-empty">
-              <h3>No recharge requests yet</h3>
-              <p>Your completed and pending recharges will appear here.</p>
-            </div>
-          ) : (
-            <div className="sn-wallet-table-wrap">
-              <table className="sn-wallet-table">
-                <thead>
-                  <tr>
-                    <th>PAYMENT DETAILS</th>
-                    <th>PAYMENT ID</th>
-                    <th>DATE</th>
-                    <th>AMOUNT</th>
-                    <th>STATUS</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {requests.map((request) => (
-                    <tr key={request.id}>
-                      <td>
-                        <strong>Razorpay Wallet Recharge</strong>
-                      </td>
-
-                      <td>
-                        {request.razorpayPaymentId || 'Pending'}
-                      </td>
-
-                      <td>{formatDate(request.createdAt)}</td>
-
-                      <td className="sn-wallet-table-amount">
-                        ₹{formatAmount(request.amount)}
-                      </td>
-
-                      <td>
-                        <span className="sn-wallet-request-status">
-                          {request.status || 'PENDING'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section className="sn-wallet-history">
-          <div className="sn-wallet-section-heading">
+        {/* TRANSACTION TABLE */}
+        <section className="sn-wallet-history-section">
+          <div className="sn-wallet-history-heading">
             <div>
               <span className="sn-wallet-eyebrow">ACCOUNT ACTIVITY</span>
-              <h2>Transaction history</h2>
-              <p>Review recorded credits and debits in your wallet.</p>
+            
+              <p>View, search and manage your wallet transaction records.</p>
             </div>
 
-            <span className="sn-wallet-history-count">
-              {transactions.length} TRANSACTIONS
+            <span className="sn-wallet-record-count">
+              {filteredTransactions.length} / {transactions.length} RECORDS
             </span>
           </div>
 
-          {loading ? (
-            <div className="sn-wallet-empty">
-              Loading transactions...
-            </div>
-          ) : transactions.length === 0 ? (
-            <div className="sn-wallet-empty">
-              <h3>No transactions yet</h3>
-              <p>Your completed wallet transactions will appear here.</p>
-            </div>
-          ) : (
-            <div className="sn-wallet-transaction-list">
-              {transactions.map((transaction) => (
-                <article
-                  className="sn-wallet-transaction"
-                  key={transaction.id}
+          <div className="sn-wallet-table-toolbar">
+            <div className="sn-wallet-filter-tabs">
+              {[
+                { label: 'All', value: 'ALL' },
+                { label: 'Credit', value: 'CREDIT' },
+                { label: 'Debit', value: 'DEBIT' },
+                { label: 'Refund', value: 'REFUND' },
+              ].map((item) => (
+                <button
+                  type="button"
+                  key={item.value}
+                  className={filter === item.value ? 'active' : ''}
+                  onClick={() => setFilter(item.value)}
                 >
-                  <div className="sn-wallet-transaction-info">
-                    <strong>
-                      {transaction.description || 'Wallet transaction'}
-                    </strong>
-                    <span>{formatDate(transaction.createdAt)}</span>
-                  </div>
-
-                  <strong
-                    className={
-                      transaction.type === 'DEBIT'
-                        ? 'sn-wallet-debit'
-                        : 'sn-wallet-credit'
-                    }
-                  >
-                    {transaction.type === 'DEBIT' ? '−' : '+'}
-                    ₹{formatAmount(transaction.amount)}
-                  </strong>
-                </article>
+                  {item.label}
+                  {item.value === 'ALL' && (
+                    <span>{transactions.length}</span>
+                  )}
+                </button>
               ))}
             </div>
-          )}
+
+            <div className="sn-wallet-filter-controls">
+              <div className="sn-wallet-search">
+                <span>⌕</span>
+                <input
+                  type="text"
+                  placeholder="Search transactions..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              <input
+                className="sn-wallet-date-input"
+                type="date"
+                aria-label="From date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+
+              <input
+                className="sn-wallet-date-input"
+                type="date"
+                aria-label="To date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+
+              <button
+                type="button"
+                className="sn-wallet-clear-button"
+                onClick={clearFilters}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="sn-wallet-table-wrap">
+            <table className="sn-wallet-table">
+              <thead>
+                <tr>
+                  <th>TRANSACTION DATE</th>
+                  <th>TRANSACTION ID</th>
+                  <th>CHARGE TYPE</th>
+                  <th>TYPE</th>
+                  <th>AMOUNT</th>
+                  <th>DESCRIPTION</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="sn-wallet-table-empty">
+                      Loading wallet transactions...
+                    </td>
+                  </tr>
+                ) : filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="sn-wallet-table-empty">
+                      <div className="sn-wallet-empty-state">
+                        <div>₹</div>
+                        <strong>No transactions found</strong>
+                        <p>
+                          Try changing your filters or make your first wallet
+                          transaction.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((transaction) => (
+                    <tr key={transaction.id}>
+                      <td>{formatDate(transaction.createdAt)}</td>
+
+                      <td className="sn-wallet-transaction-id">
+                        {transaction.id}
+                      </td>
+
+                      <td>
+                        <span className="sn-wallet-charge-label">
+                          {getChargeType(transaction)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span
+                          className={
+                            transaction.type === 'DEBIT'
+                              ? 'sn-wallet-type-badge debit'
+                              : 'sn-wallet-type-badge credit'
+                          }
+                        >
+                          {transaction.type === 'DEBIT' ? 'Debit' : 'Credit'}
+                        </span>
+                      </td>
+
+                      <td>
+                        <strong
+                          className={
+                            transaction.type === 'DEBIT'
+                              ? 'sn-wallet-debit-amount'
+                              : 'sn-wallet-credit-amount'
+                          }
+                        >
+                          {transaction.type === 'DEBIT' ? '−' : '+'}
+                          ₹{formatAmount(transaction.amount)}
+                        </strong>
+                      </td>
+
+                      <td className="sn-wallet-description">
+                        {transaction.description || 'Wallet transaction'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="sn-wallet-table-footer">
+            <span>
+              Showing {filteredTransactions.length} of {transactions.length}{' '}
+              loaded transactions
+            </span>
+
+            <div>
+              <button type="button" onClick={fetchWallet}>
+                ↻ Refresh
+              </button>
+
+              <button type="button" onClick={exportTransactions}>
+                ↓ Export CSV
+              </button>
+            </div>
+          </div>
         </section>
 
         <footer className="sn-wallet-footer">
-          <p>Your shipping funds, managed with clarity.</p>
+          <span>SHIPNEXT</span>
+          <p>Shipping funds, managed with clarity.</p>
         </footer>
+
       </div>
     </main>
   );

@@ -1,4 +1,4 @@
-import { ChevronDown,FileText } from 'lucide-react';
+import { ChevronDown,FileText,CreditCard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UserRound,CheckCheck  } from 'lucide-react';
@@ -29,6 +29,7 @@ const [myShipments, setMyShipments] = useState([]);
 const [walletBalance, setWalletBalance] = useState(0);
 const [loadingDashboardData, setLoadingDashboardData] = useState(true);
 const navigate = useNavigate();
+const [paymentsOpen, setPaymentsOpen] = useState(false);
 
 const handleLogout = () => {
   sessionStorage.removeItem('shipnextToken');
@@ -233,40 +234,76 @@ const deliveredShipments = myShipments.filter(
 ).length;
   return (
     <div className="dashboard">
-  <aside className="sidebar">
-   
-     
-      <img
-        src="/logo.jpeg"
-        alt="ShipNext Logo"
-        className="logo-image"
-      />
-  
+     <aside className="sidebar">
 
-       <p className="sidebar-label">MAIN MENU</p>
+  <img
+    src="/logo.jpeg"
+    alt="ShipNext Logo"
+    className="logo-image"
+  />
 
-<nav className="sidebar-nav">
-  <a href="#overview" className="active">Dashboard</a>
-  <Link to="/shipments">My Shipments</Link>
- 
-  
-  <Link to="/track">Track Shipment</Link>
-  <Link to="/wallet">My Wallet</Link>
-  <Link to="/cod-remittance">COD Remittance</Link>
-    <Link to="/support">Support Tickets</Link>
-  <Link to="/profile">My Profile</Link>
-  <Link to="/settings">Settings</Link>
+  <p className="sidebar-label">MAIN MENU</p>
 
-</nav>
+  <nav className="sidebar-nav">
+    <a href="#overview" className="active">Dashboard</a>
 
-        <div className="sidebar-bottom">
-          <Link to="/">← Back to Website</Link>
-        </div>
-        <button className="customer-logout-btn" onClick={handleLogout}>
-  <span>↪</span> Logout
+    <Link to="/shipments">My Shipments</Link>
+
+    {/* PAYMENTS MENU */}
+    <div className="sidebar-menu-group">
+   <button
+  type="button"
+  className="sidebar-menu-toggle"
+  onClick={() => setPaymentsOpen(!paymentsOpen)}
+>
+  <span>Payments</span>
+
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{
+      transform: paymentsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+      transition: 'transform 0.25s ease',
+      marginLeft: '8px'
+    }}
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
 </button>
-      </aside>
 
+      {paymentsOpen && (
+        <div className="sidebar-submenu">
+          <Link to="/settlement">Settlement</Link>
+          <Link to="/wallet">Wallet</Link>
+          <Link to="/billing">
+  <FileText size={18} />
+  <span>Billing</span>
+</Link>
+        </div>
+      )}
+    </div>
+
+    <Link to="/cod-remittance">COD Remittance</Link>
+    <Link to="/support">Support Tickets</Link>
+    <Link to="/profile">My Profile</Link>
+    <Link to="/settings">Settings</Link>
+  </nav>
+
+  <div className="sidebar-bottom">
+    <Link to="/">← Back to Website</Link>
+  </div>
+
+  <button className="customer-logout-btn" onClick={handleLogout}>
+    <span>↪</span> Logout
+  </button>
+
+</aside>
       <main className="dashboard-main" id="overview">
         <header className="dashboard-header">
           
